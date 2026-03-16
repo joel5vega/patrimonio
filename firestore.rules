@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner() {
+      return request.auth != null
+          && request.auth.token.email == 'joel5vega@gmail.com';
+    }
+
+    // Colecciones principales — lectura
+    match /{document=**} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
+    // Activos manuales — lectura y escritura
+    match /users/{uid}/manualAssets/{docId} {
+      allow read, write: if isOwner() && request.auth.uid == uid;
+    }
+  }
+}

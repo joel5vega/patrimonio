@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "dailyAccountSnapshots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "accountId", "order": "ASCENDING" },
+        { "fieldPath": "statementDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "dailyAccountSnapshots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "accountType", "order": "ASCENDING" },
+        { "fieldPath": "statementDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ideaTasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
