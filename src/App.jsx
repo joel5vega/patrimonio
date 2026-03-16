@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Portfolio from './pages/Portfolio';
@@ -15,7 +15,7 @@ function App() {
   return (
     <AuthProvider>
       <AppProvider>
-        <Router>
+        <BrowserRouter basename={import.meta.env.PROD ? '/portafolio' : '/'}>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
@@ -28,7 +28,7 @@ function App() {
             <Route path="/new-transaction" element={<NewTransaction />} />
             <Route path="/bank-import" element={<BankImport />} />
           </Routes>
-        </Router>
+        </BrowserRouter>
       </AppProvider>
     </AuthProvider>
   );
