@@ -12,6 +12,7 @@ const TypeBadge = ({ type }) => (
   }`}>{type === 'crypto' ? 'Crypto' : 'ETF'}</span>
 );
 
+
 const PieSVG = ({ data, size = 130 }) => {
   const total = data.reduce((s, d) => s + d.valueUSD, 0);
   if (total === 0) return null;
