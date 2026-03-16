@@ -5,3 +5,4 @@ dist/
 .env.local
 functions/node_modules/
 functions/.env
+functions/
