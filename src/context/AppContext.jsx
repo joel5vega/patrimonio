@@ -5,6 +5,20 @@ import { useManualAssets } from '../hooks/useManualAssets';
 
 const AppContext = createContext(null);
 
+// ─── Paletas de color ─────────────────────────────────────
+const CRYPTO_PIE_COLORS = [
+  '#f97316','#fb923c','#f59e0b','#eab308',
+  '#84cc16','#a855f7','#ec4899','#06b6d4',
+];
+const ETF_PIE_COLORS = [
+  '#3b82f6','#6366f1','#8b5cf6','#0ea5e9',
+  '#14b8a6','#22d3ee','#60a5fa','#818cf8',
+];
+// AppContext.jsx — reemplaza MANUAL_COLORS
+const MANUAL_COLORS = ['#a855f7', '#ec4899', '#facc15', '#06b6d4'];
+
+const STABLES = ['USDT', 'USDC', 'BUSD', 'DAI', 'FDUSD'];
+
 export const AppProvider = ({ children }) => {
   const { user } = useAuth();
   const manualCtx = useManualAssets();
@@ -87,41 +101,38 @@ export const AppProvider = ({ children }) => {
   const totalValue = (totalCryptoUSD + totalInversionUSD + manualCtx.totalManualUSD) * 6.96;
   const totalPnl   = totalInversionPnl;
 
-  // ─── PIE DATA — 3 segmentos + manuales por tipo ──────────
-// Paleta de 8 colores para activos manuales
-const MANUAL_COLORS = [
-  '#8b5cf6', // violeta
-  '#10b981', // esmeralda
-  '#f59e0b', // ámbar
-  '#ec4899', // rosa
-  '#06b6d4', // cyan
-  '#84cc16', // lima
-  '#f97316', // naranja claro
-  '#6366f1', // indigo
-];
+  // ─── PIE DATA ────────────────────────────────────────────
+  const stableAssets   = cryptoAssets.filter((a) => STABLES.includes(a.symbol) && a.netExposureUSD > 0);
+  const volatileAssets = cryptoAssets.filter((a) => !STABLES.includes(a.symbol) && a.netExposureUSD > 0);
 
-const manualPieSlices = (manualCtx.manualAssets || [])
-  .filter((a) => a.valueUSD > 0)
-  .reduce((acc, a) => {
-    const existing = acc.find((x) => x.label === a.name);
-    if (existing) { existing.valueUSD += a.valueUSD; }
-    else {
-      acc.push({
-        label: a.label,
-        valueUSD: a.valueUSD,
-        color: MANUAL_COLORS[acc.length % MANUAL_COLORS.length], // ← color por índice
-      });
-    }
-    return acc;
-  }, []);
+  const totalVolatileUSD = volatileAssets.reduce((s, a) => s + a.netExposureUSD, 0);
 
+  const stablePieSlices = stableAssets.map((a) => ({
+    label: `${a.symbol} (Cash)`,
+    valueUSD: a.netExposureUSD,
+    color: '#10b981',
+  }));
 
-const pieData = [
-  { label: 'Crypto', valueUSD: totalCryptoUSD,   color: '#f97316' },
-  { label: 'ETFs',   valueUSD: totalInversionUSD, color: '#3b82f6' },
-  ...manualPieSlices,
-].filter((d) => d.valueUSD > 0);
+const totalETFUSD = inversionPositions.reduce((s, p) => s + (p.valueUSD ?? 0), 0);
+const etfPieSlices = totalETFUSD > 0
+  ? [{ label: 'ETFs', valueUSD: totalETFUSD, color: '#3b82f6' }]
+  : [];
+  const manualPieSlices = (manualCtx.manualAssets || [])
+    .filter((a) => a.valueUSD > 0)
+    .map((a, i) => ({
+      label: a.name,
+      valueUSD: a.valueUSD,
+      color: MANUAL_COLORS[i % MANUAL_COLORS.length],
+    }));
 
+  const pieData = [
+    ...(totalVolatileUSD > 0 ? [{ label: 'Crypto', valueUSD: totalVolatileUSD, color: '#f97316' }] : []),
+    ...stablePieSlices,
+    ...etfPieSlices,
+    ...manualPieSlices,
+  ].filter((d) => d.valueUSD > 0);
+
+  // ─── TRANSACTIONS ─────────────────────────────────────────
   const transactions = statements.map((st) => ({
     id: st.id,
     title: st.subject || `${(st.accountType || 'broker').toUpperCase()} Statement`,
@@ -133,6 +144,7 @@ const pieData = [
     category: st.accountType || 'trade', date: st.statementDate,
   }));
 
+  // ─── ACCOUNTS ─────────────────────────────────────────────
   const accounts = {
     sections: [
       {
@@ -167,7 +179,7 @@ const pieData = [
       cryptoAssets, totalCryptoUSD,
       inversionPositions, totalInversionUSD, totalInversionPnl,
       inversionSnap, tradeSnap, binanceSnap,
-      assets: [...cryptoAssets, ...inversionPositions, ...manualCtx.manualAssets],
+      assets: [...cryptoAssets, ...inversionPositions, ...(manualCtx.manualAssets ?? [])],
       totalValue, totalPnl,
       pieData, riskData, loadingRisk: loading,
       transactions, accounts,
@@ -175,7 +187,6 @@ const pieData = [
       chartHistory: history,
       loading, error,
       snapshot: binanceSnap,
-      // Manual assets
       ...manualCtx,
       bankEmails: [], importBankEmail: () => {},
     }}>
