@@ -15,7 +15,7 @@ const Dashboard = () => {
       <div className="flex justify-between items-center pt-2">
         <div>
           <p className="text-white/40 text-sm">Bienvenido</p>
-          <h1 className="text-xl font-bold">PatrimonioApp</h1>
+          <h1 className="text-xl font-bold">MiPatrimonio</h1>
         </div>
         <div className="flex gap-2">
           <button onClick={() => navigate('/bank-import')} className="bg-brand-card p-2 rounded-xl border border-white/10 text-brand-teal">
