@@ -143,3 +143,37 @@ export const removeManualAsset = (uid, id) =>
 
 export const updateManualAsset = (uid, id, updates) =>
   updateDoc(doc(db, 'users', uid, 'manualAssets', id), updates);
+
+
+
+// =============================================================================
+// TRANSACTIONS — Firestore CRUD  (agregar al final de firebase.js)
+// =============================================================================
+
+const transactionsCol = (uid) => collection(db, 'users', uid, 'transactions');
+
+export const subscribeTransactions = (uid, callback, n = 100) => {
+  const q = query(transactionsCol(uid), orderBy('date', 'desc'), limit(n));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+};
+
+export const addTransaction = (uid, tx) =>
+  addDoc(transactionsCol(uid), {
+    title:     tx.title,
+    concept:   tx.concept || '',
+    amount:    parseFloat(tx.amount),
+    currency:  tx.currency || 'USD',   // 'USD' | 'BOB'
+    type:      tx.type,                // 'income' | 'expense' | 'transfer'
+    category:  tx.category,            // 'buy' | 'sell' | 'dividend' | 'transfer' | 'other'
+    date:      tx.date,                // 'YYYY-MM-DD'
+    note:      tx.note || '',
+    createdAt: serverTimestamp(),
+  });
+
+export const updateTransaction = (uid, id, updates) =>
+  updateDoc(doc(db, 'users', uid, 'transactions', id), updates);
+
+export const removeTransaction = (uid, id) =>
+  deleteDoc(doc(db, 'users', uid, 'transactions', id));
