@@ -1,27 +1,28 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getLatestBinanceSnapshot, getAdmiralsSnapshots, getStatements, getReports, getSnapshotHistory } from '../lib/firebase';
 import { useAuth } from './AuthContext';
-import { useManualAssets } from '../hooks/useManualAssets';
+import { useManualAssets, BOB_PER_USD } from '../hooks/useManualAssets';
 
 const AppContext = createContext(null);
 
 // ─── Paletas de color ─────────────────────────────────────
-const CRYPTO_PIE_COLORS = [
-  '#f97316','#fb923c','#f59e0b','#eab308',
-  '#84cc16','#a855f7','#ec4899','#06b6d4',
-];
-const ETF_PIE_COLORS = [
-  '#3b82f6','#6366f1','#8b5cf6','#0ea5e9',
-  '#14b8a6','#22d3ee','#60a5fa','#818cf8',
-];
-// AppContext.jsx — reemplaza MANUAL_COLORS
 const MANUAL_COLORS = ['#a855f7', '#ec4899', '#facc15', '#06b6d4'];
+const STABLES       = ['USDT', 'USDC', 'BUSD', 'DAI', 'FDUSD'];
 
-const STABLES = ['USDT', 'USDC', 'BUSD', 'DAI', 'FDUSD'];
+// ─── Tipo de cambio paralelo via DolarApi ─────────────────
+async function fetchBobRate() {
+  try {
+    const res  = await fetch('https://bo.dolarapi.com/v1/dolares/binance');
+    const data = await res.json();
+    return data?.venta ?? data?.compra ?? null;
+  } catch (e) {
+    console.error('❌ fetchBobRate error:', e);
+    return null;
+  }
+}
 
 export const AppProvider = ({ children }) => {
   const { user } = useAuth();
-  const manualCtx = useManualAssets();
 
   const [binanceSnap, setBinanceSnap]     = useState(null);
   const [admiralsSnaps, setAdmiralsSnaps] = useState([]);
@@ -30,22 +31,29 @@ export const AppProvider = ({ children }) => {
   const [history, setHistory]             = useState([]);
   const [loading, setLoading]             = useState(true);
   const [error, setError]                 = useState(null);
+  const [bobRate, setBobRate]             = useState(BOB_PER_USD);
+
+  // ← bobRate se pasa al hook para que los activos manuales en BOB
+  //   se conviertan con el tipo de cambio paralelo real
+  const manualCtx = useManualAssets(bobRate);
 
   const fetchAll = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const [binance, admirals, stmts, rpts, hist] = await Promise.all([
+      const [binance, admirals, stmts, rpts, hist, savedRate] = await Promise.all([
         getLatestBinanceSnapshot(),
         getAdmiralsSnapshots(),
         getStatements(50),
         getReports(20),
         getSnapshotHistory(90),
+        fetchBobRate(),
       ]);
       setBinanceSnap(binance);
       setAdmiralsSnaps(admirals);
       setStatements(stmts);
       setReports(rpts);
       setHistory(hist);
+      if (savedRate) setBobRate(savedRate);
     } catch (e) {
       if (e?.message === 'permission error') return;
       console.error('Error fetching data:', e);
@@ -90,7 +98,7 @@ export const AppProvider = ({ children }) => {
   const inversionPositions = (inversionSnap?.snapshot?.portfolioStats?.positions || []).map((p) => ({
     id: p.ticket, name: p.symbol, symbol: p.symbol, type: 'etf',
     quantity: p.size, avgBuyPrice: p.entry, currentPrice: p.marketPrice,
-    valueUSD: p.marketValue ?? 0, valueBOB: (p.marketValue ?? 0) * 6.96,
+    valueUSD: p.marketValue ?? 0, valueBOB: (p.marketValue ?? 0) * bobRate,
     weightPct: p.weight ?? 0, unrealizedPL: p.unrealizedPL ?? 0,
     tp: p.tp, sl: p.sl,
   }));
@@ -98,7 +106,7 @@ export const AppProvider = ({ children }) => {
   const totalInversionPnl = inversionSnap?.snapshot?.portfolioStats?.totalUnrealizedPL ?? 0;
 
   // ─── TOTALES GLOBALES ─────────────────────────────────────
-  const totalValue = (totalCryptoUSD + totalInversionUSD + manualCtx.totalManualUSD) * 6.96;
+  const totalValue = (totalCryptoUSD + totalInversionUSD + (manualCtx.totalManualUSD ?? 0)) * bobRate;
   const totalPnl   = totalInversionPnl;
 
   // ─── PIE DATA ────────────────────────────────────────────
@@ -106,6 +114,7 @@ export const AppProvider = ({ children }) => {
   const volatileAssets = cryptoAssets.filter((a) => !STABLES.includes(a.symbol) && a.netExposureUSD > 0);
 
   const totalVolatileUSD = volatileAssets.reduce((s, a) => s + a.netExposureUSD, 0);
+  const totalETFUSD      = inversionPositions.reduce((s, p) => s + (p.valueUSD ?? 0), 0);
 
   const stablePieSlices = stableAssets.map((a) => ({
     label: `${a.symbol} (Cash)`,
@@ -113,10 +122,10 @@ export const AppProvider = ({ children }) => {
     color: '#10b981',
   }));
 
-const totalETFUSD = inversionPositions.reduce((s, p) => s + (p.valueUSD ?? 0), 0);
-const etfPieSlices = totalETFUSD > 0
-  ? [{ label: 'ETFs', valueUSD: totalETFUSD, color: '#3b82f6' }]
-  : [];
+  const etfPieSlices = totalETFUSD > 0
+    ? [{ label: 'ETFs', valueUSD: totalETFUSD, color: '#3b82f6' }]
+    : [];
+
   const manualPieSlices = (manualCtx.manualAssets || [])
     .filter((a) => a.valueUSD > 0)
     .map((a, i) => ({
@@ -149,15 +158,15 @@ const etfPieSlices = totalETFUSD > 0
     sections: [
       {
         title: 'Binance Crypto', iconType: 'crypto', isLiability: false,
-        totalBOB: totalCryptoUSD * 6.96,
+        totalBOB: totalCryptoUSD * bobRate,
         items: cryptoAssets.filter((a) => a.netExposureUSD > 0).map((a) => ({
           name: a.symbol, displayValue: `$${a.netExposureUSD.toFixed(2)}`,
-          currency: 'USD', valueBOB: a.netExposureUSD * 6.96,
+          currency: 'USD', valueBOB: a.netExposureUSD * bobRate,
         })),
       },
       {
         title: 'Admirals Inversión', iconType: 'etf', isLiability: false,
-        totalBOB: totalInversionUSD * 6.96,
+        totalBOB: totalInversionUSD * bobRate,
         items: inversionPositions.map((p) => ({
           name: p.symbol, displayValue: `$${p.valueUSD.toFixed(2)}`,
           currency: 'USD', valueBOB: p.valueBOB, pnl: p.unrealizedPL,
@@ -165,9 +174,10 @@ const etfPieSlices = totalETFUSD > 0
       },
       {
         title: 'Activos Manuales', iconType: 'manual', isLiability: false,
-        totalBOB: manualCtx.totalManualUSD * 6.96,
-        items: manualCtx.manualAssets.map((a) => ({
-          name: a.name, displayValue: a.currency === 'BOB' ? `Bs ${a.amount.toFixed(2)}` : `$${a.amount.toFixed(2)}`,
+        totalBOB: (manualCtx.totalManualUSD ?? 0) * bobRate,
+        items: (manualCtx.manualAssets ?? []).map((a) => ({
+          name: a.name,
+          displayValue: a.currency === 'BOB' ? `Bs ${a.amount.toFixed(2)}` : `$${a.amount.toFixed(2)}`,
           currency: a.currency, valueBOB: a.valueBOB,
         })),
       },
@@ -187,6 +197,7 @@ const etfPieSlices = totalETFUSD > 0
       chartHistory: history,
       loading, error,
       snapshot: binanceSnap,
+      bobRate,
       ...manualCtx,
       bankEmails: [], importBankEmail: () => {},
     }}>

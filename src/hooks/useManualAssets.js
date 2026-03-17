@@ -7,9 +7,9 @@ import {
   updateManualAsset,
 } from '../lib/firebase';
 
-export const BOB_PER_USD = 6.96;
+export const BOB_PER_USD = 6.96; // fallback oficial
 
-export function useManualAssets() {
+export function useManualAssets(bobRate = BOB_PER_USD) {  // ← acepta rate
   const { user } = useAuth();
   const [rawAssets, setRawAssets] = useState([]);
 
@@ -21,8 +21,8 @@ export function useManualAssets() {
 
   const manualAssets = rawAssets.map((a) => ({
     ...a,
-    valueUSD: a.currency === 'BOB' ? a.amount / BOB_PER_USD : a.amount,
-    valueBOB: a.currency === 'BOB' ? a.amount : a.amount * BOB_PER_USD,
+    valueUSD: a.currency === 'BOB' ? a.amount / bobRate : a.amount,
+    valueBOB: a.currency === 'BOB' ? a.amount : a.amount * bobRate,
   }));
 
   const totalManualUSD = manualAssets.reduce((s, a) => s + a.valueUSD, 0);
@@ -30,9 +30,9 @@ export function useManualAssets() {
   return {
     manualAssets,
     totalManualUSD,
-    BOB_PER_USD,
-    addAsset:    (asset)         => user && addManualAsset(user.uid, asset),
-    removeAsset: (id)            => user && removeManualAsset(user.uid, id),
-    updateAsset: (id, updates)   => user && updateManualAsset(user.uid, id, updates),
+    BOB_PER_USD: bobRate,
+    addAsset:    (asset)       => user && addManualAsset(user.uid, asset),
+    removeAsset: (id)          => user && removeManualAsset(user.uid, id),
+    updateAsset: (id, updates) => user && updateManualAsset(user.uid, id, updates),
   };
 }

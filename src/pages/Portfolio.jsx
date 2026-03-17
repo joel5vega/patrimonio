@@ -106,7 +106,7 @@ const Portfolio = () => {
   const {
     cryptoAssets, inversionPositions, manualAssets,
     totalCryptoUSD, totalInversionUSD, totalManualUSD,
-    pieData, binanceSnap, loading, totalInversionPnl,
+    pieData, binanceSnap, loading, totalInversionPnl,bobRate
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('Todos');
@@ -168,7 +168,13 @@ const Portfolio = () => {
 
       {/* ── Distribution Card ── */}
       <section className="bg-card-dark rounded-2xl border border-border-dark p-5 overflow-hidden">
-        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-5">Distribución</h3>
+        <h1 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-5">Distribución <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+      <span className="text-[10px] font-bold text-emerald-400 font-mono">
+        Bs {bobRate.toFixed(2)} / USD
+      </span>
+    </div></h1>
+       
         <div className="flex flex-col items-center gap-6">
           <DonutChart data={pieData} totalUSD={totalUSD} />
           <div className="grid grid-cols-2 gap-2.5 w-full">
