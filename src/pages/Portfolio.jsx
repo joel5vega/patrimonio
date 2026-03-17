@@ -168,7 +168,7 @@ const Portfolio = () => {
 
       {/* ── Distribution Card ── */}
       <section className="bg-card-dark rounded-2xl border border-border-dark p-5 overflow-hidden">
-        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-5">Distribución por Tipo</h3>
+        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-5">Distribución</h3>
         <div className="flex flex-col items-center gap-6">
           <DonutChart data={pieData} totalUSD={totalUSD} />
           <div className="grid grid-cols-2 gap-2.5 w-full">
