@@ -4,5 +4,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/patrimonio/',   // ← fijo, sin condicional
+  base: process.env.NODE_ENV === 'production' ? '/patrimonio/' : '/',
+
 });
