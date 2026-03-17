@@ -13,13 +13,21 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return unsub;
-  }, []);
+useEffect(() => {
+  const unsub = onAuthStateChanged(auth, (u) => {
+    setUser(u);
+    setLoading(false);
+  });
+
+  // Seguridad: si Firebase no responde en 5s, salir del loading
+  const timeout = setTimeout(() => setLoading(false), 5000);
+
+  return () => {
+    unsub();
+    clearTimeout(timeout);
+  };
+}, []);
+
 
   const loginEmail = (email, password) =>
     signInWithEmailAndPassword(auth, email, password);
