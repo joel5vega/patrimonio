@@ -128,7 +128,9 @@ const TxRow = ({ tx, onSave, onDelete }) => {
     note:     tx.note || '',
   });
 
-  const save = async () => { await onSave(tx.id, form); setEditing(false); };
+  const save = async () => { 
+    const parent = TX_CATEGORIES.find(c => c.value === form.category)?.parent ?? 'otros';
+    await onSave(tx.id, { ...form, parentCategory: parent }); setEditing(false); };
   const meta      = categoryMeta(tx.category);
   const symbol    = tx.currency === 'BOB' ? 'Bs' : '$';
   const isExpense = tx.type === 'expense';
@@ -208,7 +210,8 @@ const NewTxModal = ({ onClose, onAdd }) => {
 
   const submit = async () => {
     if (!form.concept || !form.amount) return;
-    await onAdd({ ...form, title: form.concept });
+    const parent = TX_CATEGORIES.find(c => c.value === form.category)?.parent ?? 'otros';
+    await onAdd({ ...form, title: form.concept, parentCategory: parent });
     onClose();
   };
 

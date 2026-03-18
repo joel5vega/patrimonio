@@ -1,3 +1,4 @@
+// hooks/useTransactions.js
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -10,6 +11,8 @@ import {
 export const TX_CATEGORIES = [
   // ── Hogar ──────────────────────────────
   { value: 'viveres',      label: 'Víveres',       parent: 'hogar',       emoji: '🍎' },
+  { value: 'salidas',      label: 'Salidas',          parent: 'desarrollo', emoji: '🍽️' },
+{ value: 'comida_fuera', label: 'Comida afuera',    parent: 'desarrollo', emoji: '🍔' },
   { value: 'servicios',    label: 'Servicios',     parent: 'hogar',       emoji: '⚡' },
   { value: 'telefono',     label: 'Teléfono',      parent: 'hogar',       emoji: '📞' },
   { value: 'transporte',   label: 'Transporte',    parent: 'hogar',       emoji: '🚌' },
@@ -51,7 +54,7 @@ export const TX_GROUPS = [
   { value: 'otros',       label: '📦 Otros'               },
 ];
 
-
+// hooks/useTransactions.js
 export function useTransactions() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState([]);
@@ -62,11 +65,18 @@ export function useTransactions() {
     return () => unsub();
   }, [user]);
 
+  const enrichTx = (tx) => ({
+    ...tx,
+    parentCategory:
+      tx.parentCategory ||
+      TX_CATEGORIES.find(c => c.value === tx.category)?.parent ||
+      'otros',
+  });
+
   return {
     transactions,
-    addTransaction:    (tx)          => user && addTransaction(user.uid, tx),
-    updateTransaction: (id, updates) => user && updateTransaction(user.uid, id, updates),
-    removeTransaction: (id)          => user && removeTransaction(user.uid, id),
-    TX_CATEGORIES,
+    addTransaction:    (tx)          => user && addTransaction(user.uid, enrichTx(tx)),
+    updateTransaction: (id, updates) => user && updateTransaction(user.uid, id, enrichTx(updates)),
+    removeTransaction: (id)          => user && removeTransaction(user.uid, id),TX_CATEGORIES
   };
 }
