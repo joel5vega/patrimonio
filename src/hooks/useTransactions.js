@@ -18,6 +18,7 @@ export const TX_CATEGORIES = [
   { value: 'impuestos',    label: 'Impuestos',     parent: 'hogar',       emoji: '🏛️' },
   // ── Familia ────────────────────────────
   { value: 'familia',      label: 'Familia',       parent: 'familia',     emoji: '👨‍👩‍👧' },
+  { value: 'boda',      label: 'Boda',            parent: 'familia',     emoji: '💍' },
   // ── Desarrollo Personal ────────────────
   { value: 'educacion',    label: 'Educación',     parent: 'desarrollo',  emoji: '📚' },
   { value: 'ropa',         label: 'Ropa',          parent: 'desarrollo',  emoji: '👔' },

@@ -1,14 +1,15 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, PieChart, Repeat, TrendingUp, Wallet ,BarChart2 } from 'lucide-react';
+import { Home, PieChart, Repeat, TrendingUp, PiggyBank, Wallet ,BarChart2 } from 'lucide-react';
 
 const Layout = () => {
   const navItems = [
     { to: '/',          icon: <Home size={20} />,      label: 'Dashboard'  },
     { to: '/portfolio', icon: <PieChart size={20} />,  label: 'Portafolio' },
     { to: '/history',   icon: <TrendingUp size={20} />, label: 'Historial' },
-    { to: '/manual',    icon: <Wallet size={20} />,    label: 'Manual'     },
+    { to: '/manual',    icon: <PiggyBank size={20} />,    label: 'Manual'     },
     { to: '/transactions', icon: <Repeat size={20} />, label: 'Movimientos'},
     { to: '/analytics', icon: <BarChart2 size={20} />, label: 'Analytics'},
+    { to: '/budget', icon: <Wallet size={20} />, label: 'Presupuesto'},
   ];
 
   return (
