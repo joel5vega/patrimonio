@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import {
   getFirestore, collection, query,addDoc,deleteDoc,updateDoc,doc, onSnapshot, serverTimestamp,
-  where, orderBy, limit, getDocs,
+  where,setDoc, orderBy, limit, getDocs,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -177,3 +177,47 @@ export const updateTransaction = (uid, id, updates) =>
 
 export const removeTransaction = (uid, id) =>
   deleteDoc(doc(db, 'users', uid, 'transactions', id));
+
+// lib/firebase.js  ← agregar al final
+
+
+export async function savePortfolioSnapshot(uid, data) {
+  const date = data.date ?? new Date().toISOString().split('T')[0];
+  const ref  = doc(db, 'users', uid, 'portfolioHistory', date);
+  await setDoc(ref, {
+    date,
+    totalPortfolioUSD: data.totalPortfolioUSD,
+    cryptoUSD:         data.cryptoUSD,
+    inversionUSD:      data.inversionUSD,
+    manualUSD:         data.manualUSD,
+    // ← nuevo: mapa id → valueUSD
+    manualAssets:      data.manualAssets ?? {},
+    updatedAt:         new Date().toISOString(),
+  }, { merge: true });
+}
+export async function getPortfolioHistory(uid) {
+  try {
+    const q = query(
+      collection(db, 'users', uid, 'portfolioHistory'),
+      orderBy('date', 'asc')
+    );
+    const snap = await getDocs(q);
+    console.log('getPortfolioHistory raw docs:', snap.size, snap.docs.map(d => d.id));
+    return snap.docs.map((d) => d.data());
+  } catch (e) {
+    console.error('❌ getPortfolioHistory error:', e.code, e.message);
+    return [];
+  }
+}
+export async function getAllDailySnapshots() {
+  try {
+    // Colección raíz — NO bajo users/
+    const ref  = collection(db, 'dailyAccountSnapshots');
+    const snap = await getDocs(ref);
+    console.log('✅ getAllDailySnapshots:', snap.size, 'docs');
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.error('❌ getAllDailySnapshots error:', e.code, e.message);
+    return [];
+  }
+}
