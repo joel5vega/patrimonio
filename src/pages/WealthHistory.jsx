@@ -165,7 +165,6 @@ const MultiLineChart = ({ series, onHover, period }) => {
         ))}
       </defs>
 
-      {/* Grid Y + labels */}
       {yLabels.map((val, i) => {
         const y = toY(val);
         return (
@@ -193,7 +192,6 @@ const MultiLineChart = ({ series, onHover, period }) => {
         );
       })}
 
-      {/* Eje X */}
       <line
         x1={PAD_L}
         y1={H - PAD_B}
@@ -228,7 +226,6 @@ const MultiLineChart = ({ series, onHover, period }) => {
         );
       })}
 
-      {/* Series */}
       {series.map((s) => {
         if (s.data.length < 2) return null;
         const pts   = s.data.map((d, i) => `${toX(i, s.data.length)},${toY(d.v)}`);
@@ -253,7 +250,6 @@ const MultiLineChart = ({ series, onHover, period }) => {
         );
       })}
 
-      {/* Labels de puntos */}
       {pointLabels.map((p) => {
         const x = toX(p.index, primary.data.length);
         const y = toY(p.v);
@@ -295,7 +291,7 @@ const WealthHistory = () => {
     manualAssets,
     loading,
     bobRate,
-    ahorroBsUSD,   // viene del AppContext
+    ahorroBsUSD,
   } = useApp();
 
   const [hoverPoint, setHoverPoint] = useState(null);
@@ -307,9 +303,7 @@ const WealthHistory = () => {
     etfs: false,
   });
 
-  const days             = PERIODS.find((p) => p.key === period)?.days ?? 30;
-  const currentTotalUSD =
-    totalCryptoUSD + totalInversionUSD + (totalManualUSD ?? 0);
+  const days = PERIODS.find((p) => p.key === period)?.days ?? 30;
 
   const manualTypes = useMemo(
     () =>
@@ -337,6 +331,13 @@ const WealthHistory = () => {
       }),
     [manualAssets, bobRate]
   );
+
+  const currentTotalUSD =
+    totalCryptoUSD +
+    totalInversionUSD +
+    (manualTypes ?? [])
+      .filter((t) => !t.isAhorroBs)
+      .reduce((sum, t) => sum + (t.valueUSD ?? 0), 0);
 
   const ALL_TYPES = [SPECIAL_TODO, ...FIXED_TYPES, ...manualTypes];
 
@@ -374,7 +375,6 @@ const WealthHistory = () => {
       );
 
       if (asset.key === 'todo_full') {
-        // se rellena después
         acc[asset.key] = [];
         return acc;
       }
@@ -403,19 +403,20 @@ const WealthHistory = () => {
       return acc;
     }, {});
 
-    // construir serie virtual Todo = total + ahorroBs
-    const totalSeries = result['total'] ?? [];
+    const totalSeries    = result['total'] ?? [];
     const ahorroBsSeries = result['manual_AhorroBs'] ?? [];
 
     if (totalSeries.length) {
       const mapBs = new Map(ahorroBsSeries.map((p) => [p.date, p.v]));
-      const todoSeries = totalSeries.map((p) => {
-        const bsUSD = mapBs.get(p.date) ?? 0;
-        return { date: p.date, v: p.v + bsUSD };
-      }).filter((d) => {
-        if (days < 9999 && new Date(d.date) < cutoff) return false;
-        return true;
-      });
+      const todoSeries = totalSeries
+        .map((p) => {
+          const bsUSD = mapBs.get(p.date) ?? 0;
+          return { date: p.date, v: p.v + bsUSD };
+        })
+        .filter((d) => {
+          if (days < 9999 && new Date(d.date) < cutoff) return false;
+          return true;
+        });
       result['todo_full'] = todoSeries;
     } else {
       result['todo_full'] = [];
@@ -552,7 +553,7 @@ const WealthHistory = () => {
                   className="w-3 h-0.5 rounded-full inline-block"
                   style={{ backgroundColor: s.color }}
                 />
-                <span className="text-[10px] text-white/50">{s.label}</span>
+                <span className="text-[10px] text:white/50">{s.label}</span>
                 <span
                   className="text-[10px] font-bold"
                   style={{ color: s.color }}
