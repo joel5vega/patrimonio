@@ -1,8 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import {
-  getFirestore, collection, query,addDoc,deleteDoc,updateDoc,doc, onSnapshot, serverTimestamp,
-  where,setDoc, orderBy, limit, getDocs,
+  getFirestore, collection, query, addDoc, deleteDoc, updateDoc, doc,
+  onSnapshot, serverTimestamp, where, setDoc, orderBy, limit, getDocs,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -19,8 +19,7 @@ export const auth = getAuth(app);
 export const db   = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// ─── getLatestBinanceSnapshot ─────────────────────────────────
-// Lee: dailyAccountSnapshots / 2026-03-14_binance_portfolio
+// ─── getLatestBinanceSnapshot ───────────────────────────────
 export const getLatestBinanceSnapshot = async () => {
   const q = query(
     collection(db, 'dailyAccountSnapshots'),
@@ -33,7 +32,7 @@ export const getLatestBinanceSnapshot = async () => {
   return { id: snap.docs[0].id, ...snap.docs[0].data() };
 };
 
-// ─── getSnapshotHistory ───────────────────────────────────────
+// ─── getSnapshotHistory ─────────────────────────────────────
 export const getSnapshotHistory = async (n = 30) => {
   const q = query(
     collection(db, 'dailyAccountSnapshots'),
@@ -48,8 +47,7 @@ export const getSnapshotHistory = async (n = 30) => {
   })).reverse();
 };
 
-// ─── getAdmiralsSnapshots ─────────────────────────────────────
-// Lee: dailyAccountSnapshots / 2026.03.12_AccountID
+// ─── getAdmiralsSnapshots ──────────────────────────────────
 export const getAdmiralsSnapshots = async () => {
   const q = query(
     collection(db, 'dailyAccountSnapshots'),
@@ -61,7 +59,7 @@ export const getAdmiralsSnapshots = async () => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
-// ─── getStatements ────────────────────────────────────────────
+// ─── getStatements ─────────────────────────────────────────
 export const getStatements = async (n = 50) => {
   const q = query(
     collection(db, 'statements'),
@@ -72,57 +70,63 @@ export const getStatements = async (n = 50) => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
-// ─── getReports ───────────────────────────────────────────────
+// ─── getReports ────────────────────────────────────────────
 export const getReports = async (n = 20) => {
   const results = [];
-  // standoutsReports
   try {
     const snap = await getDocs(
       query(collection(db, 'standoutsReports'), orderBy('date', 'desc'), limit(n))
     );
-    snap.docs.forEach((d) => results.push({
-      id: d.id, type: 'standouts',
-      title: 'Standouts ' + (d.data().timeSlot || ''),
-      date: d.data().date,
-      summary: (d.data().report || '').slice(0, 300),
-      report: d.data().report,
-    }));
+    snap.docs.forEach((d) =>
+      results.push({
+        id: d.id,
+        type: 'standouts',
+        title: 'Standouts ' + (d.data().timeSlot || ''),
+        date: d.data().date,
+        summary: (d.data().report || '').slice(0, 300),
+        report: d.data().report,
+      })
+    );
   } catch (_) {}
 
-  // reportes en dailyAccountSnapshots — filtro en cliente
   try {
     const snap = await getDocs(
-      query(collection(db, 'dailyAccountSnapshots'), orderBy('statementDate', 'desc'), limit(50))
+      query(
+        collection(db, 'dailyAccountSnapshots'),
+        orderBy('statementDate', 'desc'),
+        limit(50)
+      )
     );
     snap.docs
       .filter((d) => !!d.data().report)
       .slice(0, n)
-      .forEach((d) => results.push({
-        id: d.id, type: d.data().accountType === 'crypto' ? 'crypto' : 'market',
-        title: 'Reporte ' + (d.data().accountType || '').toUpperCase() + ' · ' + d.data().statementDate,
-        date: d.data().statementDate,
-        summary: (d.data().report || '').slice(0, 300),
-        report: d.data().report,
-      }));
+      .forEach((d) =>
+        results.push({
+          id: d.id,
+          type: d.data().accountType === 'crypto' ? 'crypto' : 'market',
+          title:
+            'Reporte ' +
+            (d.data().accountType || '').toUpperCase() +
+            ' · ' +
+            d.data().statementDate,
+          date: d.data().statementDate,
+          summary: (d.data().report || '').slice(0, 300),
+          report: d.data().report,
+        })
+      );
   } catch (_) {}
 
   results.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   return results.slice(0, n);
 };
 
-
 // =============================================================================
-// MANUAL ASSETS — Firestore CRUD
+// MANUAL ASSETS
 // =============================================================================
-
-
-const BOB_PER_USD = 10;
-
-// Colección: users/{uid}/manualAssets
-const manualCol = (uid) => collection(db, 'users', uid, 'manualAssets');
 
 export const subscribeManualAssets = (uid, callback) => {
-  const q = query(manualCol(uid), orderBy('createdAt', 'desc'));
+  const col = collection(db, 'users', uid, 'manualAssets');
+  const q   = query(col, orderBy('createdAt', 'desc'));
   return onSnapshot(q, (snap) => {
     const assets = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     callback(assets);
@@ -130,11 +134,12 @@ export const subscribeManualAssets = (uid, callback) => {
 };
 
 export const addManualAsset = (uid, asset) =>
-  addDoc(manualCol(uid), {
+  addDoc(collection(db, 'users', uid, 'manualAssets'), {
     name:      asset.name,
-    currency:  asset.currency,   // 'USD' | 'BOB'
+    currency:  asset.currency,
     amount:    parseFloat(asset.amount),
     note:      asset.note || '',
+    since:     asset.since ?? null,
     createdAt: serverTimestamp(),
   });
 
@@ -144,30 +149,27 @@ export const removeManualAsset = (uid, id) =>
 export const updateManualAsset = (uid, id, updates) =>
   updateDoc(doc(db, 'users', uid, 'manualAssets', id), updates);
 
-
-
 // =============================================================================
-// TRANSACTIONS — Firestore CRUD  (agregar al final de firebase.js)
+// TRANSACTIONS
 // =============================================================================
-
-const transactionsCol = (uid) => collection(db, 'users', uid, 'transactions');
 
 export const subscribeTransactions = (uid, callback, n = 100) => {
-  const q = query(transactionsCol(uid), orderBy('date', 'desc'), limit(n));
+  const col = collection(db, 'users', uid, 'transactions');
+  const q   = query(col, orderBy('date', 'desc'), limit(n));
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   });
 };
 
 export const addTransaction = (uid, tx) =>
-  addDoc(transactionsCol(uid), {
+  addDoc(collection(db, 'users', uid, 'transactions'), {
     title:     tx.title,
     concept:   tx.concept || '',
     amount:    parseFloat(tx.amount),
-    currency:  tx.currency || 'USD',   // 'USD' | 'BOB'
-    type:      tx.type,                // 'income' | 'expense' | 'transfer'
-    category:  tx.category,            // 'buy' | 'sell' | 'dividend' | 'transfer' | 'other'
-    date:      tx.date,                // 'YYYY-MM-DD'
+    currency:  tx.currency || 'USD',
+    type:      tx.type,
+    category:  tx.category,
+    date:      tx.date,
     note:      tx.note || '',
     createdAt: serverTimestamp(),
   });
@@ -178,23 +180,45 @@ export const updateTransaction = (uid, id, updates) =>
 export const removeTransaction = (uid, id) =>
   deleteDoc(doc(db, 'users', uid, 'transactions', id));
 
-// lib/firebase.js  ← agregar al final
-
+// =============================================================================
+// PORTFOLIO HISTORY
+// =============================================================================
 
 export async function savePortfolioSnapshot(uid, data) {
   const date = data.date ?? new Date().toISOString().split('T')[0];
   const ref  = doc(db, 'users', uid, 'portfolioHistory', date);
-  await setDoc(ref, {
+
+  const cryptoUSD    = data.cryptoUSD    ?? 0;
+  const inversionUSD = data.inversionUSD ?? 0;
+
+  const manualFieldsUSD = Object.entries(data)
+    .filter(([k]) => k.startsWith('manual_') && k !== 'manual_AhorroBs')
+    .reduce((acc, [k, v]) => {
+      acc[k] = typeof v === 'number' ? v : v ?? 0;
+      return acc;
+    }, {});
+
+  const manualSumUSD = Object.values(manualFieldsUSD).reduce(
+    (s, v) => s + (typeof v === 'number' ? v : 0),
+    0
+  );
+
+  const totalPortfolioUSD =
+    data.totalPortfolioUSD ?? cryptoUSD + inversionUSD + manualSumUSD;
+
+  const payload = {
     date,
-    totalPortfolioUSD: data.totalPortfolioUSD,
-    cryptoUSD:         data.cryptoUSD,
-    inversionUSD:      data.inversionUSD,
-    manualUSD:         data.manualUSD,
-    // ← nuevo: mapa id → valueUSD
-    manualAssets:      data.manualAssets ?? {},
-    updatedAt:         new Date().toISOString(),
-  }, { merge: true });
+    cryptoUSD,
+    inversionUSD,
+    totalPortfolioUSD,
+    ...manualFieldsUSD,
+    ...(data.manual_AhorroBs != null ? { manual_AhorroBs: data.manual_AhorroBs } : {}),
+    updatedAt: new Date().toISOString(),
+  };
+
+  await setDoc(ref, payload, { merge: true });
 }
+
 export async function getPortfolioHistory(uid) {
   try {
     const q = query(
@@ -202,16 +226,16 @@ export async function getPortfolioHistory(uid) {
       orderBy('date', 'asc')
     );
     const snap = await getDocs(q);
-    console.log('getPortfolioHistory raw docs:', snap.size, snap.docs.map(d => d.id));
+    console.log('getPortfolioHistory raw docs:', snap.size, snap.docs.map((d) => d.id));
     return snap.docs.map((d) => d.data());
   } catch (e) {
     console.error('❌ getPortfolioHistory error:', e.code, e.message);
     return [];
   }
 }
+
 export async function getAllDailySnapshots() {
   try {
-    // Colección raíz — NO bajo users/
     const ref  = collection(db, 'dailyAccountSnapshots');
     const snap = await getDocs(ref);
     console.log('✅ getAllDailySnapshots:', snap.size, 'docs');
