@@ -1,13 +1,22 @@
-import { useState } from 'react';
-import { useApp } from '../context/AppContext';
+import { useMemo, useState } from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import './Portfolio.css';
 
 const STABLES = ['USDT', 'USDC', 'BUSD', 'DAI', 'FDUSD'];
 
 const CRYPTO_ICONS = {
-  BTC: 'currency_bitcoin', ETH: 'token', SOL: 'sunny', BNB: 'toll',
-  XRP: 'water_drop', ADA: 'hexagon', LINK: 'link', DEFAULT: 'generating_tokens',
+  BTC: 'currency_bitcoin',
+  ETH: 'token',
+  SOL: 'sunny',
+  BNB: 'toll',
+  XRP: 'water_drop',
+  ADA: 'hexagon',
+  LINK: 'link',
+  DEFAULT: 'generating_tokens',
 };
+
+const TABS = ['Todos', 'Crypto', 'ETFs', 'Manual'];
 
 const TypeIcon = ({ type, symbol }) => {
   const iconMap = {
@@ -16,302 +25,429 @@ const TypeIcon = ({ type, symbol }) => {
     manual: 'savings',
     stable: 'attach_money',
   };
+
   return (
-    <span className="material-symbols-outlined text-xl text-primary">
+    <span className="material-symbols-outlined text-[20px] text-primary">
       {iconMap[type] || 'account_balance'}
     </span>
   );
 };
 
-// ─── Paleta de alto contraste ────────────────────────────
-const HIGH_CONTRAST_COLORS = [
-  '#f97316', // naranja   - Crypto
-  '#10b981', // esmeralda - USDT/Cash
-  '#3b82f6', // azul      - ETFs
-  '#a855f7', // violeta   - Manual 1
-  '#ec4899', // rosa      - Manual 2
-  '#facc15', // amarillo  - Manual 3
-  '#06b6d4', // cyan      - Manual 4
-  '#f43f5e', // rojo      - extra
-];
+const formatUSD = (value = 0, digits = 0) => `$${Number(value || 0).toFixed(digits)}`;
+const formatBOB = (value = 0, rate = 6.96, digits = 0) => `Bs ${Number((value || 0) * rate).toFixed(digits)}`;
 
 const DonutChart = ({ data, totalUSD }) => {
-  if (!data || data.length === 0) return null;
-  const total = data.reduce((s, d) => s + d.valueUSD, 0);
-  if (total === 0) return null;
+  const safeData = (data || []).filter((d) => Number(d.valueUSD) > 0);
+  if (!safeData.length) return null;
 
-  const SIZE    = 220;
-  const CX      = SIZE / 2;
-  const CY      = SIZE / 2;
-  const R       = 80;
-  const RI      = 52;
-  const LABEL_R = R + 22;
-  const MIN_PCT = 4;
+  const total = safeData.reduce((sum, item) => sum + item.valueUSD, 0);
+  if (total <= 0) return null;
+
+  const SIZE = 260;
+  const CX = SIZE / 2;
+  const CY = SIZE / 2;
+  const R = 92;
+  const RI = 60;
+  const LABEL_R = 118;
+  const MOBILE_MIN_LABEL_PCT = 1.5;
+  const DESKTOP_MIN_LABEL_PCT = 2.5;
+  const isSmallScreen = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
+  const minPct = isSmallScreen ? MOBILE_MIN_LABEL_PCT : DESKTOP_MIN_LABEL_PCT;
 
   let cumAngle = -Math.PI / 2;
 
-  const slices = data.map((d) => {
-    const angle    = (d.valueUSD / total) * 2 * Math.PI;
-    const midAngle = cumAngle + angle / 2;
-    const x1  = CX + R  * Math.cos(cumAngle), y1  = CY + R  * Math.sin(cumAngle);
+  const slices = safeData.map((d) => {
+    const angle = (d.valueUSD / total) * 2 * Math.PI;
+    const startAngle = cumAngle;
+    const midAngle = startAngle + angle / 2;
+    const x1 = CX + R * Math.cos(startAngle);
+    const y1 = CY + R * Math.sin(startAngle);
     cumAngle += angle;
-    const x2  = CX + R  * Math.cos(cumAngle), y2  = CY + R  * Math.sin(cumAngle);
-    const xi1 = CX + RI * Math.cos(cumAngle), yi1 = CY + RI * Math.sin(cumAngle);
-    const xi2 = CX + RI * Math.cos(cumAngle - angle), yi2 = CY + RI * Math.sin(cumAngle - angle);
+    const x2 = CX + R * Math.cos(cumAngle);
+    const y2 = CY + R * Math.sin(cumAngle);
+    const xi1 = CX + RI * Math.cos(cumAngle);
+    const yi1 = CY + RI * Math.sin(cumAngle);
+    const xi2 = CX + RI * Math.cos(startAngle);
+    const yi2 = CY + RI * Math.sin(startAngle);
     const large = angle > Math.PI ? 1 : 0;
+    const pct = (d.valueUSD / total) * 100;
+
     return {
+      ...d,
+      pct,
+      midAngle,
       path: `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${xi1} ${yi1} A ${RI} ${RI} 0 ${large} 0 ${xi2} ${yi2} Z`,
-      color: d.color, label: d.label,
-      pct: ((d.valueUSD / total) * 100).toFixed(1),
       lx: CX + LABEL_R * Math.cos(midAngle),
       ly: CY + LABEL_R * Math.sin(midAngle),
-      lsx: CX + (R + 4)          * Math.cos(midAngle),
-      lsy: CY + (R + 4)          * Math.sin(midAngle),
-      lex: CX + (LABEL_R - 8)    * Math.cos(midAngle),
-      ley: CY + (LABEL_R - 8)    * Math.sin(midAngle),
-      midAngle,
+      lsx: CX + (R + 4) * Math.cos(midAngle),
+      lsy: CY + (R + 4) * Math.sin(midAngle),
+      lex: CX + (LABEL_R - 10) * Math.cos(midAngle),
+      ley: CY + (LABEL_R - 10) * Math.sin(midAngle),
     };
   });
 
   return (
-    <div className="flex items-center justify-center w-full">
-      <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="overflow-visible">
-        {slices.map((s, i) => (
-          <path key={`s-${i}`} d={s.path} fill={s.color} opacity={0.95} stroke="#0a1211" strokeWidth={2} />
+    <div className="portfolio-donut-wrap">
+      <svg width="100%" height="100%" viewBox={`0 0 ${SIZE} ${SIZE}`} className="portfolio-donut-svg">
+        {slices.map((slice, index) => (
+          <path
+            key={`slice-${index}`}
+            d={slice.path}
+            fill={slice.color}
+            stroke="rgba(10,18,17,0.95)"
+            strokeWidth="2"
+            opacity="0.95"
+          />
         ))}
-        {slices.filter((s) => parseFloat(s.pct) >= MIN_PCT).map((s, i) => {
-          const anchor = Math.cos(s.midAngle) > 0 ? 'start' : 'end';
+
+        {slices.filter((slice) => slice.pct >= minPct).map((slice, index) => {
+          const anchor = Math.cos(slice.midAngle) >= 0 ? 'start' : 'end';
           return (
-            <g key={`l-${i}`}>
-              <line x1={s.lsx} y1={s.lsy} x2={s.lex} y2={s.ley} stroke={s.color} strokeWidth={1} opacity={0.5} />
-              <text x={s.lx} y={s.ly - 5} textAnchor={anchor} fill={s.color}
-                fontSize={8} fontWeight="700" fontFamily="Inter, sans-serif">{s.label}</text>
-              <text x={s.lx} y={s.ly + 5} textAnchor={anchor} fill="rgba(148,163,184,0.8)"
-                fontSize={7.5} fontFamily="JetBrains Mono, monospace">{s.pct}%</text>
+            <g key={`label-${index}`} className="portfolio-donut-label">
+              <line
+                x1={slice.lsx}
+                y1={slice.lsy}
+                x2={slice.lex}
+                y2={slice.ley}
+                stroke={slice.color}
+                strokeWidth="1.5"
+                opacity="0.7"
+              />
+              <text
+                x={slice.lx}
+                y={slice.ly - 4}
+                textAnchor={anchor}
+                fill={slice.color}
+                fontSize="9"
+                fontWeight="700"
+                fontFamily="Inter, sans-serif"
+              >
+                {slice.label}
+              </text>
+              <text
+                x={slice.lx}
+                y={slice.ly + 8}
+                textAnchor={anchor}
+                fill="rgba(148,163,184,0.95)"
+                fontSize="8"
+                fontFamily="JetBrains Mono, monospace"
+              >
+                {slice.pct.toFixed(1)}%
+              </text>
             </g>
           );
         })}
-        <text x={CX} y={CY - 8} textAnchor="middle" fill="rgba(100,116,139,0.9)"
-          fontSize={8} fontWeight="700" fontFamily="Inter, sans-serif" letterSpacing="1">TOTAL USD</text>
-        <text x={CX} y={CY + 10} textAnchor="middle" fill="white"
-          fontSize={18} fontWeight="700" fontFamily="JetBrains Mono, monospace">${totalUSD.toFixed(0)}</text>
+
+        <text
+          x={CX}
+          y={CY - 12}
+          textAnchor="middle"
+          fill="rgba(148,163,184,0.92)"
+          fontSize="9"
+          fontWeight="700"
+          fontFamily="Inter, sans-serif"
+          letterSpacing="1.5"
+        >
+          TOTAL USD
+        </text>
+        <text
+          x={CX}
+          y={CY + 14}
+          textAnchor="middle"
+          fill="white"
+          fontSize="22"
+          fontWeight="700"
+          fontFamily="JetBrains Mono, monospace"
+        >
+          {formatUSD(totalUSD, 0)}
+        </text>
       </svg>
     </div>
   );
 };
 
-const TABS = ['Todos', 'Crypto', 'ETFs', 'Manual'];
+const StatCard = ({ label, value, tone = 'default' }) => (
+  <div className="portfolio-stat-card">
+    <p className="portfolio-stat-label">{label}</p>
+    <p className={`portfolio-stat-value ${tone}`}>{value}</p>
+  </div>
+);
 
 const Portfolio = () => {
   const {
-    cryptoAssets, inversionPositions, manualAssets,
-    totalCryptoUSD, totalInversionUSD, totalManualUSD,
-    pieData, binanceSnap, loading, totalInversionPnl,bobRate
+    cryptoAssets,
+    inversionPositions,
+    manualAssets,
+    totalCryptoUSD,
+    totalInversionUSD,
+    totalManualUSD,
+    pieData,
+    binanceSnap,
+    loading,
+    bobRate,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('Todos');
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
+  const bs = binanceSnap?.snapshot || {};
+  const totalUSD = totalCryptoUSD + totalInversionUSD + (totalManualUSD ?? 0);
+  const reservedBUY = bs.reservedCapitalUSD ?? 0;
+  const pendingSELL = bs.pendingSellUSD ?? 0;
+  const grossExposure = bs.grossExposureUSD ?? 0;
+  const riskScore = bs.riskMetrics?.riskScore ?? 0;
+  const riskColor =
+    riskScore >= 70 ? 'text-rose-400' : riskScore >= 40 ? 'text-yellow-400' : 'text-emerald-400';
+
+  const stableAssets = useMemo(
+    () => cryptoAssets.filter((a) => STABLES.includes(a.symbol) && a.netExposureUSD > 0),
+    [cryptoAssets]
   );
 
-  const bs            = binanceSnap?.snapshot || {};
-  const totalUSD      = totalCryptoUSD + totalInversionUSD + (totalManualUSD ?? 0);
-  const reservedBUY   = bs.reservedCapitalUSD ?? 0;
-  const pendingSELL   = bs.pendingSellUSD ?? 0;
-  const grossExposure = bs.grossExposureUSD ?? 0;
-  const riskScore     = bs.riskMetrics?.riskScore ?? 0;
-  const riskColor     = riskScore >= 70 ? 'text-rose-400' : riskScore >= 40 ? 'text-yellow-400' : 'text-emerald-400';
+  const volatileAssets = useMemo(
+    () => cryptoAssets.filter((a) => !STABLES.includes(a.symbol) && (a.netExposureUSD > 0 || a.pendingBuyUSD > 0)),
+    [cryptoAssets]
+  );
 
-  // Build unified asset list
-  const stableAssets   = cryptoAssets.filter((a) => STABLES.includes(a.symbol) && a.netExposureUSD > 0);
-  const volatileAssets = cryptoAssets.filter((a) => !STABLES.includes(a.symbol) && (a.netExposureUSD > 0 || a.pendingBuyUSD > 0));
+  const allAssets = useMemo(
+    () => [
+      ...volatileAssets.map((a) => ({
+        id: `crypto-${a.symbol}`,
+        type: 'crypto',
+        symbol: a.symbol,
+        name: a.symbol,
+        subtitle: `${a.quantity?.toFixed(4) ?? 0} ${a.symbol}`,
+        price: a.currentPrice,
+        valueUSD: a.netExposureUSD + (a.pendingBuyUSD ?? 0),
+        pnl: null,
+        pnlPct: null,
+        weightPct: a.weightPct,
+        extra: a.pendingBuyUSD > 0 ? `+${formatUSD(a.pendingBuyUSD, 2)} orden` : null,
+      })),
+      ...stableAssets.map((a) => ({
+        id: `stable-${a.symbol}`,
+        type: 'stable',
+        symbol: a.symbol,
+        name: `${a.symbol} (Cash)`,
+        subtitle: `${a.quantity?.toFixed(2) ?? 0} ${a.symbol}`,
+        price: 1,
+        valueUSD: a.netExposureUSD,
+        pnl: null,
+        pnlPct: null,
+        weightPct: a.weightPct,
+        extra: null,
+      })),
+      ...inversionPositions.map((p) => ({
+        id: `etf-${p.id}`,
+        type: 'etf',
+        symbol: p.symbol,
+        name: p.symbol,
+        subtitle: `${p.quantity} u · ${formatUSD(p.currentPrice, 2)}`,
+        price: p.currentPrice,
+        valueUSD: p.valueUSD,
+        pnl: p.unrealizedPL,
+        pnlPct: p.avgBuyPrice > 0 ? ((p.currentPrice - p.avgBuyPrice) / p.avgBuyPrice) * 100 : null,
+        weightPct: p.weightPct,
+        extra: p.tp > 0 ? `TP ${formatUSD(p.tp, 2)}` : null,
+      })),
+      ...(manualAssets ?? []).map((a) => ({
+        id: `manual-${a.id}`,
+        type: 'manual',
+        symbol: a.name?.slice(0, 3).toUpperCase() || 'MAN',
+        name: a.name,
+        subtitle:
+          a.note ||
+          (a.currency === 'BOB' ? `Bs ${a.amount?.toFixed(2)}` : `${formatUSD(a.amount, 2)}`),
+        price: null,
+        valueUSD: a.valueUSD,
+        pnl: null,
+        pnlPct: null,
+        weightPct: null,
+        extra: a.since ? `Desde ${a.since}` : null,
+      })),
+    ],
+    [volatileAssets, stableAssets, inversionPositions, manualAssets]
+  );
 
-  const allAssets = [
-    ...volatileAssets.map((a) => ({
-      id: `crypto-${a.symbol}`, type: 'crypto', symbol: a.symbol,
-      name: a.symbol, subtitle: `${a.quantity?.toFixed(4) ?? 0} ${a.symbol}`,
-      price: a.currentPrice, valueUSD: a.netExposureUSD + (a.pendingBuyUSD ?? 0),
-      pnl: null, pnlPct: null, weightPct: a.weightPct,
-      extra: a.pendingBuyUSD > 0 ? `+$${a.pendingBuyUSD.toFixed(2)} orden` : null,
-    })),
-    ...stableAssets.map((a) => ({
-      id: `stable-${a.symbol}`, type: 'stable', symbol: a.symbol,
-      name: `${a.symbol} (Cash)`, subtitle: `${a.quantity?.toFixed(2) ?? 0} ${a.symbol}`,
-      price: 1, valueUSD: a.netExposureUSD,
-      pnl: null, pnlPct: null, weightPct: a.weightPct, extra: null,
-    })),
-    ...inversionPositions.map((p) => ({
-      id: `etf-${p.id}`, type: 'etf', symbol: p.symbol,
-      name: p.symbol, subtitle: `${p.quantity} u · $${p.currentPrice}`,
-      price: p.currentPrice, valueUSD: p.valueUSD,
-      pnl: p.unrealizedPL, pnlPct: p.avgBuyPrice > 0 ? ((p.currentPrice - p.avgBuyPrice) / p.avgBuyPrice) * 100 : null,
-      weightPct: p.weightPct, extra: p.tp > 0 ? `TP $${p.tp}` : null,
-    })),
-    ...(manualAssets ?? []).map((a) => ({
-      id: `manual-${a.id}`, type: 'manual', symbol: a.name.slice(0, 3).toUpperCase(),
-      name: a.name, subtitle: a.note || (a.currency === 'BOB' ? `Bs ${a.amount?.toFixed(2)}` : `$${a.amount?.toFixed(2)}`),
-      price: null, valueUSD: a.valueUSD,
-      pnl: null, pnlPct: null, weightPct: null, extra: null,
-    })),
-  ];
+  const tabFilter = {
+    Todos: () => true,
+    Crypto: (a) => a.type === 'crypto' || a.type === 'stable',
+    ETFs: (a) => a.type === 'etf',
+    Manual: (a) => a.type === 'manual',
+  };
 
-  const tabFilter = { Todos: () => true, Crypto: (a) => a.type === 'crypto' || a.type === 'stable', ETFs: (a) => a.type === 'etf', Manual: (a) => a.type === 'manual' };
   const filtered = allAssets
-  .filter(tabFilter[activeTab])
-  .sort((a, b) => (b.valueUSD ?? 0) - (a.valueUSD ?? 0));
+    .filter(tabFilter[activeTab])
+    .sort((a, b) => (b.valueUSD ?? 0) - (a.valueUSD ?? 0));
+
+  if (loading) {
+    return (
+      <div className="portfolio-loading">
+        <div className="portfolio-spinner" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-5">
+    <div className="portfolio-page">
+      <section className="portfolio-card portfolio-hero-card">
+        <div className="portfolio-section-head">
+          <div>
+            <p className="portfolio-eyebrow">Distribución</p>
+            <h1 className="portfolio-title">Vista general del portafolio</h1>
+          </div>
+          <div className="portfolio-rate-pill">
+            <span className="portfolio-rate-dot" />
+            <span>Bs {bobRate.toFixed(2)} / USD</span>
+          </div>
+        </div>
 
-      {/* ── Distribution Card ── */}
-      <section className="bg-card-dark rounded-2xl border border-border-dark p-5 overflow-hidden">
-        <h1 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-5">Distribución <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-      <span className="text-[10px] font-bold text-emerald-400 font-mono">
-        Bs {bobRate.toFixed(2)} / USD
-      </span>
-    </div></h1>
-       
-        <div className="flex flex-col items-center gap-6">
-          <DonutChart data={pieData} totalUSD={totalUSD} />
-          <div className="grid grid-cols-2 gap-2.5 w-full">
-            {pieData.map((d, i) => (
-              <button key={`pie-leg-${i}`}
-                className="flex flex-col p-3 rounded-xl bg-background-dark/50 border border-border-dark hover:border-primary/50 hover:bg-primary/5 transition-all text-left group">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                  <span className="text-xs font-bold text-slate-300 group-hover:text-white truncate">{d.label}</span>
+        <div className="portfolio-overview-grid">
+          <div className="portfolio-chart-panel">
+            <DonutChart data={pieData} totalUSD={totalUSD} />
+          </div>
+
+          <div className="portfolio-summary-panel">
+            <div className="portfolio-summary-grid">
+              <StatCard label="Total" value={formatUSD(totalUSD, 0)} tone="text-white" />
+              <StatCard label="Crypto" value={formatUSD(totalCryptoUSD, 0)} tone="text-orange-400" />
+              <StatCard label="ETFs" value={formatUSD(totalInversionUSD, 0)} tone="text-blue-400" />
+              <StatCard label="Manual" value={formatUSD(totalManualUSD ?? 0, 0)} tone="text-violet-400" />
+            </div>
+
+            <div className="portfolio-legend-grid">
+              {(pieData || []).filter((d) => Number(d.valueUSD) > 0).map((d, i) => (
+                <div key={`pie-leg-${i}`} className="portfolio-legend-card">
+                  <div className="portfolio-legend-top">
+                    <span className="portfolio-legend-dot" style={{ backgroundColor: d.color }} />
+                    <span className="portfolio-legend-label">{d.label}</span>
+                  </div>
+                  <div className="portfolio-legend-bottom">
+                    <span className="portfolio-legend-value">{formatUSD(d.valueUSD, 0)}</span>
+                    <span className="portfolio-legend-pct">
+                      {totalUSD > 0 ? ((d.valueUSD / totalUSD) * 100).toFixed(1) : 0}%
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-baseline gap-1">
-                  <span className="font-mono text-sm font-semibold">${d.valueUSD.toFixed(0)}</span>
-                  <span className="text-[10px] text-slate-500 shrink-0">{totalUSD > 0 ? ((d.valueUSD / totalUSD) * 100).toFixed(1) : 0}%</span>
-                </div>
-              </button>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Binance Risk Bar ── */}
       {totalCryptoUSD > 0 && (
-        <section className="bg-card-dark rounded-2xl border border-border-dark p-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Binance · Exposición</p>
-            <span className={`text-xs font-black px-2 py-0.5 rounded-full bg-white/5 ${riskColor}`}>
-              Riesgo {riskScore}/100
-            </span>
+        <section className="portfolio-card">
+          <div className="portfolio-section-head compact">
+            <div>
+              <p className="portfolio-eyebrow portfolio-eyebrow-warn">Binance · Exposición</p>
+              <h2 className="portfolio-subtitle">Riesgo y concentración</h2>
+            </div>
+            <span className={`portfolio-risk-badge ${riskColor}`}>Riesgo {riskScore}/100</span>
           </div>
+
           {grossExposure > 0 && (
             <>
-              <div className="flex rounded-full overflow-hidden h-2 mb-2">
-                <div className="bg-orange-500 transition-all" style={{ width: `${(totalCryptoUSD / grossExposure) * 100}%` }} />
-                <div className="bg-yellow-400 transition-all" style={{ width: `${(reservedBUY / grossExposure) * 100}%` }} />
-                <div className="bg-blue-400 transition-all"   style={{ width: `${(pendingSELL / grossExposure) * 100}%` }} />
+              <div className="portfolio-riskbar">
+                <div className="portfolio-riskbar-segment spot" style={{ width: `${(totalCryptoUSD / grossExposure) * 100}%` }} />
+                <div className="portfolio-riskbar-segment buy" style={{ width: `${(reservedBUY / grossExposure) * 100}%` }} />
+                <div className="portfolio-riskbar-segment sell" style={{ width: `${(pendingSELL / grossExposure) * 100}%` }} />
               </div>
-              <div className="flex gap-4 text-[10px] text-slate-500 mb-3">
-                {[['bg-orange-500','Spot'],['bg-yellow-400','Ord. BUY'],['bg-blue-400','Ord. SELL']].map(([c,l]) => (
-                  <span key={l} className="flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${c} inline-block`}/>{l}
-                  </span>
-                ))}
+
+              <div className="portfolio-risk-legend">
+                <span><i className="spot" />Spot</span>
+                <span><i className="buy" />Ord. BUY</span>
+                <span><i className="sell" />Ord. SELL</span>
               </div>
             </>
           )}
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: 'Spot',           value: `$${totalCryptoUSD.toFixed(2)}`, color: 'text-white' },
-              { label: 'Ord. BUY',       value: `$${reservedBUY.toFixed(2)}`,    color: 'text-yellow-400' },
-              { label: 'Ord. SELL',      value: `$${pendingSELL.toFixed(2)}`,     color: 'text-blue-400' },
-              { label: 'Exposición',     value: `$${grossExposure.toFixed(2)}`,   color: 'text-emerald-400' },
-            ].map((r) => (
-              <div key={r.label} className="bg-background-dark/50 rounded-xl p-2.5">
-                <p className="text-[10px] text-slate-500 mb-0.5">{r.label}</p>
-                <p className={`text-sm font-bold font-mono ${r.color}`}>{r.value}</p>
-              </div>
-            ))}
+
+          <div className="portfolio-stats-grid four">
+            <StatCard label="Spot" value={formatUSD(totalCryptoUSD, 2)} tone="text-white" />
+            <StatCard label="Ord. BUY" value={formatUSD(reservedBUY, 2)} tone="text-yellow-400" />
+            <StatCard label="Ord. SELL" value={formatUSD(pendingSELL, 2)} tone="text-blue-400" />
+            <StatCard label="Exposición" value={formatUSD(grossExposure, 2)} tone="text-emerald-400" />
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <div className="bg-background-dark/50 rounded-xl p-2.5 text-center">
-              <p className="text-[10px] text-slate-500 mb-0.5">HHI</p>
-              <p className="text-sm font-bold font-mono">{(bs.riskMetrics?.herfindahlIndex ?? 0).toFixed(4)}</p>
-            </div>
-            <div className="bg-background-dark/50 rounded-xl p-2.5 text-center">
-              <p className="text-[10px] text-slate-500 mb-0.5">Top 3 conc.</p>
-              <p className={`text-sm font-bold font-mono ${(bs.riskMetrics?.top3ConcentrationPct ?? 0) > 80 ? 'text-rose-400' : 'text-white'}`}>
-                {(bs.riskMetrics?.top3ConcentrationPct ?? 0).toFixed(1)}%
-              </p>
-            </div>
+
+          <div className="portfolio-stats-grid two">
+            <StatCard label="HHI" value={(bs.riskMetrics?.herfindahlIndex ?? 0).toFixed(4)} tone="text-white" />
+            <StatCard
+              label="Top 3 conc."
+              value={`${(bs.riskMetrics?.top3ConcentrationPct ?? 0).toFixed(1)}%`}
+              tone={(bs.riskMetrics?.top3ConcentrationPct ?? 0) > 80 ? 'text-rose-400' : 'text-white'}
+            />
           </div>
         </section>
       )}
 
-      {/* ── Tabs ── */}
-      <div className="flex gap-5 overflow-x-auto no-scrollbar border-b border-border-dark">
-        {TABS.map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`pb-3 px-1 whitespace-nowrap font-bold text-sm transition-colors border-b-2 ${
-              activeTab === tab
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-primary'
-            }`}>
-            {tab}
-          </button>
-        ))}
-      </div>
+      <section className="portfolio-tabs-wrap">
+        <div className="portfolio-tabs-scroll">
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`portfolio-tab ${activeTab === tab ? 'active' : ''}`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </section>
 
-      {/* ── Asset List ── */}
-      <div className="space-y-1.5">
-        <div className="grid grid-cols-4 px-4 py-2 text-[10px] uppercase font-bold text-slate-500 tracking-widest">
+      <section className="portfolio-assets">
+        <div className="portfolio-assets-head desktop-only">
           <span className="col-span-2">Activo</span>
           <span className="text-right">Valor</span>
-          <span className="text-right">P&L</span>
+          <span className="text-right">P&amp;L</span>
         </div>
-        {filtered.length === 0 && (
-          <p className="text-center text-slate-500 text-sm py-8">Sin activos en esta categoría</p>
-        )}
+
+        {filtered.length === 0 && <p className="portfolio-empty">Sin activos en esta categoría</p>}
+
         {filtered.map((a) => (
-          <div key={a.id}
-            className="bg-card-dark border border-border-dark rounded-xl p-4 grid grid-cols-4 items-center gap-2 hover:bg-card-dark/80 transition-all">
-            {/* Col 1-2: Asset info */}
-            <div className="col-span-2 flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-background-dark flex items-center justify-center shrink-0">
+          <article key={a.id} className="portfolio-asset-card">
+            <div className="portfolio-asset-main">
+              <div className="portfolio-asset-icon">
                 <TypeIcon type={a.type} symbol={a.symbol} />
               </div>
-              <div className="min-w-0">
-                <p className="font-bold text-sm truncate">{a.name}</p>
-                <p className="text-[10px] text-slate-500 font-mono truncate">{a.subtitle}</p>
-                {a.extra && <p className="text-[9px] text-yellow-400/70 mt-0.5">{a.extra}</p>}
+
+              <div className="portfolio-asset-copy">
+                <div className="portfolio-asset-title-row">
+                  <p className="portfolio-asset-title">{a.name}</p>
+                  {a.weightPct != null && <span className="portfolio-chip">{a.weightPct.toFixed(1)}%</span>}
+                </div>
+                <p className="portfolio-asset-subtitle">{a.subtitle}</p>
+                {a.extra && <p className="portfolio-asset-extra">{a.extra}</p>}
               </div>
             </div>
-            {/* Col 3: Value */}
-            <div className="text-right">
-              <p className="font-mono text-sm font-semibold">${a.valueUSD.toFixed(0)}</p>
-              <p className="text-[10px] text-slate-500">Bs {(a.valueUSD * 6.96).toFixed(0)}</p>
+
+            <div className="portfolio-asset-metrics">
+              <div className="portfolio-metric-block">
+                <p className="portfolio-metric-label">Valor</p>
+                <p className="portfolio-metric-value">{formatUSD(a.valueUSD, 0)}</p>
+                <p className="portfolio-metric-subvalue">{formatBOB(a.valueUSD, bobRate, 0)}</p>
+              </div>
+
+              <div className="portfolio-metric-block align-end">
+                <p className="portfolio-metric-label">P&amp;L</p>
+                {a.pnl != null ? (
+                  <>
+                    <div className={`portfolio-pnl ${a.pnl >= 0 ? 'up' : 'down'}`}>
+                      {a.pnl >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                      <span>{formatUSD(Math.abs(a.pnl), 2)}</span>
+                    </div>
+                    {a.pnlPct != null && (
+                      <p className={`portfolio-pnl-pct ${a.pnl >= 0 ? 'up' : 'down'}`}>
+                        {a.pnl >= 0 ? '+' : ''}
+                        {a.pnlPct.toFixed(1)}%
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="portfolio-metric-empty">—</p>
+                )}
+              </div>
             </div>
-            {/* Col 4: P&L */}
-            <div className="text-right">
-              {a.pnl != null ? (
-                <>
-                  <div className={`flex items-center justify-end gap-0.5 font-mono text-sm font-bold ${a.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {a.pnl >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                    ${Math.abs(a.pnl).toFixed(2)}
-                  </div>
-                  {a.pnlPct != null && (
-                    <p className={`text-[10px] font-mono ${a.pnl >= 0 ? 'text-emerald-400/60' : 'text-rose-400/60'}`}>
-                      {a.pnl >= 0 ? '+' : ''}{a.pnlPct.toFixed(1)}%
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-[10px] text-slate-600">—</p>
-              )}
-            </div>
-          </div>
+          </article>
         ))}
-      </div>
+      </section>
     </div>
   );
 };
