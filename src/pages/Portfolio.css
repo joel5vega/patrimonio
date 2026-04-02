@@ -1,4 +1,6 @@
 .portfolio-page {
+  width: 100%;
+  max-width: 100%;
   display: grid;
   gap: 1rem;
 }
@@ -95,6 +97,44 @@
   box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.12);
 }
 
+.portfolio-group-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+
+.portfolio-toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.1rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.55);
+  color: rgb(148 163 184);
+  transition: all 180ms ease;
+}
+
+.portfolio-toggle-chip.active {
+  background: rgba(34, 211, 238, 0.09);
+  border-color: rgba(34, 211, 238, 0.22);
+  color: white;
+}
+
+.portfolio-toggle-chip__dot {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.portfolio-toggle-chip__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .portfolio-overview-grid {
   display: grid;
   gap: 1rem;
@@ -129,11 +169,7 @@
   margin-bottom: 0.9rem;
 }
 
-.portfolio-stats-grid.four {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 0.9rem;
-}
-
+.portfolio-stats-grid.four,
 .portfolio-stats-grid.two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 0.75rem;
@@ -147,7 +183,8 @@
   border-radius: 0.95rem;
 }
 
-.portfolio-stat-card {
+.portfolio-stat-card,
+.portfolio-legend-card {
   padding: 0.85rem;
 }
 
@@ -172,10 +209,6 @@
   display: grid;
   gap: 0.7rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.portfolio-legend-card {
-  padding: 0.85rem;
 }
 
 .portfolio-legend-top,
@@ -448,7 +481,7 @@
   }
 
   .portfolio-overview-grid {
-    grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+    grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
     align-items: stretch;
   }
 
@@ -486,12 +519,5 @@
 
   .portfolio-legend-grid {
     grid-template-columns: 1fr;
-  }
-
-  .portfolio-summary-grid,
-  .portfolio-stats-grid.two,
-  .portfolio-stats-grid.four,
-  .portfolio-asset-metrics {
-    grid-template-columns: 1fr 1fr;
   }
 }

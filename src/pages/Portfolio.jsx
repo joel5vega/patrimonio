@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowUpRight, ArrowDownRight, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Portfolio.css';
 
@@ -16,7 +16,25 @@ const CRYPTO_ICONS = {
   DEFAULT: 'generating_tokens',
 };
 
+const HIGH_CONTRAST_COLORS = [
+  '#f97316',
+  '#10b981',
+  '#3b82f6',
+  '#a855f7',
+  '#ec4899',
+  '#facc15',
+  '#06b6d4',
+  '#f43f5e',
+  '#8b5cf6',
+  '#14b8a6',
+  '#84cc16',
+  '#eab308',
+];
+
 const TABS = ['Todos', 'Crypto', 'ETFs', 'Manual'];
+
+const formatUSD = (value = 0, digits = 0) => `$${Number(value || 0).toFixed(digits)}`;
+const formatBOB = (value = 0, rate = 6.96, digits = 0) => `Bs ${Number((value || 0) * rate).toFixed(digits)}`;
 
 const TypeIcon = ({ type, symbol }) => {
   const iconMap = {
@@ -33,9 +51,6 @@ const TypeIcon = ({ type, symbol }) => {
   );
 };
 
-const formatUSD = (value = 0, digits = 0) => `$${Number(value || 0).toFixed(digits)}`;
-const formatBOB = (value = 0, rate = 6.96, digits = 0) => `Bs ${Number((value || 0) * rate).toFixed(digits)}`;
-
 const DonutChart = ({ data, totalUSD }) => {
   const safeData = (data || []).filter((d) => Number(d.valueUSD) > 0);
   if (!safeData.length) return null;
@@ -49,11 +64,7 @@ const DonutChart = ({ data, totalUSD }) => {
   const R = 92;
   const RI = 60;
   const LABEL_R = 118;
-  const MOBILE_MIN_LABEL_PCT = 1.5;
-  const DESKTOP_MIN_LABEL_PCT = 2.5;
-  const isSmallScreen = typeof window !== 'undefined' ? window.innerWidth < 640 : false;
-  const minPct = isSmallScreen ? MOBILE_MIN_LABEL_PCT : DESKTOP_MIN_LABEL_PCT;
-
+  const MIN_PCT = 1.2;
   let cumAngle = -Math.PI / 2;
 
   const slices = safeData.map((d) => {
@@ -100,65 +111,25 @@ const DonutChart = ({ data, totalUSD }) => {
           />
         ))}
 
-        {slices.filter((slice) => slice.pct >= minPct).map((slice, index) => {
+        {slices.filter((slice) => slice.pct >= MIN_PCT).map((slice, index) => {
           const anchor = Math.cos(slice.midAngle) >= 0 ? 'start' : 'end';
           return (
             <g key={`label-${index}`} className="portfolio-donut-label">
-              <line
-                x1={slice.lsx}
-                y1={slice.lsy}
-                x2={slice.lex}
-                y2={slice.ley}
-                stroke={slice.color}
-                strokeWidth="1.5"
-                opacity="0.7"
-              />
-              <text
-                x={slice.lx}
-                y={slice.ly - 4}
-                textAnchor={anchor}
-                fill={slice.color}
-                fontSize="9"
-                fontWeight="700"
-                fontFamily="Inter, sans-serif"
-              >
+              <line x1={slice.lsx} y1={slice.lsy} x2={slice.lex} y2={slice.ley} stroke={slice.color} strokeWidth="1.5" opacity="0.7" />
+              <text x={slice.lx} y={slice.ly - 4} textAnchor={anchor} fill={slice.color} fontSize="9" fontWeight="700" fontFamily="Inter, sans-serif">
                 {slice.label}
               </text>
-              <text
-                x={slice.lx}
-                y={slice.ly + 8}
-                textAnchor={anchor}
-                fill="rgba(148,163,184,0.95)"
-                fontSize="8"
-                fontFamily="JetBrains Mono, monospace"
-              >
+              <text x={slice.lx} y={slice.ly + 8} textAnchor={anchor} fill="rgba(148,163,184,0.95)" fontSize="8" fontFamily="JetBrains Mono, monospace">
                 {slice.pct.toFixed(1)}%
               </text>
             </g>
           );
         })}
 
-        <text
-          x={CX}
-          y={CY - 12}
-          textAnchor="middle"
-          fill="rgba(148,163,184,0.92)"
-          fontSize="9"
-          fontWeight="700"
-          fontFamily="Inter, sans-serif"
-          letterSpacing="1.5"
-        >
+        <text x={CX} y={CY - 12} textAnchor="middle" fill="rgba(148,163,184,0.92)" fontSize="9" fontWeight="700" fontFamily="Inter, sans-serif" letterSpacing="1.5">
           TOTAL USD
         </text>
-        <text
-          x={CX}
-          y={CY + 14}
-          textAnchor="middle"
-          fill="white"
-          fontSize="22"
-          fontWeight="700"
-          fontFamily="JetBrains Mono, monospace"
-        >
+        <text x={CX} y={CY + 14} textAnchor="middle" fill="white" fontSize="22" fontWeight="700" fontFamily="JetBrains Mono, monospace">
           {formatUSD(totalUSD, 0)}
         </text>
       </svg>
@@ -181,22 +152,20 @@ const Portfolio = () => {
     totalCryptoUSD,
     totalInversionUSD,
     totalManualUSD,
-    pieData,
     binanceSnap,
     loading,
     bobRate,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('Todos');
+  const [visibleGroups, setVisibleGroups] = useState({});
 
   const bs = binanceSnap?.snapshot || {};
-  const totalUSD = totalCryptoUSD + totalInversionUSD + (totalManualUSD ?? 0);
   const reservedBUY = bs.reservedCapitalUSD ?? 0;
   const pendingSELL = bs.pendingSellUSD ?? 0;
   const grossExposure = bs.grossExposureUSD ?? 0;
   const riskScore = bs.riskMetrics?.riskScore ?? 0;
-  const riskColor =
-    riskScore >= 70 ? 'text-rose-400' : riskScore >= 40 ? 'text-yellow-400' : 'text-emerald-400';
+  const riskColor = riskScore >= 70 ? 'text-rose-400' : riskScore >= 40 ? 'text-yellow-400' : 'text-emerald-400';
 
   const stableAssets = useMemo(
     () => cryptoAssets.filter((a) => STABLES.includes(a.symbol) && a.netExposureUSD > 0),
@@ -208,10 +177,79 @@ const Portfolio = () => {
     [cryptoAssets]
   );
 
+  const groupDefinitions = useMemo(() => {
+    const base = [
+      { groupKey: 'crypto', label: 'Crypto', color: HIGH_CONTRAST_COLORS[0], type: 'crypto' },
+      { groupKey: 'stable', label: 'Cash', color: HIGH_CONTRAST_COLORS[1], type: 'stable' },
+      { groupKey: 'etf', label: 'ETFs', color: HIGH_CONTRAST_COLORS[2], type: 'etf' },
+    ];
+
+    const manualGroups = (manualAssets ?? []).map((a, idx) => ({
+      groupKey: `manual-${a.id}`,
+      label: a.name,
+      color: HIGH_CONTRAST_COLORS[(idx + 3) % HIGH_CONTRAST_COLORS.length],
+      type: 'manual',
+      rawId: a.id,
+    }));
+
+    return [...base, ...manualGroups];
+  }, [manualAssets]);
+
+  useEffect(() => {
+    setVisibleGroups((prev) => {
+      const next = {};
+      groupDefinitions.forEach((group) => {
+        next[group.groupKey] = prev[group.groupKey] ?? true;
+      });
+      return next;
+    });
+  }, [groupDefinitions]);
+
+  const pieData = useMemo(() => {
+    const cryptoValue = volatileAssets.reduce((sum, a) => sum + (a.netExposureUSD + (a.pendingBuyUSD ?? 0)), 0);
+    const stableValue = stableAssets.reduce((sum, a) => sum + a.netExposureUSD, 0);
+    const etfValue = inversionPositions.reduce((sum, p) => sum + (p.valueUSD ?? 0), 0);
+
+    const baseItems = [
+      { groupKey: 'crypto', label: 'Crypto', valueUSD: cryptoValue, color: HIGH_CONTRAST_COLORS[0], type: 'crypto' },
+      { groupKey: 'stable', label: 'USDT (Cash)', valueUSD: stableValue, color: HIGH_CONTRAST_COLORS[1], type: 'stable' },
+      { groupKey: 'etf', label: 'ETFs', valueUSD: etfValue, color: HIGH_CONTRAST_COLORS[2], type: 'etf' },
+    ].filter((item) => item.valueUSD > 0);
+
+    const manualItems = (manualAssets ?? [])
+      .map((a, idx) => ({
+        groupKey: `manual-${a.id}`,
+        label: a.name,
+        valueUSD: a.valueUSD ?? 0,
+        color: HIGH_CONTRAST_COLORS[(idx + 3) % HIGH_CONTRAST_COLORS.length],
+        type: 'manual',
+        rawId: a.id,
+      }))
+      .filter((item) => item.valueUSD > 0);
+
+    return [...baseItems, ...manualItems];
+  }, [volatileAssets, stableAssets, inversionPositions, manualAssets]);
+
+  const visiblePieData = useMemo(
+    () => pieData.filter((item) => visibleGroups[item.groupKey] !== false),
+    [pieData, visibleGroups]
+  );
+
+  const totalUSD = useMemo(
+    () => visiblePieData.reduce((sum, item) => sum + item.valueUSD, 0),
+    [visiblePieData]
+  );
+
+  const visibleGroupSet = useMemo(
+    () => new Set(visiblePieData.map((item) => item.groupKey)),
+    [visiblePieData]
+  );
+
   const allAssets = useMemo(
     () => [
       ...volatileAssets.map((a) => ({
         id: `crypto-${a.symbol}`,
+        groupKey: 'crypto',
         type: 'crypto',
         symbol: a.symbol,
         name: a.symbol,
@@ -220,11 +258,12 @@ const Portfolio = () => {
         valueUSD: a.netExposureUSD + (a.pendingBuyUSD ?? 0),
         pnl: null,
         pnlPct: null,
-        weightPct: a.weightPct,
+        weightPct: null,
         extra: a.pendingBuyUSD > 0 ? `+${formatUSD(a.pendingBuyUSD, 2)} orden` : null,
       })),
       ...stableAssets.map((a) => ({
         id: `stable-${a.symbol}`,
+        groupKey: 'stable',
         type: 'stable',
         symbol: a.symbol,
         name: `${a.symbol} (Cash)`,
@@ -233,11 +272,12 @@ const Portfolio = () => {
         valueUSD: a.netExposureUSD,
         pnl: null,
         pnlPct: null,
-        weightPct: a.weightPct,
+        weightPct: null,
         extra: null,
       })),
       ...inversionPositions.map((p) => ({
         id: `etf-${p.id}`,
+        groupKey: 'etf',
         type: 'etf',
         symbol: p.symbol,
         name: p.symbol,
@@ -246,17 +286,17 @@ const Portfolio = () => {
         valueUSD: p.valueUSD,
         pnl: p.unrealizedPL,
         pnlPct: p.avgBuyPrice > 0 ? ((p.currentPrice - p.avgBuyPrice) / p.avgBuyPrice) * 100 : null,
-        weightPct: p.weightPct,
+        weightPct: null,
         extra: p.tp > 0 ? `TP ${formatUSD(p.tp, 2)}` : null,
       })),
       ...(manualAssets ?? []).map((a) => ({
         id: `manual-${a.id}`,
+        rawId: a.id,
+        groupKey: `manual-${a.id}`,
         type: 'manual',
         symbol: a.name?.slice(0, 3).toUpperCase() || 'MAN',
         name: a.name,
-        subtitle:
-          a.note ||
-          (a.currency === 'BOB' ? `Bs ${a.amount?.toFixed(2)}` : `${formatUSD(a.amount, 2)}`),
+        subtitle: a.note || (a.currency === 'BOB' ? `Bs ${a.amount?.toFixed(2)}` : formatUSD(a.amount, 2)),
         price: null,
         valueUSD: a.valueUSD,
         pnl: null,
@@ -264,8 +304,8 @@ const Portfolio = () => {
         weightPct: null,
         extra: a.since ? `Desde ${a.since}` : null,
       })),
-    ],
-    [volatileAssets, stableAssets, inversionPositions, manualAssets]
+    ].filter((asset) => visibleGroupSet.has(asset.groupKey)),
+    [volatileAssets, stableAssets, inversionPositions, manualAssets, visibleGroupSet]
   );
 
   const tabFilter = {
@@ -278,6 +318,17 @@ const Portfolio = () => {
   const filtered = allAssets
     .filter(tabFilter[activeTab])
     .sort((a, b) => (b.valueUSD ?? 0) - (a.valueUSD ?? 0));
+
+  const toggleGroup = (groupKey) => {
+    setVisibleGroups((prev) => ({
+      ...prev,
+      [groupKey]: !prev[groupKey],
+    }));
+  };
+
+  const visibleManualTotalUSD = visiblePieData
+    .filter((item) => item.type === 'manual')
+    .reduce((sum, item) => sum + item.valueUSD, 0);
 
   if (loading) {
     return (
@@ -301,21 +352,39 @@ const Portfolio = () => {
           </div>
         </div>
 
+        <div className="portfolio-group-toggles">
+          {groupDefinitions.map((group) => {
+            const active = visibleGroups[group.groupKey] !== false;
+            return (
+              <button
+                key={group.groupKey}
+                type="button"
+                onClick={() => toggleGroup(group.groupKey)}
+                className={`portfolio-toggle-chip ${active ? 'active' : ''}`}
+              >
+                <span className="portfolio-toggle-chip__dot" style={{ backgroundColor: group.color }} />
+                <span className="portfolio-toggle-chip__label">{group.label}</span>
+                {active ? <Eye size={14} /> : <EyeOff size={14} />}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="portfolio-overview-grid">
           <div className="portfolio-chart-panel">
-            <DonutChart data={pieData} totalUSD={totalUSD} />
+            <DonutChart data={visiblePieData} totalUSD={totalUSD} />
           </div>
 
           <div className="portfolio-summary-panel">
             <div className="portfolio-summary-grid">
-              <StatCard label="Total" value={formatUSD(totalUSD, 0)} tone="text-white" />
-              <StatCard label="Crypto" value={formatUSD(totalCryptoUSD, 0)} tone="text-orange-400" />
-              <StatCard label="ETFs" value={formatUSD(totalInversionUSD, 0)} tone="text-blue-400" />
-              <StatCard label="Manual" value={formatUSD(totalManualUSD ?? 0, 0)} tone="text-violet-400" />
+              <StatCard label="Total visible" value={formatUSD(totalUSD, 0)} tone="text-white" />
+              <StatCard label="Crypto" value={formatUSD(visiblePieData.filter((i) => i.type === 'crypto').reduce((s, i) => s + i.valueUSD, 0), 0)} tone="text-orange-400" />
+              <StatCard label="ETFs" value={formatUSD(visiblePieData.filter((i) => i.type === 'etf').reduce((s, i) => s + i.valueUSD, 0), 0)} tone="text-blue-400" />
+              <StatCard label="Manual" value={formatUSD(visibleManualTotalUSD, 0)} tone="text-violet-400" />
             </div>
 
             <div className="portfolio-legend-grid">
-              {(pieData || []).filter((d) => Number(d.valueUSD) > 0).map((d, i) => (
+              {visiblePieData.map((d, i) => (
                 <div key={`pie-leg-${i}`} className="portfolio-legend-card">
                   <div className="portfolio-legend-top">
                     <span className="portfolio-legend-dot" style={{ backgroundColor: d.color }} />
@@ -334,7 +403,7 @@ const Portfolio = () => {
         </div>
       </section>
 
-      {totalCryptoUSD > 0 && (
+      {visibleGroups.crypto !== false && totalCryptoUSD > 0 && (
         <section className="portfolio-card">
           <div className="portfolio-section-head compact">
             <div>
@@ -399,7 +468,7 @@ const Portfolio = () => {
           <span className="text-right">P&amp;L</span>
         </div>
 
-        {filtered.length === 0 && <p className="portfolio-empty">Sin activos en esta categoría</p>}
+        {filtered.length === 0 && <p className="portfolio-empty">Sin activos visibles en esta categoría</p>}
 
         {filtered.map((a) => (
           <article key={a.id} className="portfolio-asset-card">
@@ -411,7 +480,7 @@ const Portfolio = () => {
               <div className="portfolio-asset-copy">
                 <div className="portfolio-asset-title-row">
                   <p className="portfolio-asset-title">{a.name}</p>
-                  {a.weightPct != null && <span className="portfolio-chip">{a.weightPct.toFixed(1)}%</span>}
+                  {a.groupKey?.startsWith('manual-') && <span className="portfolio-chip">Manual</span>}
                 </div>
                 <p className="portfolio-asset-subtitle">{a.subtitle}</p>
                 {a.extra && <p className="portfolio-asset-extra">{a.extra}</p>}
