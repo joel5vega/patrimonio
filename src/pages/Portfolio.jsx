@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, Eye, EyeOff } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ArrowDownRight,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
+} from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import './Portfolio.css';
 
@@ -34,13 +41,40 @@ const HIGH_CONTRAST_COLORS = [
 const TABS = ['Todos', 'Crypto', 'ETFs', 'Manual'];
 
 const formatUSD = (value = 0, digits = 0) => `$${Number(value || 0).toFixed(digits)}`;
-const formatBOB = (value = 0, rate = 6.96, digits = 0) => `Bs ${Number((value || 0) * rate).toFixed(digits)}`;
+const formatBOB = (value = 0, rate = 6.96, digits = 0) =>
+  `Bs ${Number((value || 0) * rate).toFixed(digits)}`;
+
+const isQuantfuryAsset = (asset) =>
+  String(asset?.note || '').toLowerCase().includes('[quantfury]') ||
+  String(asset?.type || '').toLowerCase() === 'stock';
+
+const getAssetBadge = (asset) => {
+  if (isQuantfuryAsset(asset)) {
+    return {
+      label: 'QUANTFURY',
+      className: 'portfolio-chip portfolio-chip-stock',
+    };
+  }
+
+  if (String(asset?.type || '').toLowerCase() === 'crypto') {
+    return {
+      label: 'CRYPTO',
+      className: 'portfolio-chip portfolio-chip-crypto',
+    };
+  }
+
+  return {
+    label: 'MANUAL',
+    className: 'portfolio-chip',
+  };
+};
 
 const TypeIcon = ({ type, symbol }) => {
   const iconMap = {
     crypto: CRYPTO_ICONS[symbol] || CRYPTO_ICONS.DEFAULT,
     etf: 'show_chart',
     manual: 'savings',
+    stock: 'monitoring',
     stable: 'attach_money',
   };
 
@@ -115,21 +149,61 @@ const DonutChart = ({ data, totalUSD }) => {
           const anchor = Math.cos(slice.midAngle) >= 0 ? 'start' : 'end';
           return (
             <g key={`label-${index}`} className="portfolio-donut-label">
-              <line x1={slice.lsx} y1={slice.lsy} x2={slice.lex} y2={slice.ley} stroke={slice.color} strokeWidth="1.5" opacity="0.7" />
-              <text x={slice.lx} y={slice.ly - 4} textAnchor={anchor} fill={slice.color} fontSize="9" fontWeight="700" fontFamily="Inter, sans-serif">
+              <line
+                x1={slice.lsx}
+                y1={slice.lsy}
+                x2={slice.lex}
+                y2={slice.ley}
+                stroke={slice.color}
+                strokeWidth="1.5"
+                opacity="0.7"
+              />
+              <text
+                x={slice.lx}
+                y={slice.ly - 4}
+                textAnchor={anchor}
+                fill={slice.color}
+                fontSize="9"
+                fontWeight="700"
+                fontFamily="Inter, sans-serif"
+              >
                 {slice.label}
               </text>
-              <text x={slice.lx} y={slice.ly + 8} textAnchor={anchor} fill="rgba(148,163,184,0.95)" fontSize="8" fontFamily="JetBrains Mono, monospace">
+              <text
+                x={slice.lx}
+                y={slice.ly + 8}
+                textAnchor={anchor}
+                fill="rgba(148,163,184,0.95)"
+                fontSize="8"
+                fontFamily="JetBrains Mono, monospace"
+              >
                 {slice.pct.toFixed(1)}%
               </text>
             </g>
           );
         })}
 
-        <text x={CX} y={CY - 12} textAnchor="middle" fill="rgba(148,163,184,0.92)" fontSize="9" fontWeight="700" fontFamily="Inter, sans-serif" letterSpacing="1.5">
+        <text
+          x={CX}
+          y={CY - 12}
+          textAnchor="middle"
+          fill="rgba(148,163,184,0.92)"
+          fontSize="9"
+          fontWeight="700"
+          fontFamily="Inter, sans-serif"
+          letterSpacing="1.5"
+        >
           TOTAL USD
         </text>
-        <text x={CX} y={CY + 14} textAnchor="middle" fill="white" fontSize="22" fontWeight="700" fontFamily="JetBrains Mono, monospace">
+        <text
+          x={CX}
+          y={CY + 14}
+          textAnchor="middle"
+          fill="white"
+          fontSize="22"
+          fontWeight="700"
+          fontFamily="JetBrains Mono, monospace"
+        >
           {formatUSD(totalUSD, 0)}
         </text>
       </svg>
@@ -159,13 +233,15 @@ const Portfolio = () => {
 
   const [activeTab, setActiveTab] = useState('Todos');
   const [visibleGroups, setVisibleGroups] = useState({});
+  const [copied, setCopied] = useState(false);
 
   const bs = binanceSnap?.snapshot || {};
   const reservedBUY = bs.reservedCapitalUSD ?? 0;
   const pendingSELL = bs.pendingSellUSD ?? 0;
   const grossExposure = bs.grossExposureUSD ?? 0;
   const riskScore = bs.riskMetrics?.riskScore ?? 0;
-  const riskColor = riskScore >= 70 ? 'text-rose-400' : riskScore >= 40 ? 'text-yellow-400' : 'text-emerald-400';
+  const riskColor =
+    riskScore >= 70 ? 'text-rose-400' : riskScore >= 40 ? 'text-yellow-400' : 'text-emerald-400';
 
   const stableAssets = useMemo(
     () => cryptoAssets.filter((a) => STABLES.includes(a.symbol) && a.netExposureUSD > 0),
@@ -184,15 +260,30 @@ const Portfolio = () => {
       { groupKey: 'etf', label: 'ETFs', color: HIGH_CONTRAST_COLORS[2], type: 'etf' },
     ];
 
-    const manualGroups = (manualAssets ?? []).map((a, idx) => ({
+    const quantfuryAssets = (manualAssets ?? []).filter(isQuantfuryAsset);
+    const manualOnlyAssets = (manualAssets ?? []).filter((a) => !isQuantfuryAsset(a));
+
+    const quantfuryGroup =
+      quantfuryAssets.length > 0
+        ? [
+            {
+              groupKey: 'quantfury',
+              label: 'Quantfury',
+              color: HIGH_CONTRAST_COLORS[3],
+              type: 'stock',
+            },
+          ]
+        : [];
+
+    const manualGroups = manualOnlyAssets.map((a, idx) => ({
       groupKey: `manual-${a.id}`,
       label: a.name,
-      color: HIGH_CONTRAST_COLORS[(idx + 3) % HIGH_CONTRAST_COLORS.length],
+      color: HIGH_CONTRAST_COLORS[(idx + 4) % HIGH_CONTRAST_COLORS.length],
       type: 'manual',
       rawId: a.id,
     }));
 
-    return [...base, ...manualGroups];
+    return [...base, ...quantfuryGroup, ...manualGroups];
   }, [manualAssets]);
 
   useEffect(() => {
@@ -216,18 +307,36 @@ const Portfolio = () => {
       { groupKey: 'etf', label: 'ETFs', valueUSD: etfValue, color: HIGH_CONTRAST_COLORS[2], type: 'etf' },
     ].filter((item) => item.valueUSD > 0);
 
-    const manualItems = (manualAssets ?? [])
+    const quantfuryAssets = (manualAssets ?? []).filter(isQuantfuryAsset);
+    const manualOnlyAssets = (manualAssets ?? []).filter((a) => !isQuantfuryAsset(a));
+
+    const quantfuryValue = quantfuryAssets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
+
+    const quantfuryItem =
+      quantfuryValue > 0
+        ? [
+            {
+              groupKey: 'quantfury',
+              label: 'Quantfury',
+              valueUSD: quantfuryValue,
+              color: HIGH_CONTRAST_COLORS[3],
+              type: 'stock',
+            },
+          ]
+        : [];
+
+    const manualItems = manualOnlyAssets
       .map((a, idx) => ({
         groupKey: `manual-${a.id}`,
         label: a.name,
         valueUSD: a.valueUSD ?? 0,
-        color: HIGH_CONTRAST_COLORS[(idx + 3) % HIGH_CONTRAST_COLORS.length],
+        color: HIGH_CONTRAST_COLORS[(idx + 4) % HIGH_CONTRAST_COLORS.length],
         type: 'manual',
         rawId: a.id,
       }))
       .filter((item) => item.valueUSD > 0);
 
-    return [...baseItems, ...manualItems];
+    return [...baseItems, ...quantfuryItem, ...manualItems];
   }, [volatileAssets, stableAssets, inversionPositions, manualAssets]);
 
   const visiblePieData = useMemo(
@@ -292,8 +401,8 @@ const Portfolio = () => {
       ...(manualAssets ?? []).map((a) => ({
         id: `manual-${a.id}`,
         rawId: a.id,
-        groupKey: `manual-${a.id}`,
-        type: 'manual',
+        groupKey: isQuantfuryAsset(a) ? 'quantfury' : `manual-${a.id}`,
+        type: isQuantfuryAsset(a) ? 'stock' : (a.type || 'manual'),
         symbol: a.name?.slice(0, 3).toUpperCase() || 'MAN',
         name: a.name,
         subtitle: a.note || (a.currency === 'BOB' ? `Bs ${a.amount?.toFixed(2)}` : formatUSD(a.amount, 2)),
@@ -312,7 +421,7 @@ const Portfolio = () => {
     Todos: () => true,
     Crypto: (a) => a.type === 'crypto' || a.type === 'stable',
     ETFs: (a) => a.type === 'etf',
-    Manual: (a) => a.type === 'manual',
+    Manual: (a) => a.type === 'manual' || a.type === 'stock',
   };
 
   const filtered = allAssets
@@ -327,8 +436,78 @@ const Portfolio = () => {
   };
 
   const visibleManualTotalUSD = visiblePieData
-    .filter((item) => item.type === 'manual')
+    .filter((item) => item.type === 'manual' || item.type === 'stock')
     .reduce((sum, item) => sum + item.valueUSD, 0);
+
+  const portfolioMetrics = useMemo(() => {
+    const byGroup = visiblePieData.map((item) => ({
+      label: item.label,
+      type: item.type,
+      valueUSD: Number(item.valueUSD || 0),
+      weightPct: totalUSD > 0 ? Number(((item.valueUSD / totalUSD) * 100).toFixed(2)) : 0,
+    }));
+
+    const top3 = [...byGroup]
+      .sort((a, b) => b.valueUSD - a.valueUSD)
+      .slice(0, 3);
+
+    const top3Pct = top3.reduce((sum, item) => sum + item.weightPct, 0);
+
+    const hhi = byGroup.reduce((sum, item) => {
+      const w = item.weightPct / 100;
+      return sum + w * w;
+    }, 0);
+
+    return {
+      generatedAt: new Date().toISOString(),
+      totals: {
+        totalUSD: Number(totalUSD.toFixed(2)),
+        totalBOB: Number((totalUSD * bobRate).toFixed(2)),
+        cryptoUSD: Number(totalCryptoUSD.toFixed(2)),
+        etfUSD: Number(totalInversionUSD.toFixed(2)),
+        manualUSD: Number(totalManualUSD.toFixed(2)),
+      },
+      risk: {
+        binanceRiskScore: riskScore,
+        top3ConcentrationPct: Number(top3Pct.toFixed(2)),
+        hhi: Number(hhi.toFixed(4)),
+        reservedBUY: Number(reservedBUY.toFixed(2)),
+        pendingSELL: Number(pendingSELL.toFixed(2)),
+        grossExposure: Number(grossExposure.toFixed(2)),
+      },
+      groups: byGroup,
+      visibleAssets: filtered.map((a) => ({
+        name: a.name,
+        type: a.type,
+        valueUSD: Number((a.valueUSD || 0).toFixed(2)),
+        subtitle: a.subtitle,
+        extra: a.extra || null,
+        quantfury: a.groupKey === 'quantfury',
+      })),
+    };
+  }, [
+    visiblePieData,
+    totalUSD,
+    bobRate,
+    totalCryptoUSD,
+    totalInversionUSD,
+    totalManualUSD,
+    riskScore,
+    reservedBUY,
+    pendingSELL,
+    grossExposure,
+    filtered,
+  ]);
+
+  const handleCopyMetrics = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(portfolioMetrics, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (e) {
+      console.error('clipboard error', e);
+    }
+  };
 
   if (loading) {
     return (
@@ -346,9 +525,21 @@ const Portfolio = () => {
             <p className="portfolio-eyebrow">Distribución</p>
             <h1 className="portfolio-title">Vista general del portafolio</h1>
           </div>
-          <div className="portfolio-rate-pill">
-            <span className="portfolio-rate-dot" />
-            <span>Bs {bobRate.toFixed(2)} / USD</span>
+
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <div className="portfolio-rate-pill">
+              <span className="portfolio-rate-dot" />
+              <span>Bs {bobRate.toFixed(2)} / USD</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyMetrics}
+              className="portfolio-copy-btn"
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              <span>{copied ? 'Copiado' : 'Copiar métricas'}</span>
+            </button>
           </div>
         </div>
 
@@ -362,7 +553,10 @@ const Portfolio = () => {
                 onClick={() => toggleGroup(group.groupKey)}
                 className={`portfolio-toggle-chip ${active ? 'active' : ''}`}
               >
-                <span className="portfolio-toggle-chip__dot" style={{ backgroundColor: group.color }} />
+                <span
+                  className="portfolio-toggle-chip__dot"
+                  style={{ backgroundColor: group.color }}
+                />
                 <span className="portfolio-toggle-chip__label">{group.label}</span>
                 {active ? <Eye size={14} /> : <EyeOff size={14} />}
               </button>
@@ -378,16 +572,41 @@ const Portfolio = () => {
           <div className="portfolio-summary-panel">
             <div className="portfolio-summary-grid">
               <StatCard label="Total visible" value={formatUSD(totalUSD, 0)} tone="text-white" />
-              <StatCard label="Crypto" value={formatUSD(visiblePieData.filter((i) => i.type === 'crypto').reduce((s, i) => s + i.valueUSD, 0), 0)} tone="text-orange-400" />
-              <StatCard label="ETFs" value={formatUSD(visiblePieData.filter((i) => i.type === 'etf').reduce((s, i) => s + i.valueUSD, 0), 0)} tone="text-blue-400" />
-              <StatCard label="Manual" value={formatUSD(visibleManualTotalUSD, 0)} tone="text-violet-400" />
+              <StatCard
+                label="Crypto"
+                value={formatUSD(
+                  visiblePieData
+                    .filter((i) => i.type === 'crypto' || i.type === 'stable')
+                    .reduce((s, i) => s + i.valueUSD, 0),
+                  0
+                )}
+                tone="text-orange-400"
+              />
+              <StatCard
+                label="ETFs"
+                value={formatUSD(
+                  visiblePieData
+                    .filter((i) => i.type === 'etf')
+                    .reduce((s, i) => s + i.valueUSD, 0),
+                  0
+                )}
+                tone="text-blue-400"
+              />
+              <StatCard
+                label="Manual"
+                value={formatUSD(visibleManualTotalUSD, 0)}
+                tone="text-violet-400"
+              />
             </div>
 
             <div className="portfolio-legend-grid">
               {visiblePieData.map((d, i) => (
                 <div key={`pie-leg-${i}`} className="portfolio-legend-card">
                   <div className="portfolio-legend-top">
-                    <span className="portfolio-legend-dot" style={{ backgroundColor: d.color }} />
+                    <span
+                      className="portfolio-legend-dot"
+                      style={{ backgroundColor: d.color }}
+                    />
                     <span className="portfolio-legend-label">{d.label}</span>
                   </div>
                   <div className="portfolio-legend-bottom">
@@ -416,9 +635,18 @@ const Portfolio = () => {
           {grossExposure > 0 && (
             <>
               <div className="portfolio-riskbar">
-                <div className="portfolio-riskbar-segment spot" style={{ width: `${(totalCryptoUSD / grossExposure) * 100}%` }} />
-                <div className="portfolio-riskbar-segment buy" style={{ width: `${(reservedBUY / grossExposure) * 100}%` }} />
-                <div className="portfolio-riskbar-segment sell" style={{ width: `${(pendingSELL / grossExposure) * 100}%` }} />
+                <div
+                  className="portfolio-riskbar-segment spot"
+                  style={{ width: `${(totalCryptoUSD / grossExposure) * 100}%` }}
+                />
+                <div
+                  className="portfolio-riskbar-segment buy"
+                  style={{ width: `${(reservedBUY / grossExposure) * 100}%` }}
+                />
+                <div
+                  className="portfolio-riskbar-segment sell"
+                  style={{ width: `${(pendingSELL / grossExposure) * 100}%` }}
+                />
               </div>
 
               <div className="portfolio-risk-legend">
@@ -437,7 +665,11 @@ const Portfolio = () => {
           </div>
 
           <div className="portfolio-stats-grid two">
-            <StatCard label="HHI" value={(bs.riskMetrics?.herfindahlIndex ?? 0).toFixed(4)} tone="text-white" />
+            <StatCard
+              label="HHI"
+              value={(bs.riskMetrics?.herfindahlIndex ?? 0).toFixed(4)}
+              tone="text-white"
+            />
             <StatCard
               label="Top 3 conc."
               value={`${(bs.riskMetrics?.top3ConcentrationPct ?? 0).toFixed(1)}%`}
@@ -468,7 +700,9 @@ const Portfolio = () => {
           <span className="text-right">P&amp;L</span>
         </div>
 
-        {filtered.length === 0 && <p className="portfolio-empty">Sin activos visibles en esta categoría</p>}
+        {filtered.length === 0 && (
+          <p className="portfolio-empty">Sin activos visibles en esta categoría</p>
+        )}
 
         {filtered.map((a) => (
           <article key={a.id} className="portfolio-asset-card">
@@ -480,8 +714,15 @@ const Portfolio = () => {
               <div className="portfolio-asset-copy">
                 <div className="portfolio-asset-title-row">
                   <p className="portfolio-asset-title">{a.name}</p>
-                  {a.groupKey?.startsWith('manual-') && <span className="portfolio-chip">Manual</span>}
+                  {(() => {
+                    if (a.type === 'manual' || a.type === 'stock') {
+                      const badge = getAssetBadge(a);
+                      return <span className={badge.className}>{badge.label}</span>;
+                    }
+                    return null;
+                  })()}
                 </div>
+
                 <p className="portfolio-asset-subtitle">{a.subtitle}</p>
                 {a.extra && <p className="portfolio-asset-extra">{a.extra}</p>}
               </div>

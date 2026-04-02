@@ -316,7 +316,60 @@ const ahorroBsUSD = (manualCtx.manualAssets ?? []).reduce((sum, a) => {
     },
     [manualCtx, bobRate, withSnapshot]
   );
+  const replaceImportedAssetsBulk = useCallback(
+    async (rows, sourceTag = 'quantfury') => {
+      const tag = `[${sourceTag.toLowerCase()}]`;
 
+      const cleanedRows = rows
+        .map((row) => {
+          const name = String(row.name || '').trim();
+          const currency = String(row.currency || '').toUpperCase() === 'BOB' ? 'BOB' : 'USD';
+          const amount = parseFloat(row.amount);
+          const since = row.since ?? null;
+          const baseNote = String(row.note || '').trim();
+
+          if (!name || isNaN(amount) || amount <= 0) return null;
+
+          return {
+            name,
+            type: row.type || 'stock',
+            currency,
+            amount,
+            since,
+            note: baseNote ? `${baseNote} ${tag}` : `Importado ${tag}`,
+          };
+        })
+        .filter(Boolean);
+
+      const action = async () => {
+        const existingImported = (manualCtx.manualAssets ?? []).filter((a) =>
+          String(a.note || '').toLowerCase().includes(tag)
+        );
+
+        for (const old of existingImported) {
+          await manualCtx.removeAsset(old.id);
+        }
+
+        for (const row of cleanedRows) {
+          await manualCtx.addAsset(row);
+        }
+      };
+
+      const deltaUSD = cleanedRows.reduce((sum, row) => {
+        const val = row.currency === 'BOB'
+          ? row.amount / bobRate
+          : row.amount;
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0);
+
+      await withSnapshot(
+        action,
+        () => Promise.resolve(deltaUSD),
+        null
+      );
+    },
+    [manualCtx, bobRate, withSnapshot]
+  );
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -609,6 +662,7 @@ const ahorroBsUSD = (manualCtx.manualAssets ?? []).reduce((sum, a) => {
         addAsset,
         removeAsset,
         updateAsset,
+        replaceImportedAssetsBulk,
         bankEmails: [],
         importBankEmail: () => {},
       }}

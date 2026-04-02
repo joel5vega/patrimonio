@@ -521,3 +521,32 @@
     grid-template-columns: 1fr;
   }
 }
+.portfolio-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.88);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 12px;
+  transition: 160ms ease;
+}
+
+.portfolio-copy-btn:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.portfolio-chip-stock {
+  background: rgba(14, 165, 233, 0.14);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+.portfolio-chip-crypto {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+}
