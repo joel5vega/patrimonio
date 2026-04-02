@@ -1,0 +1,8 @@
+name,type,currency,amount,note,since
+MSFT,stock,USD,60.0,Importado [quantfury],
+GLD,stock,USD,60.0,Importado [quantfury],
+CEG,stock,USD,60.0,Importado [quantfury],
+CEG,stock,USD,50.0,Importado [quantfury],
+MRNA,stock,USD,70.0,Importado [quantfury],
+MRNA,stock,USD,30.0,Importado [quantfury],
+JNJ,stock,USD,50.0,Importado [quantfury],
