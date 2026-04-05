@@ -2,7 +2,7 @@ import re
 import pdfplumber
 import pandas as pd
 
-PDF_PATH = "Informe de Historial de Trading 02.04.2026.pdf"
+PDF_PATH = "Informe de Historial de Trading 04.04.2026.pdf"
 OUTPUT_CSV = "manual_assets_from_quantfury.csv"
 DEBUG = True
 
