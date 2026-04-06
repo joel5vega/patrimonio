@@ -1,53 +1,85 @@
-//src/utils/portfolioAnalysis.js
 // ─────────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────────
+// Categorías alineadas con distribución Long Angle:
+//   assetClass:  'renta_variable' | 'inmobiliario' | 'private_equity'
+//                'alternativos'   | 'renta_fija'   | 'efectivo'
+//   subClass (opcional): desglose interno dentro de cada assetClass
+//
+// Mapa de assetClass → categoría Long Angle:
+//   renta_variable  → Renta Variable (47%) [fondos_eeuu | acciones_individuales | fondos_internacionales]
+//   inmobiliario    → Inmobiliario   (17%) [reit | propiedad_fisica]
+//   private_equity  → Private Equity (15%) [empresa_propia | fondos_pe]
+//   alternativos    → Alternativos   ( 8%) [crypto | metales | materias_primas]
+//   renta_fija      → Renta Fija     ( 5%) [bonos_gobierno | fondos_bonos | bonos_corporativos]
+//   efectivo        → Efectivo       ( 8%) [cash | cash_equivalent]
+// ─────────────────────────────────────────────────────────────
 
 const ASSET_RULES = {
-  // Core
-  VOO:  { role: 'core',        assetClass: 'equity',       horizon: 'long',      riskLevel: 2 },
-  SPY:  { role: 'core',        assetClass: 'equity',       horizon: 'long',      riskLevel: 2 },
- 
-  // Growth
-  QQQM: { role: 'growth',      assetClass: 'equity',       horizon: 'long',      riskLevel: 3 },
-  
-  VXUS: { role: 'growth',      assetClass: 'equity',       horizon: 'long',      riskLevel: 3 },
-  VWO:  { role: 'growth',      assetClass: 'equity',       horizon: 'long',      riskLevel: 3 },
-  EMXC: { role: 'growth',      assetClass: 'equity',       horizon: 'long',      riskLevel: 3 },
-  BTC:  { role: 'growth',      assetClass: 'crypto',       horizon: 'long',      riskLevel: 3 },
-  ETH:  { role: 'growth',      assetClass: 'crypto',       horizon: 'long',      riskLevel: 3 },
-  // Defensive
-  IAU:  { role: 'defensive',   assetClass: 'commodity',    horizon: 'long',      riskLevel: 1 },
-  GLD:  { role: 'defensive',   assetClass: 'commodity',    horizon: 'long',      riskLevel: 1 },
-  BND:  { role: 'defensive',   assetClass: 'fixed_income', horizon: 'long',      riskLevel: 2 },
-  TIP:  { role: 'defensive',   assetClass: 'fixed_income', horizon: 'long',      riskLevel: 2 },
-  VNQ:  { role: 'defensive',   assetClass: 'real_estate',  horizon: 'long',      riskLevel: 2 },
-   SCHD: { role: 'defensive', assetClass: 'equity',       horizon: 'long',      riskLevel: 2 },
-  // Speculative
-  SOL:  { role: 'speculative', assetClass: 'crypto',       horizon: 'medium',    riskLevel: 4 },
-  AVAX: { role: 'speculative', assetClass: 'crypto',       horizon: 'medium',    riskLevel: 4 },
-  ADA:  { role: 'speculative', assetClass: 'crypto',       horizon: 'medium',    riskLevel: 5 },
-  XRP:  { role: 'speculative', assetClass: 'crypto',       horizon: 'medium',    riskLevel: 5 },
-  // Liquidity / Stables
-  SGOV: { role: 'liquidity',   assetClass: 'cash',         horizon: 'short',     riskLevel: 1 },
-  USDT: { role: 'liquidity',   assetClass: 'cash',         horizon: 'short',     riskLevel: 1 },
-  USDC: { role: 'liquidity',   assetClass: 'cash',         horizon: 'short',     riskLevel: 1 },
-  BUSD: { role: 'liquidity',   assetClass: 'cash',         horizon: 'short',     riskLevel: 1 },
-  DAI:  { role: 'liquidity',   assetClass: 'cash',         horizon: 'short',     riskLevel: 1 },
-  FDUSD:{ role: 'liquidity',   assetClass: 'cash',         horizon: 'short',     riskLevel: 1 },
+  // Core — Renta Variable (fondos EE.UU.)
+  VOO:  { role: 'core',        assetClass: 'renta_variable', subClass: 'fondos_eeuu',         horizon: 'long',   riskLevel: 2 },
+  SPY:  { role: 'core',        assetClass: 'renta_variable', subClass: 'fondos_eeuu',         horizon: 'long',   riskLevel: 2 },
+
+  // Growth — Renta Variable (fondos internacionales / tech)
+  QQQM: { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_eeuu',         horizon: 'long',   riskLevel: 3 },
+  VXUS: { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long', riskLevel: 3 },
+  VWO:  { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long', riskLevel: 3 },
+  EMXC: { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long', riskLevel: 3 },
+  SCHD: { role: 'defensive',   assetClass: 'renta_variable', subClass: 'fondos_eeuu',         horizon: 'long',   riskLevel: 2 },
+
+  // Alternativos — Crypto
+  BTC:  { role: 'growth',      assetClass: 'alternativos',   subClass: 'crypto',              horizon: 'long',   riskLevel: 3 },
+  ETH:  { role: 'growth',      assetClass: 'alternativos',   subClass: 'crypto',              horizon: 'long',   riskLevel: 3 },
+
+  // Alternativos — Metales preciosos
+  IAU:  { role: 'defensive',   assetClass: 'alternativos',   subClass: 'metales',             horizon: 'long',   riskLevel: 1 },
+  GLD:  { role: 'defensive',   assetClass: 'alternativos',   subClass: 'metales',             horizon: 'long',   riskLevel: 1 },
+
+  // Renta Fija
+  BND:  { role: 'defensive',   assetClass: 'renta_fija',     subClass: 'fondos_bonos',        horizon: 'long',   riskLevel: 2 },
+  TIP:  { role: 'defensive',   assetClass: 'renta_fija',     subClass: 'bonos_gobierno',      horizon: 'long',   riskLevel: 2 },
+
+  // Inmobiliario — REIT
+  VNQ:  { role: 'defensive',   assetClass: 'inmobiliario',   subClass: 'reit',                horizon: 'long',   riskLevel: 2 },
+
+  // Especulativos — Alternativos crypto
+  SOL:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',              horizon: 'medium', riskLevel: 4 },
+  AVAX: { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',              horizon: 'medium', riskLevel: 4 },
+  ADA:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',              horizon: 'medium', riskLevel: 5 },
+  XRP:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',              horizon: 'medium', riskLevel: 5 },
+
+  // Efectivo / Stables
+  SGOV: { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash_equivalent',     horizon: 'short',  riskLevel: 1 },
+  USDT: { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                horizon: 'short',  riskLevel: 1 },
+  USDC: { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                horizon: 'short',  riskLevel: 1 },
+  BUSD: { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                horizon: 'short',  riskLevel: 1 },
+  DAI:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                horizon: 'short',  riskLevel: 1 },
+  FDUSD:{ role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                horizon: 'short',  riskLevel: 1 },
 };
 
 // Activos manuales — rol 'patrimony' = excluido del análisis de portafolio
 const MANUAL_RULES = {
-  'AirTM':            { role: 'yield',     assetClass: 'cash_equivalent', horizon: 'short',     riskLevel: 2 },
-  'SAFI':             { role: 'defensive',  isLocked: true,   assetClass: 'cash_equivalent', horizon: 'short',     riskLevel: 2 },
-  'Ahorro $':         { role: 'defensive', isLocked: true,assetClass: 'cash',            horizon: 'short',     riskLevel: 1 },
-  'Ahorro Bs':        { role: 'liquidity', assetClass: 'cash',            horizon: 'short',     riskLevel: 1 },
-  'Ahorro en Bs':     { role: 'liquidity', assetClass: 'cash',            horizon: 'short',     riskLevel: 1 },
-  'terreno achacachi':{ role: 'patrimony', assetClass: 'real_asset',      horizon: 'very_long', riskLevel: 2 },
+  'AirTM':            { role: 'yield',     assetClass: 'efectivo',      subClass: 'cash_equivalent', horizon: 'short',     riskLevel: 2 },
+  'SAFI':             { role: 'defensive',  isLocked: true,              assetClass: 'efectivo',      subClass: 'cash_equivalent', horizon: 'short', riskLevel: 2 },
+  'Ahorro $':         { role: 'defensive', isLocked: true,              assetClass: 'efectivo',      subClass: 'cash',            horizon: 'short', riskLevel: 1 },
+  'Ahorro Bs':        { role: 'liquidity', assetClass: 'efectivo',      subClass: 'cash',            horizon: 'short',     riskLevel: 1 },
+  'Ahorro en Bs':     { role: 'liquidity', assetClass: 'efectivo',      subClass: 'cash',            horizon: 'short',     riskLevel: 1 },
+  'terreno achacachi':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
+  'terreno ach':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
+  'terreno sas':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
 };
 
+// ─────────────────────────────────────────────────────────────
+// RETURN ASSUMPTIONS — por assetClass (nuevo esquema)
+// ─────────────────────────────────────────────────────────────
 const RETURN_ASSUMPTIONS = {
+  renta_variable: 0.08,
+  alternativos:   0.10,  // promedio crypto + metales
+  inmobiliario:   0.05,
+  private_equity: 0.12,
+  renta_fija:     0.03,
+  efectivo:       0.03,  // promedio cash + cash_equivalent
+  // legado (por si algún activo externo usa los nombres anteriores)
   equity:          0.08,
   crypto:          0.12,
   fixed_income:    0.03,
@@ -92,11 +124,11 @@ function classifyAsset(name, type, groupKey, symbol) {
   if (manualKey) return MANUAL_RULES[manualKey];
 
   if (type === 'stock')  return groupKey === 'quantfury'
-    ? { role: 'trading',  assetClass: 'equity', horizon: 'short', riskLevel: 4 }
-    : { role: 'growth',   assetClass: 'equity', horizon: 'long',  riskLevel: 3 };
-  if (type === 'etf')    return { role: 'growth',    assetClass: 'equity', horizon: 'long',  riskLevel: 3 };
-  if (type === 'crypto') return { role: 'growth',    assetClass: 'crypto', horizon: 'long',  riskLevel: 4 };
-  return                        { role: 'liquidity', assetClass: 'cash',   horizon: 'short', riskLevel: 2 };
+    ? { role: 'trading',  assetClass: 'renta_variable', subClass: 'acciones_individuales', horizon: 'short', riskLevel: 4 }
+    : { role: 'growth',   assetClass: 'renta_variable', subClass: 'acciones_individuales', horizon: 'long',  riskLevel: 3 };
+  if (type === 'etf')    return { role: 'growth',    assetClass: 'renta_variable', subClass: 'fondos_eeuu',  horizon: 'long',  riskLevel: 3 };
+  if (type === 'crypto') return { role: 'growth',    assetClass: 'alternativos',   subClass: 'crypto',       horizon: 'long',  riskLevel: 4 };
+  return                        { role: 'liquidity', assetClass: 'efectivo',       subClass: 'cash',         horizon: 'short', riskLevel: 2 };
 }
 
 function buildStrategy(role, name, { speculativePct, cashPct }) {
@@ -131,7 +163,7 @@ function buildRebalancePlan({ assets, byRolePct, investableUSD }) {
     .sort((a, b) => b.diff - a.diff);
 
   let remainingCash = assets
-    .filter(a => a.classification.assetClass === 'cash')
+    .filter(a => a.classification.assetClass === 'efectivo')
     .reduce((s, a) => s + a.valueUSD, 0);
 
   const assetsByRole = assets.reduce((acc, a) => {
@@ -193,7 +225,7 @@ export function buildPortfolioV3(input) {
     byRolePct[r] = investableUSD > 0 ? (v / investableUSD) * 100 : 0;
   });
 
-  // Distribución por asset class (solo portafolio invertible)
+  // Distribución por assetClass Long Angle (solo portafolio invertible)
   const byClass = {};
   portfolioAssets.forEach(a => { byClass[a.classification.assetClass] = (byClass[a.classification.assetClass] || 0) + a.valueUSD; });
 
@@ -202,10 +234,23 @@ export function buildPortfolioV3(input) {
     byClassPct[k] = investableUSD > 0 ? (v / investableUSD) * 100 : 0;
   });
 
+  // Distribución por subClass (desglose interno como Long Angle)
+  const bySubClass = {};
+  portfolioAssets.forEach(a => {
+    const key = `${a.classification.assetClass}__${a.classification.subClass || 'otros'}`;
+    bySubClass[key] = (bySubClass[key] || 0) + a.valueUSD;
+  });
+
+  const bySubClassPct = {};
+  Object.entries(bySubClass).forEach(([k, v]) => {
+    bySubClassPct[k] = investableUSD > 0 ? (v / investableUSD) * 100 : 0;
+  });
+
   const speculativePct = byRolePct.speculative || 0;
   const tradingPct     = byRolePct.trading      || 0;
   const corePct        = byRolePct.core         || 0;
-  const cashPct        = byClassPct.cash        || 0;
+  // cashPct ahora se basa en assetClass 'efectivo'
+  const cashPct        = byClassPct.efectivo    || 0;
 
   // Añadir estrategia a todos los activos
   const assets = enriched.map(a => ({
@@ -245,21 +290,27 @@ export function buildPortfolioV3(input) {
     excessTrading:      tradingPct     > THRESHOLDS.maxTradingPct,
     highRisk:           portfolioRisk  > 3.5,
     lowDiversification: hhi            > 0.25,
+    noPrivateEquity:    !byClass['private_equity'],  // gap detectado vs Long Angle
   };
 
   const rules = [];
-  if (alerts.underCore)       rules.push('UNDER CORE → comprar SPY');
+  if (alerts.underCore)       rules.push('UNDER CORE → comprar VOO');
   if (alerts.overCash)        rules.push('EXCESS CASH → invertir progresivamente');
   if (alerts.overSpeculative) rules.push('REDUCE ALTCOINS');
   if (alerts.highRisk)        rules.push('REDUCIR RIESGO global');
-  if (!rules.length)          rules.push('Portfolio balanceado \u2713');
+  if (alerts.noPrivateEquity) rules.push('SIN PRIVATE EQUITY → considerar fondos SAFI o participación directa');
+  if (!rules.length)          rules.push('Portfolio balanceado ✓');
 
   const rebalance = buildRebalancePlan({ assets: portfolioAssets, byRolePct, investableUSD });
 
   return {
     generatedAt: new Date().toISOString(),
     totals:      { totalUSD, investableUSD, patrimonyUSD },
-    portfolio:   { byRole: byRolePct, byAssetClass: byClassPct },
+    portfolio:   {
+      byRole:       byRolePct,
+      byAssetClass: byClassPct,    // categorías Long Angle: renta_variable, inmobiliario, etc.
+      bySubClass:   bySubClassPct, // desglose interno (fondos_eeuu, crypto, metales, reit, etc.)
+    },
     patrimony:   { totalUSD: patrimonyUSD, byClass: patrimonyByClass, assets: patrimonyAssets },
     risk:        {
       portfolioRisk:  Number(portfolioRisk.toFixed(2)),
