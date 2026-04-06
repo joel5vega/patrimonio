@@ -1,3 +1,4 @@
+// src/pages/Portfolio.jsx
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight, ArrowDownRight,
@@ -37,8 +38,12 @@ const ROLE_COLORS = {
 };
 
 const ROLE_TARGETS = {
-  core: 40, growth: 25, defensive: 15,
-  liquidity: 15, speculative: 5,
+  core:        30, // SPY + SCHD
+  growth:      20, // QQQM + VXUS/EMXC + BTC + ETH
+  defensive:   15, // IAU + BND + TIP + VNQ
+  liquidity:   15, // USDT/USDC o SGOV
+  alternative: 10, // Terreno + otros activos reales
+  speculative: 10, // ADA + XRP + SOL + AVAX
 };
 
 const TABS = ['Todos', 'Crypto', 'ETFs', 'Manual'];
@@ -74,8 +79,8 @@ const AlertDot = ({ ok, warn }) =>
 const DonutChart = ({ data, totalUSD }) => {
   const safe = (data || []).filter(d => d.valueUSD > 0);
   if (!safe.length) return null;
-  const total = safe.reduce((s, d) => s + d.valueUSD, 0);
-  if (!total) return null;
+  const total = totalUSD > 0 ? totalUSD : safe.reduce((s, d) => s + d.valueUSD, 0);
+if (!total) return null;
 
   const S = 260, CX = 130, CY = 130, R = 90, RI = 58, LR = 116, MIN = 1.5;
   let cum = -Math.PI / 2;
@@ -595,7 +600,7 @@ const [legendOpen, setLegendOpen] = useState(false);
       id: `manual-${a.id}`, rawId: a.id,
       groupKey: isQuantfury(a) ? 'quantfury' : `manual-${a.id}`,
       type: isQuantfury(a) ? 'stock' : (a.type || 'manual'),
-      symbol: a.name?.slice(0, 3).toUpperCase() || 'MAN',
+      symbol: a.name?.slice(0, 4).toUpperCase() || 'MAN',
       name: a.name,
       subtitle: a.note || (a.currency === 'BOB' ? `Bs ${a.amount?.toFixed(2)}` : fmt(a.amount, 2)),
       price: null, valueUSD: a.valueUSD,
@@ -666,7 +671,7 @@ const [legendOpen, setLegendOpen] = useState(false);
 
   <div className="portfolio-group-toggles">
     {groupDefinitions.map(group => {
-      const active = visibleGroups[group.groupKey] !== false;
+      const active = visibleGroups[group.groupKey] ?? true;
       return (
         <button key={group.groupKey} type="button"
           onClick={() => toggleGroup(group.groupKey)}
