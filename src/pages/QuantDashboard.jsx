@@ -1,7 +1,7 @@
 // pages/QuantDashboard.jsx
 // Orquesta todos los sub-componentes con datos de ejemplo
 import React from 'react';
-import './portfolio.css';
+import './Portfolio.css';
 
 import QuantHeader    from '../components/QuantHeader';
 import DonutChart     from '../components/DonutChart';
