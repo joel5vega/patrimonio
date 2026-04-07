@@ -45,12 +45,12 @@ const Layout = () => {
       </aside>
 
       <div className="app-main-wrap">
-        <header className="app-topbar desktop-only">
+        {/* <header className="app-topbar desktop-only">
           <div>
             <p className="app-topbar__eyebrow">Resumen</p>
             <p className="app-topbar__title">Tu espacio de control</p>
           </div>
-        </header>
+        </header> */}
 
         <main className="app-main">
           <div className="app-content">

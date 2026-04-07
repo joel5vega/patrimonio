@@ -192,7 +192,7 @@ const Dashboard = () => {
       <header className="px-6 pb-4 flex justify-between items-center">
         <div>
        
-          <h1 className="text-2xl font-black">MiPatrimonio</h1>
+          {/* <h1 className="text-2xl font-black">MiPatrimonio</h1> */}
         </div>
         {/* <div className="flex gap-3">
           <button
@@ -210,7 +210,7 @@ const Dashboard = () => {
         </div> */}
       </header>
 {/* Versículo primero */}
-      <BibleVerse />
+      <h1><BibleVerse /></h1>
       {/* Main Portfolio Card */}
       <section className="px-4 mb-6">
         <div className="bg-gradient-to-br from-slate-900 to-slate-950 p-7 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden">

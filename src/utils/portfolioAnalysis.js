@@ -64,9 +64,9 @@ const MANUAL_RULES = {
   'Ahorro $':         { role: 'defensive', isLocked: true,              assetClass: 'efectivo',      subClass: 'cash',            horizon: 'short', riskLevel: 1 },
   'Ahorro Bs':        { role: 'liquidity', assetClass: 'efectivo',      subClass: 'cash',            horizon: 'short',     riskLevel: 1 },
   'Ahorro en Bs':     { role: 'liquidity', assetClass: 'efectivo',      subClass: 'cash',            horizon: 'short',     riskLevel: 1 },
-  'terreno achacachi':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
-  'terreno ach':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
-  'terreno sas':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
+  't achacachi':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
+  't ach':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
+  't sas':{ role: 'patrimony', assetClass: 'inmobiliario',  subClass: 'propiedad_fisica', horizon: 'very_long', riskLevel: 2 },
 };
 
 // ─────────────────────────────────────────────────────────────

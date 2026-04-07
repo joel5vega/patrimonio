@@ -340,7 +340,7 @@ const Dashboard = ({ v3 }) => {
       </Section>
 
       {/* Métricas + clases */}
-      <Section eyebrow="Métricas cuantitativas" title="Riesgo y retorno">
+      {/* <Section eyebrow="Métricas cuantitativas" title="Riesgo y retorno">
         <div className="v3-metrics-grid">
           <div className="v3-metric-card"><span className="v3-metric-label">Riesgo medio</span><span className="v3-metric-value">{(risk?.portfolioRisk??0).toFixed(2)}</span></div>
           <div className="v3-metric-card"><span className="v3-metric-label">Retorno est.</span><span className="v3-metric-value green">{(risk?.expectedReturn??0).toFixed(1)}%</span></div>
@@ -356,7 +356,7 @@ const Dashboard = ({ v3 }) => {
             </div>
           ))}
         </div>
-      </Section>
+      </Section> */}
 
       {/* Rebalanceo */}
       {rebalancePlan?.actions?.length>0&&(
@@ -394,7 +394,7 @@ const Dashboard = ({ v3 }) => {
       </div>
 
       {/* Activos por rol */}
-      <Section eyebrow="Clasificación" title="Activos por rol">
+      {/* <Section eyebrow="Clasificación" title="Activos por rol">
         <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
           {Object.entries(byRoleMap)
             .sort((a,b)=>roleOrder.indexOf(a[0])-roleOrder.indexOf(b[0]))
@@ -423,7 +423,7 @@ const Dashboard = ({ v3 }) => {
               );
             })}
         </div>
-      </Section>
+      </Section> */}
 
       {/* Reglas */}
       {ruleEvaluation?.length>0&&(
@@ -632,8 +632,8 @@ const Portfolio = () => {
       <section className="portfolio-card">
         <div className="portfolio-section-head">
           <div>
-            <span className="portfolio-eyebrow">Distribución</span>
-            <h1 className="portfolio-title">Vista general del portafolio</h1>
+            {/* <span className="portfolio-eyebrow">Distribución</span> */}
+            <h1 className="portfolio-title">Portfolio</h1>
           </div>
           <div className="portfolio-header-pills">
             <div className="portfolio-rate-pill">
@@ -642,7 +642,7 @@ const Portfolio = () => {
             </div>
             <button type="button" onClick={handleCopy} className="portfolio-copy-btn">
               {copied?<Check size={13}/>:<Copy size={13}/>}
-              <span>{copied?'Copiado':'Copiar V3'}</span>
+              <span>{copied?'Copiado':'Copiar'}</span>
             </button>
           </div>
         </div>
