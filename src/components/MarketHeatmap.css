@@ -1,0 +1,495 @@
+/* src/components/MarketHeatmap.css */
+
+/* ── Container ── */
+.heatmap-container {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* ── Header ── */
+.heatmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.heatmap-title {
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.heatmap-legend {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.legend-item {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+.legend-item.red     { background: rgba(225,29,72,0.18);   color: #fb7185; }
+.legend-item.neutral { background: rgba(148,163,184,0.1);  color: #94a3b8; }
+.legend-item.green   { background: rgba(16,185,129,0.18);  color: #34d399; }
+
+/* ── Grid wrapper ── */
+.heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: rgba(2, 6, 23, 0.6);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  padding: 2px;
+}
+
+/* ── Main row (70%) ── */
+.heatmap-row-main {
+  display: flex;
+  gap: 3px;
+  height: 220px;
+}
+
+/* ── Secondary row (role groups) ── */
+.heatmap-row-secondary {
+  display: flex;
+  gap: 3px;
+  height: 120px;
+}
+
+/* ═══════════════════════════════════════
+   MAIN TILE
+═══════════════════════════════════════ */
+.heatmap-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.18rem;
+  padding: 0.5rem 0.35rem;
+  border-radius: 6px;
+  transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+  cursor: pointer;
+  overflow: visible;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.heatmap-tile:hover {
+  transform: scale(0.97);
+  filter: brightness(1.25);
+  z-index: 20;
+}
+
+.tile-icon {
+  flex-shrink: 0;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.tile-ticker {
+  font-size: clamp(0.6rem, 1.1vw, 0.95rem);
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 92%;
+  text-align: center;
+}
+
+.tile-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(0.45rem, 0.8vw, 0.68rem);
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-apr {
+  display: flex;
+  align-items: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #14b8a6;
+}
+
+.tile-weight {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.5rem;
+  opacity: 0.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-change {
+  font-size: clamp(0.5rem, 0.9vw, 0.75rem);
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-no-data {
+  font-size: 0.55rem;
+  color: rgba(148, 163, 184, 0.3);
+}
+
+/* ═══════════════════════════════════════
+   ROLE GROUP BLOCK
+═══════════════════════════════════════ */
+.heatmap-role-group {
+  display: flex;
+  flex-direction: column;
+  border-radius: 6px;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-width: 60px;
+  transition: filter 0.18s ease;
+}
+
+.heatmap-role-group:hover {
+  filter: brightness(1.08);
+}
+
+/* Group header bar */
+.heatmap-role-group__header {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.4rem;
+  background: rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+}
+
+.heatmap-role-group__label {
+  font-size: 0.52rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.heatmap-role-group__pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.5rem;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Mini tiles row inside group */
+.heatmap-role-group__tiles {
+  display: flex;
+  flex: 1;
+  gap: 2px;
+  padding: 2px;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════
+   MINI TILE (inside role group)
+═══════════════════════════════════════ */
+.heatmap-mini-tile {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+  overflow: visible;
+  padding: 0.15rem;
+}
+
+.heatmap-mini-tile:hover {
+  filter: brightness(1.4);
+  transform: scale(0.96);
+  z-index: 20;
+}
+
+.mini-ticker {
+  font-size: clamp(0.44rem, 0.75vw, 0.62rem);
+  font-weight: 900;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.mini-change {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(0.38rem, 0.65vw, 0.54rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-nodata {
+  font-size: 0.45rem;
+  color: rgba(148, 163, 184, 0.3);
+}
+
+/* ═══════════════════════════════════════
+   TOOLTIP
+═══════════════════════════════════════ */
+.heatmap-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(2, 6, 23, 0.97);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.8rem;
+  min-width: 165px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 300;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+  animation: heatmap-fadein 0.12s ease;
+}
+
+@keyframes heatmap-fadein {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0);   }
+}
+
+.heatmap-tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.5rem;
+}
+
+.heatmap-tooltip-icon-wrap {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.heatmap-tooltip-name   { font-size: 0.82rem; font-weight: 900; color: white; line-height: 1.2; }
+.heatmap-tooltip-symbol { font-size: 0.6rem; color: rgba(148,163,184,0.55); font-weight: 700; letter-spacing: 0.06em; margin-top: 0.05rem; }
+
+.heatmap-tooltip-divider { height: 1px; background: rgba(148,163,184,0.1); margin: 0 0 0.45rem; }
+
+.heatmap-tooltip-rows { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.heatmap-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.heatmap-tooltip-label {
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: rgba(148,163,184,0.45);
+}
+
+.heatmap-tooltip-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: white;
+  font-variant-numeric: tabular-nums;
+}
+
+.heatmap-tooltip-pnl { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.heatmap-tooltip-pnl.up   { color: #34d399; }
+.heatmap-tooltip-pnl.down { color: #fb7185; }
+
+.heatmap-tooltip-footer {
+  display: flex;
+  align-items: center;
+  margin-top: 0.45rem;
+  padding-top: 0.38rem;
+  border-top: 1px solid;
+}
+
+.heatmap-tooltip-role { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* ═══════════════════════════════════════
+   ROLE LEGEND STRIP
+═══════════════════════════════════════ */
+.heatmap-role-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148,163,184,0.07);
+}
+
+.heatmap-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.heatmap-role-chip__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+/* ─────────────────────────────────────────────
+   Rotates mini-tile text when tile is narrow
+───────────────────────────────────────────── */
+
+/* Enable container queries on mini tiles */
+.heatmap-mini-tile {
+  container-type: inline-size;
+  container-name: minitile;
+}
+
+/* Default (wide enough): horizontal */
+.mini-ticker {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  transition: writing-mode 0s;
+}
+
+.mini-change,
+.mini-nodata {
+  writing-mode: horizontal-tb;
+}
+
+/* Narrow tile (< 52px): rotate 90° */
+@container minitile (max-width: 52px) {
+  .mini-ticker {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: clamp(0.42rem, 1.8cqi, 0.62rem);
+    max-width: none;
+    max-height: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mini-change,
+  .mini-nodata {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: clamp(0.36rem, 1.5cqi, 0.5rem);
+  }
+}
+
+/* Very narrow (< 28px): hide PnL, keep only ticker rotated */
+@container minitile (max-width: 28px) {
+  .mini-change,
+  .mini-nodata {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE RESPONSIVE — MarketHeatmap
+   Applies at ≤ 600px
+═══════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+
+  .heatmap-container { padding: 0.85rem 0.75rem; border-radius: 1rem; }
+  .heatmap-header { margin-bottom: 0.65rem; }
+  .heatmap-title {
+    font-size: 0.55rem; letter-spacing: 0.1em;
+    white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 58%;
+  }
+
+  /* Grid: altura auto — sin valores fijos */
+  .heatmap-grid { gap: 2px; padding: 2px; height: auto !important; }
+
+  /* Fila main: 130px, tiles proporcionales sin mínimo rígido */
+  .heatmap-row-main { height: 130px !important; flex-wrap: nowrap; overflow: hidden; }
+
+  .heatmap-tile { min-width: 0; flex-shrink: 1; padding: 0.25rem; gap: 0.1rem; }
+  .tile-icon    { width: 14px !important; height: 14px !important; }
+  .tile-ticker  { font-size: 0.7rem; }
+  .tile-value   { display: none; }      /* oculto en móvil */
+  .tile-change  { font-size: 0.6rem; }
+  .tile-no-data { font-size: 0.44rem; }
+
+  /* Grupos secundarios: flex-wrap → se acomodan en 2-3 columnas */
+  .heatmap-row-secondary {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex-wrap: wrap;
+    overflow: visible;
+    gap: 3px;
+  }
+
+  .heatmap-role-group {
+    min-width: clamp(70px, 30%, 120px);
+    flex-shrink: 1; flex-grow: 1;
+    height: 80px;
+  }
+
+  .heatmap-role-group__label { font-size: 0.44rem; }
+  .heatmap-role-group__pct   { font-size: 0.42rem; }
+
+  @container minitile (max-width: 40px) {
+    .mini-ticker {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: clamp(0.4rem, 2cqi, 0.55rem);
+      max-height: 75%;
+    }
+    .mini-change, .mini-nodata { display: none; }
+  }
+
+  /* Leyenda: wrap normal, sin mask */
+  .heatmap-role-legend {
+    flex-wrap: wrap; overflow: visible;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  .heatmap-tooltip { min-width: 140px; z-index: 500; }
+}
+
+@media (max-width: 380px) {
+  .heatmap-row-main { height: 110px !important; }
+  .heatmap-role-group { min-width: clamp(60px, 28%, 100px); height: 72px; }
+  .tile-ticker { font-size: 0.62rem; }
+}
+
+/* ≤ 380px (SE, mini phones) */
+@media (max-width: 380px) {
+  .heatmap-row-main      { height: 140px; }
+  .heatmap-row-secondary { min-height: 80px; max-height: 95px; }
+  .heatmap-tile          { min-width: 70px; }
+  .heatmap-role-group    { min-width: 62px; }
+  .heatmap-mini-tile     { min-width: 28px; }
+  .tile-ticker           { font-size: 0.74rem; }
+}

@@ -1007,3 +1007,11 @@
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
+
+/* Fix double padding en móvil */
+@media (max-width: 600px) {
+  .portfolio-page {
+    padding: 0;   /* app-main ya paddea con 1rem */
+    gap: 1rem;
+  }
+}

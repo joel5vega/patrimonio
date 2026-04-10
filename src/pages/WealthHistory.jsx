@@ -11,11 +11,20 @@ const PERIODS = [
 ];
 
 const FIXED_TYPES = [
-  { key: 'total',  label: 'Total',  field: 'totalPortfolioUSD', color: '#14b8a6' },
-  { key: 'crypto', label: 'Crypto', field: 'cryptoUSD',         color: '#f97316' },
-  { key: 'etfs',   label: 'ETFs',   field: 'inversionUSD',      color: '#3b82f6' },
+  { key: 'total', label: 'Total', field: 'totalPortfolioUSD', color: '#14b8a6' },
+  { key: 'crypto', label: 'Crypto', field: 'cryptoUSD', color: '#f97316' },
+  { key: 'etfs', label: 'ETFs', field: 'inversionUSD', color: '#3b82f6' },
 ];
-
+// ─── CATEGORÍAS DE PORTAFOLIO (roles de portfolioAnalysis) ────
+const ROLE_TYPES = [
+  { key: 'role_core',        label: 'Core',        field: 'role_core',        color: '#14b8a6' },
+  { key: 'role_growth',      label: 'Growth',      field: 'role_growth',      color: '#3b82f6' },
+  { key: 'role_defensive',   label: 'Defensive',   field: 'role_defensive',   color: '#10b981' },
+  { key: 'role_yield',       label: 'Yield (DeFi)', field: 'role_yield',      color: '#a855f7' },
+  { key: 'role_liquidity',   label: 'Liquidez',    field: 'role_liquidity',   color: '#facc15' },
+  { key: 'role_speculative', label: 'Especulativo', field: 'role_speculative', color: '#ef4444' },
+  { key: 'role_trading',     label: 'Trading (QF)', field: 'role_trading',    color: '#ec4899' }, // Quantfury agrupado
+];
 const SPECIAL_TODO = {
   key: 'todo_full',
   label: 'Todo',
@@ -301,6 +310,13 @@ const WealthHistory = () => {
     total: false,
     crypto: false,
     etfs: false,
+    role_core: false,
+  role_growth: false,
+  role_defensive: false,
+  role_yield: false,
+  role_liquidity: false,
+  role_speculative: false,
+  role_trading: false,
   });
 
   const days = PERIODS.find((p) => p.key === period)?.days ?? 30;
@@ -339,7 +355,7 @@ const WealthHistory = () => {
       .filter((t) => !t.isAhorroBs)
       .reduce((sum, t) => sum + (t.valueUSD ?? 0), 0);
 
-  const ALL_TYPES = [SPECIAL_TODO, ...FIXED_TYPES, ...manualTypes];
+  const ALL_TYPES = [SPECIAL_TODO, ...FIXED_TYPES, ...ROLE_TYPES, ...manualTypes];
 
   const vis = useMemo(() => {
     const defaults = {};
@@ -491,10 +507,10 @@ const WealthHistory = () => {
         <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-1">
           Patrimonio Total (Todo)
         </p>
-        <h2 className="text-4xl font-black">
+        {/* <h3 className="text-4xl font-black">
           Bs {((currentTotalUSD + ahorroBsUSD) * 6.96).toFixed(2)}
-        </h2>
-        <p className="text-white/70 text-sm mt-1">
+        </h3> */}
+        <p className="text-4xl font-black">
           ${(currentTotalUSD + ahorroBsUSD).toFixed(2)} USD
         </p>
         {primarySeries && (
@@ -510,24 +526,22 @@ const WealthHistory = () => {
         <p className="text-xs font-bold text-white/40 uppercase tracking-wider">
           Mostrar en gráfico
         </p>
-        <div className="flex flex-wrap gap-2">
-          <ChipButton key={SPECIAL_TODO.key} type={SPECIAL_TODO} />
-          {FIXED_TYPES.map((a) => (
-            <ChipButton key={a.key} type={a} />
-          ))}
-        </div>
-        {manualTypes.length > 0 && (
-          <>
-            <p className="text-[10px] text-white/20 uppercase tracking-wider pt-1">
-              Activos manuales
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {manualTypes.map((a) => (
-                <ChipButton key={a.key} type={a} />
-              ))}
-            </div>
-          </>
-        )}
+        {/* Botones: Series fijas */}
+<div className="flex flex-wrap gap-1 mb-1">
+  {[SPECIAL_TODO, ...FIXED_TYPES].map((t) => <ChipButton key={t.key} type={t} />)}
+</div>
+{/* Botones: Roles de portafolio */}
+<p className="text-xs text-gray-400 mb-1 mt-2">Por categoría</p>
+<div className="flex flex-wrap gap-1 mb-1">
+  {ROLE_TYPES.map((t) => <ChipButton key={t.key} type={t} />)}
+</div>
+
+{/* Botones: Activos manuales */}
+<p className="text-xs text-gray-400 mb-1 mt-2">Activos manuales</p>
+<div className="flex flex-wrap gap-1">
+  {manualTypes.map((t) => <ChipButton key={t.key} type={t} />)}
+</div>
+
       </div>
 
       <div className="flex bg-brand-card rounded-2xl border border-white/5 p-1 gap-1">
