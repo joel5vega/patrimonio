@@ -12,7 +12,7 @@ import {
 } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { useManualAssets, BOB_PER_USD } from '../hooks/useManualAssets';
-import { buildPortfolioV3 } from '../utils/portfolioAnalysis'; // ← NUEVO
+import { buildPortfolioV3 } from '../utils/portfolioAnalysis';
 const AppContext = createContext(null);
 
 const MANUAL_COLORS = ['#a855f7', '#ec4899', '#facc15', '#06b6d4'];
