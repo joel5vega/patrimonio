@@ -1,38 +1,61 @@
+:root {
+  --sidebar-w: 280px;
+  --sidebar-w-collapsed: 68px;
+}
+
+/* ── Reset anti-scroll horizontal global ─────────────────── */
+html, body, #root {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* ── Shell ───────────────────────────────────────────────── */
 .app-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(14, 165, 233, 0.06), transparent 28%),
+    radial-gradient(circle at top, rgba(14,165,233,0.06), transparent 28%),
     linear-gradient(180deg, #030712 0%, #020617 100%);
   color: #fff;
+  /* Impide scroll horizontal en el shell */
+  overflow-x: hidden;
 }
 
+/* ── Área de contenido principal ────────────────────────── */
 .app-main-wrap {
+  /* min-width:0 permite que el flex/grid child se comprima */
   min-width: 0;
+  overflow-x: hidden;
 }
 
 .app-main {
   width: 100%;
+  /* No hardcodeamos px: el padding no causa overflow */
+  box-sizing: border-box;
   padding: 0.15rem 0.15rem 1.75rem;
+  overflow-x: hidden;
 }
 
 .app-content {
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
+  box-sizing: border-box;
+  /* Contenido nunca desborda */
+  overflow-x: hidden;
+  min-width: 0;
 }
 
+/* ── Bottom nav (mobile) ─────────────────────────────────── */
 .app-bottomnav {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 0; right: 0; bottom: 0;
   z-index: 60;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.15rem;
   padding: 0.55rem 0.35rem calc(0.55rem + env(safe-area-inset-bottom));
   background: rgba(15, 23, 42, 0.92);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255,255,255,0.08);
   backdrop-filter: blur(18px);
 }
 
@@ -50,13 +73,13 @@
   flex-direction: column;
   gap: 0.3rem;
   border-radius: 0.9rem;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255,255,255,0.42);
   padding: 0.35rem 0.2rem;
 }
 
 .app-bottomnav__link.is-active {
   color: #2dd4bf;
-  background: rgba(45, 212, 191, 0.1);
+  background: rgba(45,212,191,0.1);
 }
 
 .app-bottomnav__icon {
@@ -72,65 +95,113 @@
   letter-spacing: 0.01em;
 }
 
+/* ── Sidebar & topbar ocultos en mobile ─────────────────── */
 .app-sidebar,
-.app-topbar {
-  display: none;
-}
+.app-topbar { display: none; }
 
-.mobile-only {
-  display: grid;
-}
+.mobile-only  { display: grid; }
+.desktop-only { display: none; }
 
-.desktop-only {
-  display: none;
-}
-
+/* ── DESKTOP ─────────────────────────────────────────────── */
 @media (min-width: 1024px) {
+
+  /* Grid del shell: sidebar | contenido
+     La columna del sidebar usa var() para la animación */
   .app-shell {
     display: grid;
-    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    /* minmax(0,1fr) garantiza que el contenido no desborde */
   }
 
+  /* Sidebar colapsado → columna angosta */
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr);
+  }
+
+  /* ── Sidebar ── */
   .app-sidebar {
     display: flex;
     flex-direction: column;
     position: sticky;
     top: 0;
     height: 100vh;
+    width: var(--sidebar-w);
     padding: 1.5rem 1rem;
-    border-right: 1px solid rgba(148, 163, 184, 0.1);
-    background: rgba(2, 6, 23, 0.72);
+    border-right: 1px solid rgba(148,163,184,0.1);
+    background: rgba(2,6,23,0.72);
     backdrop-filter: blur(16px);
+    overflow: hidden;
+    /* Transición suave al colapsar */
+    transition: width 220ms cubic-bezier(0.4,0,0.2,1);
+    box-sizing: border-box;
   }
 
+  .app-shell.sidebar-collapsed .app-sidebar {
+    width: var(--sidebar-w-collapsed);
+    padding: 1.5rem 0.6rem;
+  }
+
+  /* ── Brand + botón toggle ── */
   .app-sidebar__brand {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
     padding: 0.9rem 0.85rem 1.2rem;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    border-bottom: 1px solid rgba(148,163,184,0.08);
     margin-bottom: 1rem;
+    min-height: 72px;
   }
 
-  .app-sidebar__eyebrow,
-  .app-topbar__eyebrow {
+  .app-shell.sidebar-collapsed .app-sidebar__brand {
+    padding: 0.9rem 0.25rem 1.2rem;
+    justify-content: center;
+  }
+
+  .app-sidebar__eyebrow {
     margin: 0 0 0.35rem;
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.16em;
     font-weight: 800;
     color: #64748b;
+    white-space: nowrap;
   }
 
-  .app-sidebar__title,
-  .app-topbar__title {
+  .app-sidebar__title {
     margin: 0;
     font-size: 1.2rem;
     font-weight: 800;
     color: #fff;
+    white-space: nowrap;
   }
 
-  .app-sidebar__nav {
-    display: grid;
-    gap: 0.4rem;
+  /* ── Botón colapsar ── */
+  .app-sidebar__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 0.6rem;
+    border: 1px solid rgba(148,163,184,0.12);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease;
+    /* Siempre visible, incluso colapsado */
+    margin-top: 0.15rem;
   }
+
+  .app-sidebar__toggle:hover {
+    background: rgba(45,212,191,0.12);
+    color: #2dd4bf;
+    border-color: rgba(45,212,191,0.22);
+  }
+
+  /* ── Nav links ── */
+  .app-sidebar__nav { display: grid; gap: 0.4rem; }
 
   .app-navlink {
     justify-content: flex-start;
@@ -138,18 +209,27 @@
     min-height: 50px;
     padding: 0.8rem 0.9rem;
     border-radius: 0.95rem;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255,255,255,0.55);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  /* Colapsado: centrar icono, ocultar label */
+  .app-shell.sidebar-collapsed .app-navlink {
+    justify-content: center;
+    padding: 0.8rem 0;
+    gap: 0;
   }
 
   .app-navlink:hover {
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.88);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.88);
   }
 
   .app-navlink.is-active {
-    background: linear-gradient(135deg, rgba(45, 212, 191, 0.18), rgba(14, 165, 233, 0.08));
+    background: linear-gradient(135deg, rgba(45,212,191,0.18), rgba(14,165,233,0.08));
     color: #2dd4bf;
-    border: 1px solid rgba(45, 212, 191, 0.16);
+    border: 1px solid rgba(45,212,191,0.16);
   }
 
   .app-navlink__icon {
@@ -166,17 +246,12 @@
     font-weight: 700;
   }
 
+  /* ── Contenido principal ── */
   .app-main-wrap {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr;
     min-width: 0;
-  }
-
-  .app-topbar {
-    display: flex;
-    align-items: center;
-    min-height: 76px;
-    padding: 1.25rem 2rem 0;
+    overflow-x: hidden;
   }
 
   .app-main {
@@ -187,17 +262,10 @@
     max-width: 1600px;
   }
 
-  .mobile-only {
-    display: none;
-  }
-
-  .desktop-only {
-    display: flex;
-  }
+  .mobile-only  { display: none; }
+  .desktop-only { display: flex; }
 }
 
 @media (min-width: 1400px) {
-  .app-main {
-    padding: 1.25rem 2.5rem 2.5rem;
-  }
+  .app-main { padding: 1.25rem 2.5rem 2.5rem; }
 }

@@ -5,32 +5,153 @@
 // ─────────────────────────────────────────────────────────────
 
 // ─── CLASIFICACIÓN DE ACTIVOS ─────────────────────────────────
+// sector: clasificación por industria/sector económico
+// Sectores usados: tecnologia, salud, defensa, consumo_basico,
+//   finanzas, energia, materiales, inmobiliario_cotizado,
+//   bonos_gobierno, bonos_inflacion, crypto_l1, crypto_defi,
+//   crypto_stablecoin, metales_preciosos, efectivo_global
 
 const ASSET_RULES = {
-  VOO:   { role: 'core',        assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 2 },
-  SPY:   { role: 'core',        assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 2 },
-  QQQM:  { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 3 },
-  VXUS:  { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long',   riskLevel: 3 },
-  VWO:   { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long',   riskLevel: 3 },
-  EMXC:  { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long',   riskLevel: 3 },
-  SCHD:  { role: 'defensive',   assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 2 },
-  BTC:   { role: 'growth',      assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'long',   riskLevel: 3 },
-  ETH:   { role: 'growth',      assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'long',   riskLevel: 3 },
-  IAU:   { role: 'defensive',   assetClass: 'alternativos',   subClass: 'metales',                horizon: 'long',   riskLevel: 1 },
-  GLD:   { role: 'defensive',   assetClass: 'alternativos',   subClass: 'metales',                horizon: 'long',   riskLevel: 1 },
-  BND:   { role: 'defensive',   assetClass: 'renta_fija',     subClass: 'fondos_bonos',           horizon: 'long',   riskLevel: 2 },
-  TIP:   { role: 'defensive',   assetClass: 'renta_fija',     subClass: 'bonos_gobierno',         horizon: 'long',   riskLevel: 2 },
-  VNQ:   { role: 'defensive',   assetClass: 'inmobiliario',   subClass: 'reit',                   horizon: 'long',   riskLevel: 2 },
-  SOL:   { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 4 },
-  AVAX:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 4 },
-  ADA:   { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 5 },
-  XRP:   { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 5 },
-  SGOV:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash_equivalent',        horizon: 'short',  riskLevel: 1 },
-  USDT:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1 },
-  USDC:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1 },
-  BUSD:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1 },
-  DAI:   { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1 },
-  FDUSD: { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1 },
+  // ── ETFs Core ────────────────────────────────────────────
+  VOO:   { role: 'core',        assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 2, sector: 'diversificado_eeuu'       },
+  SPY:   { role: 'core',        assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 2, sector: 'diversificado_eeuu'       },
+
+  // ── ETFs Growth ──────────────────────────────────────────
+  QQQM:  { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 3, sector: 'tecnologia'               },
+  QQQ:   { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 3, sector: 'tecnologia'               },
+  VXUS:  { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long',   riskLevel: 3, sector: 'diversificado_global'     },
+  VWO:   { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long',   riskLevel: 3, sector: 'emergentes'               },
+  EMXC:  { role: 'growth',      assetClass: 'renta_variable', subClass: 'fondos_internacionales', horizon: 'long',   riskLevel: 3, sector: 'emergentes'               },
+CEG: { role: 'trading', assetClass: 'renta_variable', subClass: 'acciones_individuales',
+       horizon: 'short', riskLevel: 3, sector: 'energia_renovable' },
+  // ── ETFs Defensivos ──────────────────────────────────────
+  SCHD:  { role: 'defensive',   assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 2, sector: 'dividendos_value'         },
+  VTI:   { role: 'core',        assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 2, sector: 'diversificado_eeuu'       },
+  IVV:   { role: 'core',        assetClass: 'renta_variable', subClass: 'fondos_eeuu',            horizon: 'long',   riskLevel: 2, sector: 'diversificado_eeuu'       },
+
+  // ── Renta Fija ────────────────────────────────────────────
+  BND:   { role: 'defensive',   assetClass: 'renta_fija',     subClass: 'fondos_bonos',           horizon: 'long',   riskLevel: 2, sector: 'bonos_gobierno'           },
+  TIP:   { role: 'defensive',   assetClass: 'renta_fija',     subClass: 'bonos_gobierno',         horizon: 'long',   riskLevel: 2, sector: 'bonos_inflacion'          },
+  AGG:   { role: 'defensive',   assetClass: 'renta_fija',     subClass: 'fondos_bonos',           horizon: 'long',   riskLevel: 2, sector: 'bonos_gobierno'           },
+
+  // ── Inmobiliario ─────────────────────────────────────────
+  VNQ:   { role: 'defensive',   assetClass: 'inmobiliario',   subClass: 'reit',                   horizon: 'long',   riskLevel: 2, sector: 'inmobiliario_cotizado'    },
+
+  // ── Metales / Commodities ─────────────────────────────────
+  IAU:   { role: 'defensive',   assetClass: 'alternativos',   subClass: 'metales',                horizon: 'long',   riskLevel: 1, sector: 'metales_preciosos'        },
+  GLD:   { role: 'defensive',   assetClass: 'alternativos',   subClass: 'metales',                horizon: 'long',   riskLevel: 1, sector: 'metales_preciosos'        },
+  SLV:   { role: 'defensive',   assetClass: 'alternativos',   subClass: 'metales',                horizon: 'long',   riskLevel: 2, sector: 'metales_preciosos'        },
+  GDX:   { role: 'growth',      assetClass: 'alternativos',   subClass: 'metales',                horizon: 'long',   riskLevel: 3, sector: 'mineria'                  },
+
+  // ── Crypto Layer-1 ────────────────────────────────────────
+  BTC:   { role: 'growth',      assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'long',   riskLevel: 3, sector: 'crypto_l1'                },
+  ETH:   { role: 'growth',      assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'long',   riskLevel: 3, sector: 'crypto_l1'                },
+  BNB:   { role: 'growth',      assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'long',   riskLevel: 3, sector: 'crypto_l1'                },
+
+  // ── Crypto Speculative ────────────────────────────────────
+  SOL:   { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 4, sector: 'crypto_l1'                },
+  AVAX:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 4, sector: 'crypto_l1'                },
+  ADA:   { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 5, sector: 'crypto_l1'                },
+  XRP:   { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 5, sector: 'crypto_pagos'             },
+  DOT:   { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 4, sector: 'crypto_l1'                },
+  MATIC: { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 4, sector: 'crypto_l2'                },
+  LINK:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 4, sector: 'crypto_defi'              },
+  UNI:   { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 5, sector: 'crypto_defi'              },
+  AAVE:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 5, sector: 'crypto_defi'              },
+  DOGE:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'short',  riskLevel: 5, sector: 'crypto_meme'              },
+  SHIB:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'short',  riskLevel: 5, sector: 'crypto_meme'              },
+  PEPE:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'short',  riskLevel: 5, sector: 'crypto_meme'              },
+  HBAR:  { role: 'speculative', assetClass: 'alternativos',   subClass: 'crypto',                 horizon: 'medium', riskLevel: 4, sector: 'crypto_l1'                },
+POL: { role: 'speculative', assetClass: 'alternativos', subClass: 'crypto',
+       horizon: 'medium', riskLevel: 4, sector: 'crypto_l2' },
+  // ── Stablecoins / Liquidez ────────────────────────────────
+  SGOV:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash_equivalent',        horizon: 'short',  riskLevel: 1, sector: 'efectivo_global'          },
+  USDT:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1, sector: 'crypto_stablecoin'        },
+  USDC:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1, sector: 'crypto_stablecoin'        },
+  BUSD:  { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1, sector: 'crypto_stablecoin'        },
+  DAI:   { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1, sector: 'crypto_stablecoin'        },
+  FDUSD: { role: 'liquidity',   assetClass: 'efectivo',       subClass: 'cash',                   horizon: 'short',  riskLevel: 1, sector: 'crypto_stablecoin'        },
+
+  // ── Acciones individuales (Quantfury / trading) ───────────
+  // Tecnología
+  MSFT:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  AAPL:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  GOOGL: { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  GOOG:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  META:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  AMZN:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  NVDA:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'tecnologia'               },
+  TSLA:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'tecnologia'               },
+  AMD:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'tecnologia'               },
+  INTC:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  CRM:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  ORCL:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  ADBE:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  NFLX:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  PYPL:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+  SNOW:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'tecnologia'               },
+  PLTR:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'tecnologia'               },
+  UBER:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'tecnologia'               },
+
+  // Salud y biotecnología
+  JNJ:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'salud'                    },
+  UNH:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'salud'                    },
+  PFE:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'salud'                    },
+  ABBV:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'salud'                    },
+  MRK:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'salud'                    },
+  MRNA:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'salud'                    },
+  BNTX:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'salud'                    },
+  ISRG:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'salud'                    },
+  ABT:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'salud'                    },
+
+  // Defensa y aeroespacial
+  LMT:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'defensa'                  },
+  RTX:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'defensa'                  },
+  NOC:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'defensa'                  },
+  GD:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'defensa'                  },
+  BA:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'defensa'                  },
+  KTOS:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'defensa'                  },
+
+  // Finanzas y bancos
+  JPM:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'finanzas'                 },
+  BAC:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'finanzas'                 },
+  GS:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'finanzas'                 },
+  MS:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'finanzas'                 },
+  V:     { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'finanzas'                 },
+  MA:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'finanzas'                 },
+  BRK_B: { role: 'trading',    assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'finanzas'                 },
+  COIN:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'finanzas'                 },
+
+  // Energía
+  XOM:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'energia'                  },
+  CVX:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'energia'                  },
+  COP:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'energia'                  },
+  NEE:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'energia_renovable'        },
+  ENPH:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 4, sector: 'energia_renovable'        },
+
+  // Consumo básico y alimentos
+  KO:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 1, sector: 'consumo_basico'           },
+  PG:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 1, sector: 'consumo_basico'           },
+  PEP:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 1, sector: 'consumo_basico'           },
+  WMT:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 1, sector: 'consumo_basico'           },
+  COST:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'consumo_basico'           },
+  MCD:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 1, sector: 'consumo_basico'           },
+
+  // Consumo discrecional
+  AMZN_CONS: { role: 'trading', assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'consumo_discrecional'     },
+  NKE:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'consumo_discrecional'     },
+  SBUX:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'consumo_discrecional'     },
+  DIS:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'consumo_discrecional'     },
+  LULU:  { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'consumo_discrecional'     },
+
+  // Materiales e industria
+  CAT:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'materiales'               },
+  DE:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'materiales'               },
+  FCX:   { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 3, sector: 'materiales'               },
+
+  // Telecomunicaciones
+  VZ:    { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'telecomunicaciones'       },
+  T:     { role: 'trading',     assetClass: 'renta_variable', subClass: 'acciones_individuales',  horizon: 'short',  riskLevel: 2, sector: 'telecomunicaciones'       },
 };
 
 // Claves en lowercase para lookup case-insensitive.
@@ -116,11 +237,12 @@ const RETURN_ASSUMPTIONS = {
 // ─── THRESHOLDS ───────────────────────────────────────────────
 // Ajustados para perfil boliviano, mediano/largo plazo
 const THRESHOLDS = {
-  minCashPct:        10,  // mínimo operativo (USDT + AirTM)
+  minCashPct:        5,   // alerta lowCash (USDT puro < 5% = crítico)
+  cashRetentionPct:  10,  // buffer mínimo para deployableCash
   maxCashPct:        35,
-  maxSpeculativePct:  5,  // altcoins — cap duro bajo
-  coreMinPct:        30,  // ancla en index funds
-  maxTradingPct:     12,  // Quantfury — cap duro
+  maxSpeculativePct:  5,
+  coreMinPct:        30,
+  maxTradingPct:     12,
 };
 
 // ─── TARGETS POR ROL ─────────────────────────────────────────
@@ -139,17 +261,20 @@ export const PORTFOLIO_TARGETS = {
 // ─── HELPERS ─────────────────────────────────────────────────
 
 function classifyAsset(name, type, groupKey, symbol) {
-  const symKey = (symbol || '').toUpperCase().trim();
+  const symKey = (symbol || '').toUpperCase().trim().split('/')[0];
   if (symKey && ASSET_RULES[symKey]) return ASSET_RULES[symKey];
 
   const nameLower = (name || '').toLowerCase().trim();
   if (nameLower && MANUAL_RULES[nameLower]) return MANUAL_RULES[nameLower];
 
-  if (type === 'stock') return groupKey === 'quantfury'
-    ? { role: 'trading',  assetClass: 'renta_variable', subClass: 'acciones_individuales', horizon: 'short', riskLevel: 4 }
-    : { role: 'growth',   assetClass: 'renta_variable', subClass: 'acciones_individuales', horizon: 'long',  riskLevel: 3 };
-  if (type === 'etf')    return { role: 'growth',    assetClass: 'renta_variable', subClass: 'fondos_eeuu', horizon: 'long',  riskLevel: 3 };
-  if (type === 'crypto') return { role: 'growth',    assetClass: 'alternativos',   subClass: 'crypto',      horizon: 'long',  riskLevel: 4 };
+  if (type === 'crypto' && groupKey === 'quantfury')
+  return { role: 'speculative', assetClass: 'alternativos', subClass: 'crypto', horizon: 'short', riskLevel: 5 };
+
+if (type === 'stock') return groupKey === 'quantfury'
+  ? { role: 'trading',  assetClass: 'renta_variable', subClass: 'acciones_individuales', horizon: 'short', riskLevel: 4 }
+  : { role: 'growth',   assetClass: 'renta_variable', subClass: 'acciones_individuales', horizon: 'long',  riskLevel: 3 };
+if (type === 'etf')    return { role: 'growth',    assetClass: 'renta_variable', subClass: 'fondos_eeuu', horizon: 'long',  riskLevel: 3 };
+if (type === 'crypto') return { role: 'growth',    assetClass: 'alternativos',   subClass: 'crypto',      horizon: 'long',  riskLevel: 4 };
   return                        { role: 'liquidity', assetClass: 'efectivo',       subClass: 'cash',        horizon: 'short', riskLevel: 2 };
 }
 
@@ -178,7 +303,13 @@ function buildStrategy(role, _name, { speculativePct, cashPct, tradingPct }) {
 // Genera dos planes:
 //   monthly  → qué comprar este mes con el ingreso disponible (~$287)
 //   lumpSum  → cash deployable por encima del mínimo operativo
-function buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthlyUSD }) {
+function buildRebalancePlan({
+  portfolioAssets,
+  byRolePct,
+  investableUSD,
+  monthlyUSD,
+  investableCashUSD,   // ← recibe el cash ya filtrado (sin DeFi)
+}) {
   const deficits = Object.entries(PORTFOLIO_TARGETS)
     .map(([role, target]) => ({
       role, target,
@@ -195,7 +326,7 @@ function buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthly
     return acc;
   }, {});
 
-  // ── Plan mensual: distribuye el ingreso mensual proporcionalmente al déficit ──
+  // ── Plan mensual ──
   const monthlyActions = [];
   let monthlyBudget = monthlyUSD;
 
@@ -211,11 +342,10 @@ function buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthly
     if (!candidates.length) continue;
 
     monthlyActions.push({
-      action:        'BUY',
-      asset:         candidates[0].symbol || candidates[0].name,
-      amountUSD:     Number(invest.toFixed(2)),
-      reason:        `${d.role} underweight (${d.current.toFixed(1)}% → ${d.target}%)`,
-      // Estimación de meses para alcanzar el target a este ritmo
+      action:         'BUY',
+      asset:          candidates[0].symbol || candidates[0].name,
+      amountUSD:      Number(invest.toFixed(2)),
+      reason:         `${d.role} underweight (${d.current.toFixed(1)}% → ${d.target}%)`,
       monthsToTarget: invest > 0
         ? Math.ceil((d.diff / 100 * investableUSD) / invest)
         : null,
@@ -223,15 +353,8 @@ function buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthly
     monthlyBudget -= invest;
   }
 
-  // ── Plan lump-sum: efectivo deployable por encima del mínimo operativo ──
-  const investableCashUSD = portfolioAssets
-    .filter(a =>
-      a.classification.assetClass === 'efectivo' &&
-      a.classification.isInvestable !== false
-    )
-    .reduce((s, a) => s + a.valueUSD, 0);
-
-  const minOperativeCash = investableUSD * (THRESHOLDS.minCashPct / 100);
+  // ── Plan lump-sum: usa investableCashUSD recibido (sin AirTM) ──
+  const minOperativeCash = investableUSD * (THRESHOLDS.cashRetentionPct / 100);
   const deployableCash   = Math.max(0, investableCashUSD - minOperativeCash);
   const lumpSumActions   = [];
 
@@ -259,12 +382,12 @@ function buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthly
   }
 
   return {
-    remainingCash: Number(minOperativeCash.toFixed(2)),
+    remainingCash:  Number(minOperativeCash.toFixed(2)),
     deployableCash: Number(deployableCash.toFixed(2)),
     monthlyUSD,
-    monthly:  monthlyActions,   // plan mensual con ingreso nuevo
-    lumpSum:  lumpSumActions,   // plan con cash excedente existente
-    actions:  lumpSumActions.length > 0 ? lumpSumActions : monthlyActions, // retrocompatibilidad Dashboard
+    monthly:  monthlyActions,
+    lumpSum:  lumpSumActions,
+    actions:  lumpSumActions.length > 0 ? lumpSumActions : monthlyActions,
   };
 }
 
@@ -335,11 +458,13 @@ export function buildPortfolioV3(input) {
 
   // 4. Cash operativo (solo efectivo investable)
   const investableCashUSD = portfolioAssets
-    .filter(a =>
-      a.classification.assetClass === 'efectivo' &&
-      a.classification.isInvestable !== false
-    )
-    .reduce((s, a) => s + a.valueUSD, 0);
+  .filter(a =>
+    a.classification.assetClass === 'efectivo' &&
+    a.classification.isInvestable !== false &&
+    !(a.classification.isDeFi && (a.classification.aprPct || 0) > 0)   // excluir yield-bearing cash
+  )
+  .reduce((s, a) => s + a.valueUSD, 0);
+
 
   const speculativePct = byRolePct.speculative || 0;
   const tradingPct     = byRolePct.trading      || 0;
@@ -397,7 +522,7 @@ export function buildPortfolioV3(input) {
   if (!rules.length)          rules.push('Portfolio balanceado ✓');
 
   // 9. Rebalanceo
-  const rebalance = buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthlyUSD });
+  const rebalance = buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthlyUSD ,investableCashUSD});
 
   return {
     generatedAt: new Date().toISOString(),
