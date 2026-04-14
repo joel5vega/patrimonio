@@ -849,7 +849,7 @@ const Portfolio = () => {
           </div>
         </div>
       </section>
-<MarketHeatmap assets={v3.assets} />
+<MarketHeatmap assets={v3?.assets ?? allAssets} bobRate={bobRate}  />
       {/* ── Dashboard ── */}
       <section className="portfolio-card">
         <div className="portfolio-section-head">

@@ -8,11 +8,11 @@ import {
   getAllDailySnapshots,
   savePortfolioSnapshot,
   getPortfolioHistory,
+  replacePortfolioSnapshot,
 } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { useManualAssets, BOB_PER_USD } from '../hooks/useManualAssets';
 import { buildPortfolioV3 } from '../utils/portfolioAnalysis'; // ← NUEVO
-
 const AppContext = createContext(null);
 
 const MANUAL_COLORS = ['#a855f7', '#ec4899', '#facc15', '#06b6d4'];
@@ -294,24 +294,29 @@ export const AppProvider = ({ children }) => {
       });
 
       const today = new Date().toISOString().split('T')[0];
-      if (assetSince && assetSince < today) {
-        const existing = await getPortfolioHistory(user.uid);
-        const existDoc = existing.find((d) => d.date === assetSince);
-        const pastCrypto = existDoc?.cryptoUSD ?? 0;
-        const pastInv = existDoc?.inversionUSD ?? 0;
+ await replacePortfolioSnapshot(user.uid, today, {
+    cryptoUSD,
+    inversionUSD,
+    ...manualFields,
+    totalPortfolioUSD: cryptoUSD + inversionUSD + manualUSDOnly,
+  });
 
-        await savePortfolioSnapshot(user.uid, {
-          date: assetSince,
-          cryptoUSD: pastCrypto,
-          inversionUSD: pastInv,
-          ...manualFields,
-          ...roleFields,
-          totalPortfolioUSD: pastCrypto + pastInv + manualUSDOnly,
-        });
-      }
+  // snapshot histórico (assetSince) sigue usando merge para no borrar histórico
+  if (assetSince && assetSince !== today) {
+    const existing = await getPortfolioHistory(user.uid);
+    const existDoc = existing.find((d) => d.date === assetSince);
+    const pastCrypto = existDoc?.cryptoUSD ?? 0;
+    const pastInv = existDoc?.inversionUSD ?? 0;
+    await replacePortfolioSnapshot(user.uid, assetSince, {
+      cryptoUSD: pastCrypto,
+      inversionUSD: pastInv,
+      ...manualFields,
+      totalPortfolioUSD: pastCrypto + pastInv + manualUSDOnly,
+    });
+  }
 
-      const updated = await getPortfolioHistory(user.uid);
-      setChartHistory(updated);
+  const updated = await getPortfolioHistory(user.uid);
+  setChartHistory(updated)
     },
     [user, manualCtx.manualAssets, binanceSnap, admiralsSnaps, bobRate]
   );
@@ -367,53 +372,81 @@ export const AppProvider = ({ children }) => {
   );
 
   const replaceImportedAssetsBulk = useCallback(
-    async (rows, sourceTag = 'quantfury') => {
-      const tag = `[${sourceTag.toLowerCase()}]`;
+  async (rows, sourceTag = 'quantfury') => {
+    const tag = `[${sourceTag.toLowerCase()}]`;
 
-      const cleanedRows = rows
-        .map((row) => {
-          const name = String(row.name || '').trim();
-          const currency = String(row.currency || '').toUpperCase() === 'BOB' ? 'BOB' : 'USD';
-          const amount = parseFloat(row.amount);
-          const since = row.since ?? null;
-          const baseNote = String(row.note || '').trim();
-          if (!name || isNaN(amount) || amount <= 0) return null;
-          return {
-            name,
-            type: row.type || 'stock',
-            currency,
-            amount,
-            since,
-            note: baseNote ? `${baseNote} ${tag}` : `Importado ${tag}`,
-          };
-        })
-        .filter(Boolean);
+    // ── 1. Normalizar y validar filas entrantes ───────────────────────────
+    const cleanedRows = rows
+      .map((row) => {
+        const name     = String(row.name || '').trim();
+        const currency = String(row.currency || '').toUpperCase() === 'BOB' ? 'BOB' : 'USD';
+        const amount   = parseFloat(row.amount);
+        const since    = row.since ?? null;
+        const baseNote = String(row.note || '').trim();
 
-      const action = async () => {
-        const existingImported = (manualCtx.manualAssets ?? []).filter((a) =>
-          String(a.note || '').toLowerCase().includes(tag)
-        );
-        for (const old of existingImported) {
-          await manualCtx.removeAsset(old.id);
-        }
-        for (const row of cleanedRows) {
-          await manualCtx.addAsset(row);
-        }
-      };
+        if (!name || isNaN(amount) || amount <= 0) return null;
 
-      const deltaUSD = cleanedRows.reduce((sum, row) => {
-        const val = row.currency === 'BOB' ? row.amount / bobRate : row.amount;
+        // Leer "type" primero, luego "asset_type" como fallback
+        const rawType = String(row.type || row.asset_type || 'stock')
+          .trim()
+          .toLowerCase();
+        const type = ['stock', 'crypto', 'future'].includes(rawType)
+          ? rawType
+          : 'stock';
+
+        return {
+          name,
+          type,       // ✅ siempre presente y normalizado
+          currency,
+          amount,
+          since,
+          note: baseNote
+            ? `${baseNote} ${tag}`
+            : `Importado ${tag}`,
+        };
+      })
+      .filter(Boolean);
+
+    if (cleanedRows.length === 0) return;
+
+    // ── 2. Acción atómica: eliminar anteriores → insertar nuevas ─────────
+    const action = async () => {
+      // Eliminar todas las posiciones que tengan el tag de esta fuente
+      const existingImported = (manualCtx.manualAssets ?? []).filter((a) =>
+        String(a.note || '').toLowerCase().includes(tag)
+      );
+      for (const old of existingImported) {
+        await manualCtx.removeAsset(old.id);
+      }
+      for (const row of cleanedRows) {
+        await manualCtx.addAsset(row);
+      }
+    };
+
+    // ── 3. Calcular deltaUSD para el snapshot ─────────────────────────────
+    // Delta = nuevas posiciones − posiciones anteriores que se eliminan
+    const previousUSD = (manualCtx.manualAssets ?? [])
+      .filter((a) => String(a.note || '').toLowerCase().includes(tag))
+      .reduce((sum, a) => {
+        const val = a.currency === 'BOB' ? a.amount / bobRate : a.amount;
         return sum + (isNaN(val) ? 0 : val);
       }, 0);
 
-      await withSnapshot(
-        action,
-        () => Promise.resolve(deltaUSD),
-        null
-      );
-    },
-    [manualCtx, bobRate, withSnapshot]
-  );
+    const newUSD = cleanedRows.reduce((sum, row) => {
+      const val = row.currency === 'BOB' ? row.amount / bobRate : row.amount;
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+
+    const deltaUSD = newUSD - previousUSD;
+
+    await withSnapshot(
+      action,
+      () => Promise.resolve(deltaUSD),
+      null
+    );
+  },
+  [manualCtx, bobRate, withSnapshot]
+);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);

@@ -1,3 +1,4 @@
+// src/hooks/useManualAssets.js
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -41,19 +42,21 @@ export function useManualAssets(bobRate = BOB_PER_USD) {
     [bobRate]
   );
 
-  const addAsset = useCallback(
-    async (asset) => {
-      if (!user) return;
+const addAsset = useCallback(
+  async (asset) => {
+    if (!user) return;
 
-      await addManualAsset(user.uid, {
-        ...asset,
-        type: asset.type ?? 'manual',
-        amount: parseFloat(asset.amount),
-        since: asset.since ?? new Date().toISOString().split('T')[0],
-      });
-    },
-    [user]
-  );
+    await addManualAsset(user.uid, {
+      name:     String(asset.name || '').trim(),
+      type:     asset.type ?? 'manual',        // ✅ explícito
+      currency: asset.currency ?? 'USD',
+      amount:   parseFloat(asset.amount),
+      note:     asset.note || '',
+      since:    asset.since ?? new Date().toISOString().split('T')[0],
+    });
+  },
+  [user]
+);
 
   const removeAsset = useCallback(
     async (id) => {

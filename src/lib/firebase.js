@@ -137,6 +137,7 @@ export const addManualAsset = (uid, asset) =>
   addDoc(collection(db, 'users', uid, 'manualAssets'), {
     name:      asset.name,
     currency:  asset.currency,
+      type:      asset.type || 'manual', 
     amount:    parseFloat(asset.amount),
     note:      asset.note || '',
     since:     asset.since ?? null,
@@ -183,7 +184,12 @@ export const removeTransaction = (uid, id) =>
 // =============================================================================
 // PORTFOLIO HISTORY
 // =============================================================================
-
+// Sobrescribe el documento completo (sin merge) — elimina campos obsoletos
+export async function replacePortfolioSnapshot(uid, date, data) {
+  const ref = doc(db, 'users', uid, 'portfolioHistory', date);
+  await setDoc(ref, { ...data, date, updatedAt: new Date().toISOString() });
+  // sin merge: true → campos viejos desaparecen
+}
 export async function savePortfolioSnapshot(uid, data) {
   const date = data.date ?? new Date().toISOString().split('T')[0];
   const ref  = doc(db, 'users', uid, 'portfolioHistory', date);

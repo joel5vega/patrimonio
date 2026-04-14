@@ -127,13 +127,13 @@ const THRESHOLDS = {
 // % sobre portafolio INVERTIBLE (excluye reserve + patrimony).
 // Perfil: boliviano, largo plazo, trading controlado, DeFi yield como pilar.
 export const PORTFOLIO_TARGETS = {
-  core:        35,  // VOO / SPY
+  core:        30,  // VOO / SPY
   growth:      25,  // QQQM, BTC, ETH, VXUS
   defensive:   10,  // IAU, BND
   liquidity:    5,  // USDT operativo mínimo
   yield:       15,  // AirTM DeFi 8% — pilar de ingreso pasivo
   speculative:  5,  // altcoins — cap duro
-  trading:      5,  // Quantfury — cap duro
+  trading:      10,  // Quantfury — cap duro
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────

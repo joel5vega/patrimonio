@@ -422,3 +422,8 @@
 .searchInput:focus {
   border-color: var(--brand-teal, #2dd4bf);
 }
+.time {
+  color: var(--text-muted, #9ca3af);
+  font-size: 0.72rem;
+  font-style: italic;
+}
