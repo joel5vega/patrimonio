@@ -408,8 +408,8 @@ const Dashboard = ({ v3 }) => {
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
     
- {/* Objetivo vs actual */}
-      <Section eyebrow="Rebalanceo" title="Objetivo vs actual">
+ {/* Objetivo vs actual */} <StatusBar totals={totals} risk={risk} alerts={alerts}/>
+      <Section eyebrow="Rebalanceo" title="Objetivo vs actual" defaultOpen={true}>
         <div className="v3-target-list">
           {Object.entries(PORTFOLIO_TARGETS).map(([role,target])=>{
             const current=byRole[role]||0;
@@ -445,9 +445,9 @@ const Dashboard = ({ v3 }) => {
           })}
         </div>
       </Section>
-  <StatusBar totals={totals} risk={risk} alerts={alerts}/>
+ 
       {/* Distribución por rol */}
-      <Section eyebrow="Motor de reglas" title="Distribución por rol" defaultOpen={true}>
+      <Section eyebrow="Motor de reglas" title="Distribución por rol" defaultOpen={false}>
         <RoleTreemap byRole={byRole} byRoleMap={byRoleMap}/>
       </Section>
 
@@ -786,7 +786,20 @@ const Portfolio = () => {
             </button>
           </div>
         </div>
-
+<MarketHeatmap assets={v3?.assets ?? allAssets} bobRate={bobRate}  />
+  {/* ── Dashboard ── */}
+      <section className="portfolio-card">
+        <div className="portfolio-section-head">
+          <div>
+            <span className="portfolio-eyebrow">Análisis automático</span>
+            <h2 className="portfolio-subtitle">Dashboard · Portafolio invertible</h2>
+          </div>
+          <BarChart2 size={16} style={{color:'rgba(255,255,255,0.2)'}}/>
+        </div>
+        <div style={{padding:'0 1.5rem 1.5rem'}}>
+          <Dashboard v3={v3}/>
+        </div>
+      </section>
         {/* Toggles de grupos */}
         <div className="portfolio-group-toggles">
           {groupDefinitions.map(group=>{
@@ -849,20 +862,8 @@ const Portfolio = () => {
           </div>
         </div>
       </section>
-<MarketHeatmap assets={v3?.assets ?? allAssets} bobRate={bobRate}  />
-      {/* ── Dashboard ── */}
-      <section className="portfolio-card">
-        <div className="portfolio-section-head">
-          <div>
-            <span className="portfolio-eyebrow">Análisis automático</span>
-            <h2 className="portfolio-subtitle">Dashboard · Portafolio invertible</h2>
-          </div>
-          <BarChart2 size={16} style={{color:'rgba(255,255,255,0.2)'}}/>
-        </div>
-        <div style={{padding:'0 1.5rem 1.5rem'}}>
-          <Dashboard v3={v3}/>
-        </div>
-      </section>
+
+    
 
       {/* ── Reservas (SAFI, Ahorro $, Ahorro Bs) ── */}
       {v3?.reserves?.totalUSD>0&&(

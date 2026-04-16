@@ -1,10 +1,4 @@
 symbol,asset_type,status,date,time,side,sub_action,price,quantity,value_usd,realized_pnl
-MSFT,stock,open,25/03/2026,6:34:18 PM UTC,BUY,abrir,370.22,0.1621,60.01,
-MSFT,stock,open,06/04/2026,1:35:31 PM UTC,BUY,añadir,373.17,0.134,50.0,
-MSFT,stock,open,09/04/2026,5:36:31 PM UTC,BUY,añadir,371.72,0.269,99.99,
-MSFT,stock,open,10/04/2026,1:54:15 PM UTC,BUY,añadir,372.95,0.5095,190.02,
-MSFT,stock,open,13/04/2026,3:47:41 PM UTC,SELL,reducir,380.25,0.4298,163.43,3.44
-MSFT,stock,open,14/04/2026,1:56:00 PM UTC,SELL,reducir,390.76,0.2686,104.96,4.97
 JNJ,stock,open,02/04/2026,5:07:41 PM UTC,BUY,abrir,244.21,0.2047,49.99,
 JNJ,stock,open,13/04/2026,3:45:52 PM UTC,BUY,añadir,235.91,0.8054,190.0,
 KTOS,stock,open,06/04/2026,7:31:56 PM UTC,BUY,abrir,73.92,1.3528,100.0,
@@ -14,6 +8,7 @@ ABT,stock,open,09/04/2026,1:43:52 PM UTC,BUY,abrir,102.79,0.9729,100.0,
 ABT,stock,open,09/04/2026,5:36:09 PM UTC,BUY,añadir,102.8,0.9728,100.0,
 ABT,stock,open,14/04/2026,2:04:44 PM UTC,BUY,añadir,101.47,0.9855,100.0,
 SLV,stock,open,13/04/2026,4:37:49 PM UTC,BUY,abrir,68.52,2.9189,200.0,
+SLV,stock,open,15/04/2026,3:31:25 PM UTC,SELL,reducir,71.34,1.4594,104.11,4.12
 CEG,stock,open,14/04/2026,1:39:25 PM UTC,BUY,abrir,290.72,1.0319,299.99,
 POL/USDT,crypto,open,14/04/2026,3:17:02 PM UTC,BUY,abrir,0.084,3571.42857143,300.0,
 XRP/USD,crypto,open,14/04/2026,3:17:52 PM UTC,BUY,abrir,1.3734,145.62399884,200.0,
@@ -52,6 +47,13 @@ PINS,stock,closed,13/04/2026,7:21:00 PM UTC,SELL,cerrar,17.99,12.3444,222.08,2.0
 MRNA,stock,closed,10/04/2026,1:41:37 PM UTC,BUY,abrir,50.82,3.1484,160.0,
 MRNA,stock,closed,13/04/2026,1:55:04 PM UTC,SELL,reducir,52.73,1.5742,83.01,3.01
 MRNA,stock,closed,14/04/2026,1:55:10 PM UTC,SELL,cerrar,50.3,1.5742,79.18,-0.82
+MSFT,stock,closed,25/03/2026,6:34:18 PM UTC,BUY,abrir,370.22,0.1621,60.01,
+MSFT,stock,closed,06/04/2026,1:35:31 PM UTC,BUY,añadir,373.17,0.134,50.0,
+MSFT,stock,closed,09/04/2026,5:36:31 PM UTC,BUY,añadir,371.72,0.269,99.99,
+MSFT,stock,closed,10/04/2026,1:54:15 PM UTC,BUY,añadir,372.95,0.5095,190.02,
+MSFT,stock,closed,13/04/2026,3:47:41 PM UTC,SELL,reducir,380.25,0.4298,163.43,3.44
+MSFT,stock,closed,14/04/2026,1:56:00 PM UTC,SELL,reducir,390.76,0.2686,104.96,4.97
+MSFT,stock,closed,14/04/2026,6:09:26 PM UTC,SELL,cerrar,390.99,0.3761,147.05,7.04
 VXJ6,future,closed,06/04/2026,2:10:11 PM UTC,BUY,abrir,24.1,1.0,100.0,
 VXJ6,future,closed,08/04/2026,1:37:35 PM UTC,SELL,cerrar,21.15,1.0,100.0,-12.24
 VXJ6,future,closed,09/04/2026,1:46:36 AM UTC,BUY,abrir,22.1,1.0,80.0,

@@ -246,78 +246,58 @@
   font-weight: 600;
 }
 
-/* ── Full‑screen overlay + bottom sheet (NewTxModal & Category picker) ── */
+/* ── Full‑screen overlay + bottom sheet ── */
 .fsOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.75);
-  z-index: 60;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 200;
   display: flex;
   justify-content: center;
-  align-items: flex-end;
+  align-items: flex-end;   /* ancla al fondo */
 }
 
 .fsSheet {
   width: 100%;
   max-width: 480px;
-  height: 100%;
+  /* ✅ clave: NO usar height:100%, dejar que crezca hasta max */
+  max-height: calc(92dvh - env(safe-area-inset-bottom, 0px));
   background: #050708;
   border-radius: 24px 24px 0 0;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* ✅ overflow solo en el sheet, no corta footer */
+  overflow: visible;
 }
 
 .fsHeader {
-  position: sticky;
-  top: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.9rem 1rem 0.6rem;
   background: #050708;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px 24px 0 0;
+  flex-shrink: 0;
   z-index: 1;
 }
 
-.fsTitle {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-/* botón de cerrar reutilizado */
-.btnClose {
-  border: 1px solid rgba(255,255,255,0.35);
-  background: rgba(0,0,0,0.75);
-  color: #ffffff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  font-size: 0;
-  transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
-}
-.btnClose:hover {
-  background: rgba(0,0,0,0.95);
-  border-color: #fff;
-}
-.btnClose:active { transform: scale(0.9); }
-
 .fsBody {
   flex: 1;
-  padding: 0.75rem 1rem 0.75rem;
+  min-height: 0;             /* ✅ permite scroll interno sin comprimir footer */
+  padding: 0.75rem 1rem;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .fsFooter {
-  padding: 0.75rem 1rem 1.1rem;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  flex-shrink: 0;            /* ✅ nunca se comprime */
+  padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 16px));
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #050708;
 }
-
 /* ── Inputs del modal ── */
 .labelModal {
   display: block;
