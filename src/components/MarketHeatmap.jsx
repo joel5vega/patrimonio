@@ -2,15 +2,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import {
-  Bitcoin, CircleDollarSign, TrendingUp, BarChart2,
-  Landmark, Layers, RefreshCw, ShieldCheck, Zap,
-  Dices, Droplets, Building2, Briefcase, DollarSign,
-  // sector icons
-  Cpu, HeartPulse, Pill, Dna, Activity,
-  Shield, Plane, CreditCard, Flame, Sun,
-  Coffee, ShoppingBag, ShoppingCart, Utensils,
-  Wrench, Mountain, Signal, Globe2, Gem, Lock,
-  Smartphone, Car, Tv2, Tractor,
+  Bitcoin, TrendingUp, BarChart2, Landmark, Layers, 
+  RefreshCw, ShieldCheck, Zap, Dices, Droplets, 
+  Building2, Briefcase, DollarSign, Cpu, HeartPulse, 
+  Lock, Shield, CreditCard, Flame, Sun, ShoppingBag, 
+  ShoppingCart, Droplet, Signal, Globe2, Gem, Box, Smartphone
 } from 'lucide-react';
 import './MarketHeatmap.css';
 
@@ -18,7 +14,7 @@ import './MarketHeatmap.css';
 const fmt    = (v, d = 0) => v == null ? '—' : '$' + Number(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
 const fmtPct = v => v == null ? null : (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
 
-/* ─── Roles ─────────────────────────────────────────────── */
+/* ─── Roles y Sectores ──────────────────────────────────── */
 const ROLE_META = {
   core:        { color: '#3b82f6', Icon: Landmark,    label: 'Core'        },
   growth:      { color: '#10b981', Icon: TrendingUp,  label: 'Growth'      },
@@ -31,25 +27,25 @@ const ROLE_META = {
   patrimony:   { color: '#f97316', Icon: Building2,   label: 'Patrimony'   },
 };
 
-// Roles que siempre muestran sus tiles rotados 90° (muchos activos pequeños)
-const ALWAYS_ROTATED_ROLES = new Set(['trading', 'speculative']);
-
-/* ─── Iconos reales (Simple Icons CDN) ─────────────────── */
+/* ─── Iconos ───────────────────────────────────────────── */
 const SI_SLUGS = {
   BTC:'bitcoin', ETH:'ethereum', SOL:'solana', BNB:'binance',
   XRP:'xrp', ADA:'cardano', AVAX:'avalanche', DOT:'polkadot',
   MATIC:'polygon', UNI:'uniswap', AAVE:'aave', LINK:'chainlink',
-  DOGE:'dogecoin', USDT:'tether', USDC:'usdcoin', DAI:'dai',XRP:'xrp/usd',
+  DOGE:'dogecoin', USDT:'tether', USDC:'usdcoin', DAI:'dai',
+  MELI:'mercadolibre', // <-- Agregado Mercado Libre (Logo oficial)
 };
+
 const SI_COLORS = {
   BTC:'#f7931a', ETH:'#627eea', SOL:'#9945ff', BNB:'#f3ba2f',
   XRP:'#346aa9', ADA:'#0033ad', AVAX:'#e84142', DOT:'#e6007a',
   MATIC:'#8247e5', UNI:'#ff007a', AAVE:'#b6509e', LINK:'#2a5ada',
   DOGE:'#c2a633', USDT:'#26a17b', USDC:'#2775ca', DAI:'#f5ac37',
+  MELI:'#FFE600', // <-- Color oficial amarillo de Mercado Libre
 };
 
 function AssetIcon({ asset, size = 16 }) {
-  const sym  = (asset.symbol || '').toUpperCase();
+  const sym  = (asset.symbol || '').toUpperCase().split('/')[0];
   const slug = SI_SLUGS[sym];
   const col  = SI_COLORS[sym];
   const [err, setErr] = useState(false);
@@ -59,7 +55,7 @@ function AssetIcon({ asset, size = 16 }) {
       <img
         src={`https://cdn.simpleicons.org/${slug}/${(col||'ffffff').replace('#','')}`}
         alt={sym} width={size} height={size}
-        style={{ borderRadius: 3, flexShrink: 0, display: 'block' }}
+        style={{ borderRadius: 3, flexShrink: 0, display: 'block', objectFit: 'contain' }}
         onError={() => setErr(true)}
       />
     );
@@ -67,94 +63,49 @@ function AssetIcon({ asset, size = 16 }) {
   return <Icon size={size} color={color} strokeWidth={2} style={{ flexShrink: 0 }} />;
 }
 
-/* ─── Lucide fallback ───────────────────────────────────── */
 const SYMBOL_LUCIDE = {
-  // ETFs diversificados
   VOO:{Icon:BarChart2,color:'#10b981'}, SPY:{Icon:BarChart2,color:'#10b981'},
   IVV:{Icon:BarChart2,color:'#10b981'}, VTI:{Icon:BarChart2,color:'#34d399'},
-  // Tecnología
   QQQM:{Icon:Cpu,color:'#60a5fa'}, QQQ:{Icon:Cpu,color:'#60a5fa'},
   NVDA:{Icon:Cpu,color:'#76c442'}, TSLA:{Icon:Zap,color:'#34d399'},
   AAPL:{Icon:Smartphone,color:'#94a3b8'}, MSFT:{Icon:Cpu,color:'#60a5fa'},
-  GOOGL:{Icon:Cpu,color:'#ea4335'}, GOOG:{Icon:Cpu,color:'#ea4335'},
-  META:{Icon:Cpu,color:'#1877f2'}, AMZN:{Icon:ShoppingCart,color:'#ff9900'},
-  AMD:{Icon:Cpu,color:'#ed1c24'}, INTC:{Icon:Cpu,color:'#0071c5'},
-  NFLX:{Icon:Tv2,color:'#e50914'}, UBER:{Icon:Car,color:'#94a3b8'},
-  PLTR:{Icon:Cpu,color:'#a855f7'}, SNOW:{Icon:Cpu,color:'#29b5e8'},
-  CRM:{Icon:Cpu,color:'#00a1e0'}, ORCL:{Icon:Cpu,color:'#f80000'},
-  ADBE:{Icon:Cpu,color:'#ff0000'}, PYPL:{Icon:Cpu,color:'#003087'},
-  // Salud
-  JNJ:{Icon:HeartPulse,color:'#d4163c'}, UNH:{Icon:HeartPulse,color:'#006db0'},
-  PFE:{Icon:Pill,color:'#0093d0'}, ABBV:{Icon:Pill,color:'#071d49'},
-  MRK:{Icon:Pill,color:'#009999'}, MRNA:{Icon:Dna,color:'#0f2a57'},
-  BNTX:{Icon:Dna,color:'#2b2b73'}, ISRG:{Icon:HeartPulse,color:'#0077c8'},
-  ABT:{Icon:Activity,color:'#e31837'},
-  // Defensa
-  LMT:{Icon:Shield,color:'#1a3a5c'}, RTX:{Icon:Shield,color:'#0e3d8b'},
-  NOC:{Icon:Shield,color:'#21314d'}, GD:{Icon:Shield,color:'#003168'},
-  BA:{Icon:Plane,color:'#1d428a'}, KTOS:{Icon:Shield,color:'#4a90d9'},
-  // Finanzas
-  JPM:{Icon:Landmark,color:'#1a478c'}, BAC:{Icon:Landmark,color:'#e31837'},
-  GS:{Icon:Landmark,color:'#7399c6'}, MS:{Icon:Landmark,color:'#003087'},
-  V:{Icon:CreditCard,color:'#1a1f71'}, MA:{Icon:CreditCard,color:'#eb001b'},
-  COIN:{Icon:Bitcoin,color:'#0052ff'},
-  // Energía
-  XOM:{Icon:Flame,color:'#d22630'}, CVX:{Icon:Flame,color:'#0046ad'},
-  COP:{Icon:Flame,color:'#d6001c'}, NEE:{Icon:Sun,color:'#00afec'},
-  ENPH:{Icon:Sun,color:'#ff6600'},
-  // Consumo básico
-  KO:{Icon:Coffee,color:'#f40009'}, PG:{Icon:ShoppingBag,color:'#003068'},
-  PEP:{Icon:Coffee,color:'#004b93'}, WMT:{Icon:ShoppingCart,color:'#0071ce'},
-  COST:{Icon:ShoppingCart,color:'#005dab'}, MCD:{Icon:Utensils,color:'#da291c'},
-  SBUX:{Icon:Coffee,color:'#00704a'}, NKE:{Icon:ShoppingBag,color:'#f05924'},
-  DIS:{Icon:Tv2,color:'#006e99'}, LULU:{Icon:ShoppingBag,color:'#94a3b8'},
-  // Materiales / industria
-  CAT:{Icon:Wrench,color:'#ffcd11'}, DE:{Icon:Tractor,color:'#367c2b'},
-  FCX:{Icon:Mountain,color:'#f26522'}, GDX:{Icon:Mountain,color:'#c9a949'},
-  // Telecom
-  VZ:{Icon:Signal,color:'#cd040b'}, T:{Icon:Signal,color:'#00a8e0'},
-  // ETFs internacionales
   VXUS:{Icon:Globe2,color:'#06b6d4'}, VWO:{Icon:Globe2,color:'#06b6d4'},
-  EMXC:{Icon:Globe2,color:'#06b6d4'},
-  SCHD:{Icon:TrendingUp,color:'#facc15'},
-  // Metales
-  IAU:{Icon:Gem,color:'#eab308'}, GLD:{Icon:Gem,color:'#eab308'},
-  SLV:{Icon:Gem,color:'#94a3b8'},
-  // Renta fija
-  BND:{Icon:Lock,color:'#facc15'}, TIP:{Icon:Shield,color:'#facc15'},
-  AGG:{Icon:Lock,color:'#facc15'},
-  VNQ:{Icon:Building2,color:'#f97316'},
+  SCHD:{Icon:TrendingUp,color:'#facc15'}, IAU:{Icon:Gem,color:'#eab308'},
+  GLD:{Icon:Gem,color:'#eab308'}, BND:{Icon:Lock,color:'#facc15'},
+  TIP:{Icon:Shield,color:'#facc15'}, VNQ:{Icon:Building2,color:'#f97316'},
   SGOV:{Icon:DollarSign,color:'#06b6d4'},
+  
+  /* --- Nuevos agregados --- */
+  MU:   {Icon:Cpu, color:'#60a5fa'},         // Micron: Tecnología
+  LITE: {Icon:Cpu, color:'#60a5fa'},         // Lumentum: Tecnología
+  MELI: {Icon:ShoppingBag, color:'#facc15'}, // Fallback por si falla el logo oficial
 };
 
-/* ─── Sector → icono + color de fondo cuando no hay PnL ───── */
 const SECTOR_META = {
+  diversificado_eeuu:    { Icon: BarChart2,    color: '#10b981', bg: 'rgba(16,185,129,0.18)'   },
+  diversificado_global:  { Icon: Globe2,       color: '#06b6d4', bg: 'rgba(6,182,212,0.18)'    },
+  emergentes:            { Icon: Globe2,       color: '#3b82f6', bg: 'rgba(59,130,246,0.15)'   },
   tecnologia:            { Icon: Cpu,          color: '#60a5fa', bg: 'rgba(96,165,250,0.18)'   },
-  salud:                 { Icon: HeartPulse,   color: '#f43f5e', bg: 'rgba(244,63,94,0.18)'    },
-  defensa:               { Icon: Shield,       color: '#94a3b8', bg: 'rgba(148,163,184,0.18)'  },
-  consumo_basico:        { Icon: ShoppingBag,  color: '#a3e635', bg: 'rgba(163,230,53,0.12)'   },
-  consumo_discrecional:  { Icon: ShoppingCart, color: '#f97316', bg: 'rgba(249,115,22,0.15)'   },
+  salud:                 { Icon: HeartPulse,   color: '#fb7185', bg: 'rgba(251,113,133,0.18)'  },
+  defensa:               { Icon: Shield,       color: '#64748b', bg: 'rgba(100,116,139,0.18)'  },
   finanzas:              { Icon: Landmark,     color: '#3b82f6', bg: 'rgba(59,130,246,0.18)'   },
-  energia:               { Icon: Flame,        color: '#fb923c', bg: 'rgba(251,146,60,0.18)'   },
-  energia_renovable:     { Icon: Sun,          color: '#facc15', bg: 'rgba(250,204,21,0.15)'   },
-  materiales:            { Icon: Wrench,       color: '#b45309', bg: 'rgba(180,83,9,0.20)'     },
-  telecomunicaciones:    { Icon: Signal,       color: '#06b6d4', bg: 'rgba(6,182,212,0.15)'    },
-  inmobiliario_cotizado: { Icon: Building2,    color: '#f97316', bg: 'rgba(249,115,22,0.15)'   },
+  energia:               { Icon: Droplet,      color: '#f59e0b', bg: 'rgba(245,158,11,0.18)'   },
+  energia_renovable:     { Icon: Sun,          color: '#84cc16', bg: 'rgba(132,204,22,0.18)'   },
+  consumo_basico:        { Icon: ShoppingCart, color: '#14b8a6', bg: 'rgba(20,184,166,0.18)'   },
+  consumo_discrecional:  { Icon: ShoppingBag,  color: '#8b5cf6', bg: 'rgba(139,92,246,0.18)'   },
+  materiales:            { Icon: Box,          color: '#d946ef', bg: 'rgba(217,70,239,0.18)'   },
+  telecomunicaciones:    { Icon: Signal,       color: '#3b82f6', bg: 'rgba(59,130,246,0.18)'   },
+  inmobiliario_cotizado: { Icon: Building2,    color: '#f97316', bg: 'rgba(249,115,22,0.18)'   },
   metales_preciosos:     { Icon: Gem,          color: '#eab308', bg: 'rgba(234,179,8,0.18)'    },
-  mineria:               { Icon: Mountain,     color: '#78716c', bg: 'rgba(120,113,108,0.18)'  },
   bonos_gobierno:        { Icon: Lock,         color: '#facc15', bg: 'rgba(250,204,21,0.12)'   },
-  bonos_inflacion:       { Icon: Shield,       color: '#a3e635', bg: 'rgba(163,230,53,0.12)'   },
-  diversificado_eeuu:    { Icon: BarChart2,    color: '#10b981', bg: 'rgba(16,185,129,0.15)'   },
-  diversificado_global:  { Icon: Globe2,       color: '#06b6d4', bg: 'rgba(6,182,212,0.15)'    },
-  dividendos_value:      { Icon: TrendingUp,   color: '#facc15', bg: 'rgba(250,204,21,0.12)'   },
-  emergentes:            { Icon: Globe2,       color: '#f97316', bg: 'rgba(249,115,22,0.15)'   },
+  bonos_inflacion:       { Icon: Shield,       color: '#facc15', bg: 'rgba(250,204,21,0.12)'   },
   efectivo_global:       { Icon: DollarSign,   color: '#06b6d4', bg: 'rgba(6,182,212,0.12)'    },
   crypto_l1:             { Icon: Layers,       color: '#a855f7', bg: 'rgba(168,85,247,0.18)'   },
-  crypto_l2:             { Icon: Layers,       color: '#8b5cf6', bg: 'rgba(139,92,246,0.18)'   },
+  crypto_l2:             { Icon: Layers,       color: '#d946ef', bg: 'rgba(217,70,239,0.18)'   },
   crypto_defi:           { Icon: Zap,          color: '#14b8a6', bg: 'rgba(20,184,166,0.18)'   },
-  crypto_pagos:          { Icon: CreditCard,   color: '#38bdf8', bg: 'rgba(56,189,248,0.18)'   },
-  crypto_stablecoin:     { Icon: DollarSign,   color: '#22d3ee', bg: 'rgba(34,211,238,0.12)'   },
-  crypto_meme:           { Icon: Dices,        color: '#f43f5e', bg: 'rgba(244,63,94,0.15)'    },
+  crypto_pagos:          { Icon: CreditCard,   color: '#3b82f6', bg: 'rgba(59,130,246,0.18)'   },
+  crypto_meme:           { Icon: Flame,        color: '#f43f5e', bg: 'rgba(244,63,94,0.18)'    },
+  crypto_stablecoin:     { Icon: DollarSign,   color: '#22d3ee', bg: 'rgba(34,211,238,0.18)'   },
 };
 
 const TYPE_LUCIDE = {
@@ -163,9 +114,8 @@ const TYPE_LUCIDE = {
   manual:{Icon:Briefcase,color:'#94a3b8'},
 };
 
-/* Prioridad: símbolo concreto → sector → rol → tipo → fallback */
 function resolveIconLucide(asset) {
-  const sym    = (asset.symbol||'').toUpperCase();
+  const sym    = (asset.symbol||'').toUpperCase().split('/')[0];
   const sector = asset.classification?.sector;
   const role   = asset.classification?.role;
   const type   = asset.type;
@@ -176,9 +126,7 @@ function resolveIconLucide(asset) {
   return { Icon: Briefcase, color: '#64748b' };
 }
 
-/* ─── Color de fondo del tile ────────────────────────────── */
 function tileBg(p, asset) {
-  // Con PnL: escala verde/rojo
   if (p != null) {
     if (p >= 5)  return 'rgba(5,150,105,0.82)';
     if (p >= 2)  return 'rgba(16,185,129,0.60)';
@@ -187,7 +135,6 @@ function tileBg(p, asset) {
     if (p >= -5) return 'rgba(244,63,94,0.58)';
     return 'rgba(225,29,72,0.80)';
   }
-  // Sin PnL: color del sector
   const sector = asset?.classification?.sector;
   if (sector && SECTOR_META[sector]) return SECTOR_META[sector].bg;
   const role = asset?.classification?.role;
@@ -195,6 +142,7 @@ function tileBg(p, asset) {
   if (role === 'speculative') return 'rgba(244,63,94,0.15)';
   return 'rgba(30,41,59,0.70)';
 }
+
 /* ─── Portal Tooltip ─────────────────────────────────────── */
 function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
   const [pos, setPos] = useState(null);
@@ -213,6 +161,7 @@ function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
 
   const role     = asset.classification?.role;
   const roleMeta = role ? ROLE_META[role] : null;
+  const sector   = asset.classification?.sector;
   const isDeFi   = asset.classification?.isDeFi;
   const aprPct   = asset.classification?.aprPct;
   const { color } = resolveIconLucide(asset);
@@ -242,7 +191,7 @@ function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
         </div>
         {asset.weightPct != null && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">Peso</span>
+            <span className="hm-tooltip__lbl">Peso global</span>
             <span className="hm-tooltip__val">{asset.weightPct.toFixed(1)}%</span>
           </div>
         )}
@@ -250,12 +199,6 @@ function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
           <div className="hm-tooltip__row">
             <span className="hm-tooltip__lbl">PnL</span>
             <span className={`hm-tooltip__pnl ${pct >= 0 ? 'up' : 'down'}`}>{pctLabel}</span>
-          </div>
-        )}
-        {asset.price != null && (
-          <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">Precio</span>
-            <span className="hm-tooltip__val">{fmt(asset.price, 2)}</span>
           </div>
         )}
         {isDeFi && aprPct != null && (
@@ -268,12 +211,19 @@ function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
           </div>
         )}
       </div>
-      {roleMeta && (
-        <div className="hm-tooltip__footer" style={{ borderColor: `${roleMeta.color}22` }}>
-          <roleMeta.Icon size={10} color={roleMeta.color} style={{ marginRight: 5, flexShrink: 0 }} />
-          <span className="hm-tooltip__role" style={{ color: roleMeta.color }}>{roleMeta.label}</span>
-          {asset.strategy?.reduce && (
-            <span className="hm-tooltip__action">↓ Reducir</span>
+      {(roleMeta || sector) && (
+        <div className="hm-tooltip__footer" style={{ borderColor: roleMeta ? `${roleMeta.color}22` : 'rgba(255,255,255,0.1)' }}>
+          {roleMeta && (
+            <>
+              <roleMeta.Icon size={10} color={roleMeta.color} style={{ marginRight: 5, flexShrink: 0 }} />
+              <span className="hm-tooltip__role" style={{ color: roleMeta.color }}>{roleMeta.label}</span>
+            </>
+          )}
+          {roleMeta && sector && <span style={{ opacity: 0.3, margin: '0 4px' }}>|</span>}
+          {sector && (
+            <span className="hm-tooltip__sector" style={{ opacity: 0.7, fontSize: '0.55rem', textTransform: 'uppercase' }}>
+              {sector.replace(/_/g, ' ')}
+            </span>
           )}
         </div>
       )}
@@ -283,10 +233,11 @@ function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
 }
 
 /* ─── Tile ───────────────────────────────────────────────── */
-function HeatTile({ asset, sizePct, forceRotate }) {
+function HeatTile({ asset, roleColor, isSmallBlock }) {
   const [hover, setHover]       = useState(false);
   const [anchorRect, setAnchor] = useState(null);
   const tileRef                 = useRef(null);
+  
   const onEnter = useCallback(() => {
     if (tileRef.current) setAnchor(tileRef.current.getBoundingClientRect());
     setHover(true);
@@ -296,61 +247,39 @@ function HeatTile({ asset, sizePct, forceRotate }) {
   const pct       = asset.pnlPct ?? null;
   const bg        = tileBg(pct, asset);
   const pctLabel  = fmtPct(pct);
-  const ticker = (asset.symbol || '').split('/')[0] || asset.name?.slice(0, 5).toUpperCase() || '?';
-  const role      = asset.classification?.role;
-  const roleColor = ROLE_META[role]?.color ?? '#334155';
-  const rotated   = forceRotate || sizePct < 5;
-  const mini      = !rotated && sizePct < 9;
+  const ticker    = (asset.symbol || '').split('/')[0] || asset.name?.slice(0, 5).toUpperCase() || '?';
+  
+  const isMini = isSmallBlock || asset.valueUSD < 500;
 
   return (
     <div
       ref={tileRef}
-      className={[
-        'hm-tile',
-        rotated ? 'hm-tile--rot' : '',
-        mini    ? 'hm-tile--mini' : '',
-      ].filter(Boolean).join(' ')}
+      className={`hm-tile ${isMini ? 'hm-tile--mini' : ''}`}
       style={{
-        width:      `calc(${sizePct}% - 2px)`,
+        flex: `${asset.valueUSD} 1 auto`, 
         background: bg,
-        border:     `2px solid ${roleColor}55`,
-        boxShadow:  hover ? `inset 0 0 0 1px ${roleColor}88, 0 0 10px ${roleColor}22` : 'none',
+        border: `1px solid rgba(255,255,255,0.06)`,
+        boxShadow: hover ? `inset 0 0 0 1px rgba(255,255,255,0.3), 0 0 12px ${roleColor}40` : 'none',
       }}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
-      {/* Peso del portfolio (solo tiles normales grandes) */}
-      {!rotated && !mini && asset.weightPct != null && (
+      {!isMini && asset.weightPct != null && (
         <span className="hm-tile__weight">{asset.weightPct.toFixed(1)}%</span>
       )}
-
-      {rotated ? (
-        /* ── Contenido rotado 90° ── */
-        <div className="hm-tile__rot-inner">
-          <AssetIcon asset={asset} size={11} />
-          <span className="hm-tile__rot-ticker">{ticker}</span>
-          {pctLabel && (
-            <span className="hm-tile__rot-change"
-              style={{ color: pct >= 0 ? '#34d399' : '#fb7185' }}>
-              {pctLabel}
-            </span>
-          )}
+      
+      {/* Contenedor interno que rotará automáticamente si es necesario */}
+      <div className="hm-tile__inner">
+        <div className="hm-tile__icon-wrap">
+          <AssetIcon asset={asset} size={isMini ? 12 : 17} />
         </div>
-      ) : (
-        /* ── Contenido normal ── */
-        <>
-          <div className="hm-tile__icon-wrap">
-            <AssetIcon asset={asset} size={mini ? 13 : 17} />
-          </div>
-          <span className="hm-tile__ticker">{ticker}</span>
-          {pctLabel && (
-            <span className="hm-tile__change"
-              style={{ color: pct >= 0 ? '#34d399' : '#fb7185' }}>
-              {pctLabel}
-            </span>
-          )}
-        </>
-      )}
+        <span className="hm-tile__ticker">{ticker}</span>
+        {pctLabel && (
+          <span className="hm-tile__change" style={{ color: pct >= 0 ? '#34d399' : '#fb7185' }}>
+            {pctLabel}
+          </span>
+        )}
+      </div>
 
       {hover && anchorRect && (
         <TooltipPortal asset={asset} anchorRect={anchorRect} pct={pct} pctLabel={pctLabel} />
@@ -358,131 +287,44 @@ function HeatTile({ asset, sizePct, forceRotate }) {
     </div>
   );
 }
-
-/* ─── Banda ──────────────────────────────────────────────── */
-function RoleBand({ role, assets, totalVal, isSmall }) {
-  const meta     = ROLE_META[role] ?? { color: '#64748b', Icon: Briefcase, label: role };
-  const bandVal  = assets.reduce((s, a) => s + (a.valueUSD || 0), 0);
-  const bandPct  = totalVal > 0 ? (bandVal / totalVal) * 100 : 0;
-  // Ordenar de mayor a menor dentro de la banda
-  const sorted   = [...assets].sort((a, b) => (b.valueUSD||0) - (a.valueUSD||0));
-  const forceRot = ALWAYS_ROTATED_ROLES.has(role);
+/* ─── Role Block ─────────────────────────────────────────── */
+function RoleBlock({ role, assets, roleTotalVal, totalGlobalVal }) {
+  const meta = ROLE_META[role] ?? { color: '#64748b', Icon: Briefcase, label: role };
+  const roleGlobalPct = totalGlobalVal > 0 ? (roleTotalVal / totalGlobalVal) * 100 : 0;
+  const sorted = [...assets].sort((a, b) => (b.valueUSD||0) - (a.valueUSD||0));
+  
+  // Si el bloque representa menos del 12% global, colapsamos el diseño de sus tiles
+  const isSmallBlock = roleGlobalPct < 12;
 
   return (
     <div
-      className={`hm-band${isSmall ? ' hm-band--sm' : ''}`}
+      className="hm-group"
       style={{
-        flex:           `${bandPct} 0 0`,
-        '--band-color': meta.color,
-        borderColor:    `${meta.color}33`,
-        minWidth:       `${Math.max(sorted.length * (forceRot ? 28 : 42), 55)}px`,
+        flex: `${roleGlobalPct} 0 0`, // Escala su anchura dentro de la fila según su peso
+        '--role-color': meta.color,
+        border: `2px solid ${meta.color}88`,
+        boxShadow: `0 4px 20px -2px ${meta.color}15`,
       }}
     >
-      <div className="hm-band__head">
-        <meta.Icon size={9} strokeWidth={2.5} color={meta.color} style={{ flexShrink: 0 }} />
-        <span className="hm-band__label">{meta.label}</span>
-        <span className="hm-band__pct">{bandPct.toFixed(1)}%</span>
+      <div className="hm-group__head" style={{ background: `${meta.color}1a`, borderBottom: `1px solid ${meta.color}40` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <meta.Icon size={12} strokeWidth={2.5} color={meta.color} />
+          <span className="hm-group__title" style={{ color: meta.color }}>{meta.label.toUpperCase()}</span>
+        </div>
+        <span className="hm-group__pct" style={{ color: meta.color, opacity: 0.8 }}>{roleGlobalPct.toFixed(1)}%</span>
       </div>
-     <div className={`hm-band__tiles${forceRot ? ' hm-band__tiles--rot' : ''}`}>
-  {sorted.map((a, i) => {
-    // Distribuye en 2 filas: mitad arriba, mitad abajo
-    const half    = Math.ceil(sorted.length / 2);
-    const row1    = sorted.slice(0, half);
-    const row2    = sorted.slice(half);
-    const sizePct = bandVal > 0 ? (a.valueUSD / bandVal) * 100 : 100 / sorted.length;
-    return null; // reemplazado por las 2 filas abajo
-  })}
-  {/* Renderizar 2 sub-filas cuando está rotado */}
-  {forceRot ? (() => {
-    const half = Math.ceil(sorted.length / 2);
-    const rows = [sorted.slice(0, half), sorted.slice(half)];
-    return rows.map((row, ri) => (
-      <div key={ri} className="hm-band__tiles-row">
-        {row.map(a => {
-          const sizePct = bandVal > 0 ? (a.valueUSD / bandVal) * 100 : 100 / sorted.length;
-          return (
-            <HeatTile key={a.id || a.name} asset={a} sizePct={sizePct} forceRotate={true} />
-          );
-        })}
+
+      {/* Aquí es donde Trading brilla: flex-wrap permite saltos de línea suaves */}
+      <div className="hm-group__content">
+        {sorted.map(a => (
+          <HeatTile 
+            key={a.id || a.name} 
+            asset={a} 
+            roleColor={meta.color} 
+            isSmallBlock={isSmallBlock} 
+          />
+        ))}
       </div>
-    ));
-  })() : sorted.map(a => {
-    const sizePct = bandVal > 0 ? (a.valueUSD / bandVal) * 100 : 100 / sorted.length;
-    return (
-      <HeatTile key={a.id || a.name} asset={a} sizePct={sizePct} forceRotate={false} />
-    );
-  })}
-</div>
-    </div>
-  );
-}
-
-/* ─── Distribución en 3 filas ────────────────────────────
-   Ordena roles por valor DESC, luego bin-packing greedy
-   en 3 cubetas. Dentro de cada cubeta los roles también
-   quedan ordenados de mayor a menor.
-──────────────────────────────────────────────────────── */
-function distributeRoles(byRole) {
-  const entries = Object.entries(byRole)
-    .map(([role, assets]) => ({
-      role,
-      val: assets.reduce((s, a) => s + (a.valueUSD || 0), 0),
-    }))
-    .sort((a, b) => b.val - a.val);   // ← orden DESC global
-
-  if (!entries.length) return [[], [], []];
-
-  const buckets = [[], [], []];
-  const sums    = [0, 0, 0];
-
-  for (const e of entries) {
-    // Asignar al bucket con menor suma acumulada
-    const idx = sums.indexOf(Math.min(...sums));
-    buckets[idx].push({ role: e.role, val: e.val });
-    sums[idx] += e.val;
-  }
-
-  // Ordenar DENTRO de cada bucket de mayor a menor
-  buckets.forEach(b => b.sort((a, bb) => bb.val - a.val));
-
-  // Ordenar los 3 buckets: el más pesado en fila 0
-  buckets.sort((a, bb) => {
-    const sa = a.reduce((s, x) => s + x.val, 0);
-    const sb = bb.reduce((s, x) => s + x.val, 0);
-    return sb - sa;
-  });
-
-  return buckets.map(b => b.map(x => x.role));
-}
-
-/* ─── Fila ───────────────────────────────────────────────── */
-function HeatRow({ roles, byRole, totalVal, rowIdx }) {
-  const present = roles.filter(r => byRole[r]);
-  if (!present.length) return null;
-  const isSmall = rowIdx >= 1;
-  return (
-    <div className={`hm-row${isSmall ? ' hm-row--sm' : ''}`}>
-      {present.map(role => (
-        <RoleBand key={role} role={role} assets={byRole[role]} totalVal={totalVal} isSmall={isSmall} />
-      ))}
-    </div>
-  );
-}
-
-/* ─── Leyenda ────────────────────────────────────────────── */
-function RoleLegend({ roles }) {
-  return (
-    <div className="hm-legend">
-      {roles.map(role => {
-        const meta = ROLE_META[role];
-        if (!meta) return null;
-        return (
-          <span key={role} className="hm-legend__chip">
-            <span className="hm-legend__dot" style={{ background: meta.color }} />
-            {meta.label}
-          </span>
-        );
-      })}
     </div>
   );
 }
@@ -503,21 +345,35 @@ export default function MarketHeatmap({ assets }) {
     weightPct: (a.valueUSD / totalVal) * 100,
   }));
 
+  // Agrupar por rol
   const byRole = {};
   enriched.forEach(a => {
-    const r = a.classification?.role ?? 'liquidity';
-    if (!byRole[r]) byRole[r] = [];
-    byRole[r].push(a);
+    const role = a.classification?.role || 'liquidity';
+    if (!byRole[role]) byRole[role] = { assets: [], total: 0 };
+    byRole[role].assets.push(a);
+    byRole[role].total += (a.valueUSD || 0);
   });
 
-  const [row0, row1, row2] = distributeRoles(byRole);
+  const sortedRoles = Object.entries(byRole)
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([key, data]) => ({ key, ...data }));
 
-  // Leyenda: roles ordenados por valor desc
-  const allPresent = Object.keys(byRole).sort((a, b) => {
-    const va = byRole[a].reduce((s, x) => s + (x.valueUSD||0), 0);
-    const vb = byRole[b].reduce((s, x) => s + (x.valueUSD||0), 0);
-    return vb - va;
-  });
+  // Algoritmo de Bin Packing (Treemap) para agrupar roles en 3 filas equilibradas
+  const rows = [
+    { total: 0, roles: [] },
+    { total: 0, roles: [] },
+    { total: 0, roles: [] }
+  ];
+
+  for (const r of sortedRoles) {
+    // Busca la fila que tenga el menor acumulado hasta ahora para meter el rol ahí
+    const targetRow = rows.reduce((min, row) => row.total < min.total ? row : min, rows[0]);
+    targetRow.roles.push(r);
+    targetRow.total += r.total;
+  }
+
+  // Ordenar filas de mayor peso (arriba) a menor peso (abajo)
+  rows.sort((a, b) => b.total - a.total);
 
   const up     = investible.filter(a => (a.pnlPct ?? 0) >= 0).length;
   const down   = investible.filter(a => (a.pnlPct ?? 0) <  0).length;
@@ -526,7 +382,7 @@ export default function MarketHeatmap({ assets }) {
   return (
     <div className="hm-container">
       <div className="hm-header">
-        <span className="hm-title">Mapa de calor · Invertible</span>
+        <span className="hm-title">Mapa de calor · Portafolio</span>
         <div className="hm-counts">
           {down   > 0 && <span className="hm-count red">▼ {down}</span>}
           {noData > 0 && <span className="hm-count neutral">― {noData}</span>}
@@ -535,12 +391,27 @@ export default function MarketHeatmap({ assets }) {
       </div>
 
       <div className="hm-grid">
-        <HeatRow roles={row0} byRole={byRole} totalVal={totalVal} rowIdx={0} />
-        <HeatRow roles={row1} byRole={byRole} totalVal={totalVal} rowIdx={1} />
-        <HeatRow roles={row2} byRole={byRole} totalVal={totalVal} rowIdx={2} />
+        {rows.map((row, idx) => {
+          if (row.total === 0) return null;
+          return (
+            <div 
+              key={idx} 
+              className="hm-row" 
+              style={{ flex: `${row.total} 0 0` }} /* El ALTO de la fila depende de su peso total */
+            >
+              {row.roles.map(r => (
+                <RoleBlock
+                  key={r.key}
+                  role={r.key}
+                  assets={r.assets}
+                  roleTotalVal={r.total}
+                  totalGlobalVal={totalVal}
+                />
+              ))}
+            </div>
+          );
+        })}
       </div>
-
-      <RoleLegend roles={allPresent} />
     </div>
   );
 }
