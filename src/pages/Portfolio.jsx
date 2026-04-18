@@ -9,7 +9,7 @@ import { useApp } from '../context/AppContext';
 import { buildPortfolioV3, PORTFOLIO_TARGETS, MANUAL_RULES } from '../utils/portfolioAnalysis';
 import './Portfolio.css';
 import MarketHeatmap from '../components/MarketHeatmap';
-// ─── CONSTANTES ───────────────────────────────────────────────
+
 const STABLES = ['USDT','USDC','BUSD','DAI','FDUSD'];
 
 const CRYPTO_ICONS = {
@@ -585,8 +585,15 @@ const PatrimonyPanel = ({ patrimony }) => {
 // ══════════════════════════════════════════════════════════════
 const Portfolio = () => {
   const {
-    cryptoAssets=[],inversionPositions=[],manualAssets=[],
-    totalCryptoUSD=0,binanceSnap,loading=false,bobRate=6.96,
+    cryptoAssets,
+    inversionPositions,
+    manualAssets,
+    totalCryptoUSD = 0,
+    binanceSnap,
+    loading = false,
+    bobRate = 6.96,
+    todayPortfolioV3,
+    totalManualUSD = 0,
   } = useApp();
 
   const [activeTab,     setActiveTab]     = useState('Todos');
@@ -689,11 +696,26 @@ const Portfolio = () => {
 
   const totalBrutoUSD = useMemo(()=>allAssets.reduce((s,a)=>s+(a.valueUSD||0),0),[allAssets]);
 
-  // v3 ahora recibe monthlyUSD
-  const v3 = useMemo(()=>buildPortfolioV3({
-    allAssets, totalUSD:totalBrutoUSD, reservedBUY, pendingSELL, grossExposure, monthlyUSD,
-  }),[allAssets,totalBrutoUSD,reservedBUY,pendingSELL,grossExposure,monthlyUSD]);
+const v3 = useMemo(() => {
+  if (todayPortfolioV3) return todayPortfolioV3;
 
+  return buildPortfolioV3({
+    allAssets,
+    totalUSD: totalBrutoUSD,
+    reservedBUY,
+    pendingSELL,
+    grossExposure,
+    monthlyUSD,
+  });
+}, [
+  todayPortfolioV3,
+  allAssets,
+  totalBrutoUSD,
+  reservedBUY,
+  pendingSELL,
+  grossExposure,
+  monthlyUSD,
+]);
   // pieData: solo activos investables (excluye reserve y patrimony)
   const pieData = useMemo(()=>{
     const cryptoVal = volatileAssets.reduce((s,a)=>s+a.netExposureUSD+(a.pendingBuyUSD??0),0);

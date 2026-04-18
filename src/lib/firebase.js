@@ -1,8 +1,21 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import {
-  getFirestore, collection, query, addDoc, deleteDoc, updateDoc, doc,
-  onSnapshot, serverTimestamp, where, setDoc, orderBy, limit, getDocs,
+  getFirestore,
+  collection,
+  query,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp,
+  where,
+  setDoc,
+  orderBy,
+  limit,
+  getDocs,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -250,4 +263,57 @@ export async function getAllDailySnapshots() {
     console.error('❌ getAllDailySnapshots error:', e.code, e.message);
     return [];
   }
+}
+
+export const subscribeIdeas = (callback) => {
+  const q = query(
+    collection(db, 'ideaTasks'),
+    orderBy('createdAt', 'desc'),
+    limit(5)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    callback(data);
+  }, (error) => {
+    console.error("Error en subscribeIdeas:", error);
+  });
+};
+
+export const subscribeStandouts = (callback) => {
+  const q = query(
+    collection(db, 'standoutsReports'),
+    orderBy('createdAt', 'desc'),
+    limit(3)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    callback(data);
+  }, (error) => {
+    console.error("Error en subscribeStandouts:", error);
+  });
+};
+
+export async function getPortfolioSnapshotByDate(userId, date) {
+  const ref = doc(db, 'users', userId, 'portfolioHistory', date);
+  const snap = await getDoc(ref);
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function getLatestPortfolioAnalysis(userId) {
+  const q = query(
+    collection(db, 'portfolioAnalysis', userId, 'daily'),
+    orderBy('date', 'desc'),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return { id: snap.docs[0].id, ...snap.docs[0].data() };
 }

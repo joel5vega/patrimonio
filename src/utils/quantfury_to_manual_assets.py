@@ -7,14 +7,14 @@ from pathlib import Path
 # ─────────────────────────────────────────────
 #  CONFIGURACIÓN
 # ─────────────────────────────────────────────
-PDF_PATH    = "Informe de Historial de Trading 16.04.2026.pdf"
+PDF_PATH    = "Informe de Historial de Trading 17.04.2026.pdf"
 OUTPUT_FULL = "trading_history_full.csv"   # Todos los trades
 OUTPUT_POS  = "assets_ready.csv"           # Posiciones abiertas ponderadas
 
 # Equity REAL (sin apalancamiento).
 # El peso de cada posición se calcula sobre el notional total invertido
 # y luego se escala al equity real para reflejar el riesgo efectivo.
-EQUITY_REAL = 636   # ← cambia este valor según tu saldo actual
+EQUITY_REAL = 645   # ← cambia este valor según tu saldo actual
 
 
 # ─────────────────────────────────────────────
