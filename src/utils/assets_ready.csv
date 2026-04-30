@@ -1,14 +1,10 @@
 name,type,currency,amount,note,since
-ABT,stock,USD,53.3,Importado Quantfury | Leverage 9.38x,2026-04-17
-CEG,stock,USD,74.62,Importado Quantfury | Leverage 9.38x,2026-04-17
-HBAR/USD,crypto,USD,10.66,Importado Quantfury | Leverage 9.38x,2026-04-17
-JNJ,stock,USD,53.29,Importado Quantfury | Leverage 9.38x,2026-04-17
-KTOS,stock,USD,60.0,Importado Quantfury | Leverage 9.38x,2026-04-17
-LITE,stock,USD,26.58,Importado Quantfury | Leverage 9.38x,2026-04-17
-MELI,stock,USD,63.96,Importado Quantfury | Leverage 9.38x,2026-04-17
-MRNA,stock,USD,53.3,Importado Quantfury | Leverage 9.38x,2026-04-17
-MU,stock,USD,64.31,Importado Quantfury | Leverage 9.38x,2026-04-17
-POL/USDT,crypto,USD,54.68,Importado Quantfury | Leverage 9.38x,2026-04-17
-SLV,stock,USD,64.87,Importado Quantfury | Leverage 9.38x,2026-04-17
-SOL/USD,crypto,USD,32.62,Importado Quantfury | Leverage 9.38x,2026-04-17
-XRP/USD,crypto,USD,32.81,Importado Quantfury | Leverage 9.38x,2026-04-17
+ABT,stock,USD,74.59,Importado Quantfury | Leverage 10.73x,2026-04-30
+CEG,stock,USD,102.56,Importado Quantfury | Leverage 10.73x,2026-04-30
+HBAR/USD,crypto,USD,9.32,Importado Quantfury | Leverage 10.73x,2026-04-30
+JNJ,stock,USD,65.26,Importado Quantfury | Leverage 10.73x,2026-04-30
+KTOS,stock,USD,52.49,Importado Quantfury | Leverage 10.73x,2026-04-30
+MELI,stock,USD,93.23,Importado Quantfury | Leverage 10.73x,2026-04-30
+POL/USDT,crypto,USD,47.83,Importado Quantfury | Leverage 10.73x,2026-04-30
+SLV,stock,USD,133.18,Importado Quantfury | Leverage 10.73x,2026-04-30
+SOL/USD,crypto,USD,28.54,Importado Quantfury | Leverage 10.73x,2026-04-30

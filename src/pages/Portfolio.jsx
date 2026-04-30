@@ -6,7 +6,7 @@ import {
   Lock, Zap, Calendar,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { buildPortfolioV3, PORTFOLIO_TARGETS, MANUAL_RULES } from '../utils/portfolioAnalysis';
+import { buildPortfolioV3, PORTFOLIO_TARGETS, MANUAL_RULES,INVESTOR_PROFILES } from '../utils/portfolioAnalysis';
 import './Portfolio.css';
 import MarketHeatmap from '../components/MarketHeatmap';
 
@@ -182,9 +182,9 @@ const RoleTreemap = ({ byRole, byRoleMap }) => {
                 <span className="role-chip__name">{role}</span>
                 <span className="role-chip__pct">{pct.toFixed(1)}%</span>
                 {/* Target indicator */}
-                {PORTFOLIO_TARGETS[role]!=null&&(
+                {activeTargets[role]!=null&&(
                   <span style={{fontSize:'0.6rem',color:'rgba(148,163,184,0.6)',marginLeft:'auto'}}>
-                    meta {PORTFOLIO_TARGETS[role]}%
+                    meta {activeTargets[role]}%
                   </span>
                 )}
               </div>
@@ -365,11 +365,100 @@ const ReservesPanel = ({ reserves }) => {
     </div>
   );
 };
+// ─── InvestorProfilePanel ─────────────────────────────────────
+const InvestorProfilePanel = ({ profile, onProfileChange, customTargets, onCustomChange }) => {
+  const roles = Object.keys(PORTFOLIO_TARGETS);
+  const total = Object.values(customTargets).reduce((s, v) => s + v, 0);
+  const isOver = total !== 100;
 
+  return (
+    <div style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Selector de perfil */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+        {Object.entries(INVESTOR_PROFILES).map(([key, p]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => {
+              onProfileChange(key);
+              if (key !== 'personalizado') onCustomChange({ ...p.targets });
+            }}
+            style={{
+              padding: '0.35rem 0.75rem',
+              borderRadius: '999px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              border: `1px solid ${profile === key ? '#3b82f6' : 'rgba(148,163,184,0.2)'}`,
+              background: profile === key ? 'rgba(59,130,246,0.15)' : 'transparent',
+              color: profile === key ? '#60a5fa' : 'rgba(148,163,184,0.7)',
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Descripción */}
+      <p style={{ fontSize: '0.72rem', color: 'rgba(148,163,184,0.6)', margin: 0 }}>
+        {INVESTOR_PROFILES[profile]?.description}
+      </p>
+
+      {/* Sliders de ajuste manual */}
+      {profile === 'personalizado' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {roles.map(role => (
+            <div key={role} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{
+                width: '80px', fontSize: '0.68rem', fontWeight: 700,
+                color: ROLE_COLORS[role] || '#64748b', textTransform: 'uppercase',
+              }}>{role}</span>
+              <input
+                type="range" min={0} max={60} step={1}
+                value={customTargets[role] || 0}
+                onChange={e => onCustomChange(prev => ({
+                  ...prev, [role]: Number(e.target.value)
+                }))}
+                style={{ flex: 1, accentColor: ROLE_COLORS[role] || '#3b82f6' }}
+              />
+              <span style={{
+                width: '36px', textAlign: 'right',
+                fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace',
+                color: ROLE_COLORS[role] || '#fff',
+              }}>{customTargets[role] || 0}%</span>
+            </div>
+          ))}
+          <div style={{
+            fontSize: '0.7rem', fontWeight: 700, textAlign: 'right',
+            color: isOver ? '#f43f5e' : '#10b981',
+          }}>
+            Total: {total}% {isOver ? `(${total > 100 ? '+' : ''}${total - 100}% vs 100%)` : '✓'}
+          </div>
+        </div>
+      )}
+
+      {/* Vista previa de targets para perfil no-personalizado */}
+      {profile !== 'personalizado' && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+          {roles.map(role => (
+            <span key={role} style={{
+              fontSize: '0.65rem', padding: '0.2rem 0.5rem',
+              borderRadius: '4px', background: `${ROLE_COLORS[role]}22`,
+              color: ROLE_COLORS[role], fontWeight: 700,
+            }}>
+              {role} {INVESTOR_PROFILES[profile]?.targets?.[role]}%
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 // ─── Dashboard ────────────────────────────────────────────────
 const Dashboard = ({ v3 }) => {
   if (!v3) return null;
-  const { portfolio, alerts, ruleEvaluation, rebalancePlan, assets, risk, totals } = v3;
+  const { portfolio, alerts, ruleEvaluation, rebalancePlan, assets, risk, totals,activeTargets } = v3;
   const byRole  = portfolio?.byRole  || {};
   const byClass = portfolio?.byAssetClass || {};
 
@@ -411,7 +500,7 @@ const Dashboard = ({ v3 }) => {
  {/* Objetivo vs actual */} <StatusBar totals={totals} risk={risk} alerts={alerts}/>
       <Section eyebrow="Rebalanceo" title="Objetivo vs actual" defaultOpen={true}>
         <div className="v3-target-list">
-          {Object.entries(PORTFOLIO_TARGETS).map(([role,target])=>{
+          {Object.entries(activeTargets ||PORTFOLIO_TARGETS).map(([role,target])=>{
             const current=byRole[role]||0;
             const ok=role==='speculative'||role==='trading'?current<=target:current>=target;
             const dir=role==='speculative'||role==='trading'?'≤':'≥';
@@ -448,7 +537,7 @@ const Dashboard = ({ v3 }) => {
  
       {/* Distribución por rol */}
       <Section eyebrow="Motor de reglas" title="Distribución por rol" defaultOpen={false}>
-        <RoleTreemap byRole={byRole} byRoleMap={byRoleMap}/>
+        <RoleTreemap byRole={byRole} byRoleMap={byRoleMap}activeTargets={activeTargets || PORTFOLIO_TARGETS}/>
       </Section>
 
      
@@ -600,7 +689,9 @@ const Portfolio = () => {
   const [visibleGroups, setVisibleGroups] = useState({});
   const [copied,        setCopied]        = useState(false);
   const [legendOpen,    setLegendOpen]    = useState(false);
-
+const [investorProfile, setInvestorProfile] = useState('moderado');
+const [customTargets,   setCustomTargets]   = useState({ ...PORTFOLIO_TARGETS });
+const [showProfilePanel, setShowProfilePanel] = useState(false);
   const bs            = binanceSnap?.snapshot;
   const reservedBUY   = bs?.reservedCapitalUSD  ?? 0;
   const pendingSELL   = bs?.pendingSellUSD       ?? 0;
@@ -695,9 +786,13 @@ const Portfolio = () => {
   },[groupDefinitions,allAssets]);
 
   const totalBrutoUSD = useMemo(()=>allAssets.reduce((s,a)=>s+(a.valueUSD||0),0),[allAssets]);
-
+const activeTargets = useMemo(() =>
+  investorProfile === 'personalizado'
+    ? customTargets
+    : { ...(INVESTOR_PROFILES[investorProfile]?.targets ?? PORTFOLIO_TARGETS) }
+    //  ↑ spread crea nueva referencia siempre
+, [investorProfile, customTargets]);
 const v3 = useMemo(() => {
-  if (todayPortfolioV3) return todayPortfolioV3;
 
   return buildPortfolioV3({
     allAssets,
@@ -706,6 +801,7 @@ const v3 = useMemo(() => {
     pendingSELL,
     grossExposure,
     monthlyUSD,
+    customTargets: activeTargets,
   });
 }, [
   todayPortfolioV3,
@@ -715,6 +811,7 @@ const v3 = useMemo(() => {
   pendingSELL,
   grossExposure,
   monthlyUSD,
+  activeTargets
 ]);
   // pieData: solo activos investables (excluye reserve y patrimony)
   const pieData = useMemo(()=>{
@@ -790,25 +887,89 @@ const v3 = useMemo(() => {
 
   return (
     <div className="portfolio-page">
+{/* ── Hero ── */}
+<section className="portfolio-card">
+  <div className="portfolio-section-head">
+    <div>
+      <h1 className="portfolio-title">Portfolio</h1>
+    </div>
+    <div className="portfolio-header-pills">
+      <div className="portfolio-rate-pill">
+        <span className="portfolio-rate-dot"/>
+        Bs {bobRate.toFixed(2)} · ~${monthlyUSD}/mes
+      </div>
+      <button type="button" onClick={handleCopy} className="portfolio-copy-btn">
+        {copied ? <Check size={13}/> : <Copy size={13}/>}
+        <span>{copied ? 'Copiado' : 'Copiar'}</span>
+      </button>
+    </div>
+  </div>
 
-      {/* ── Hero ── */}
-      <section className="portfolio-card">
-        <div className="portfolio-section-head">
-          <div>
-            <h1 className="portfolio-title">Portfolio</h1>
-          </div>
-          <div className="portfolio-header-pills">
-            <div className="portfolio-rate-pill">
-              <span className="portfolio-rate-dot"/>
-              Bs {bobRate.toFixed(2)} · ~${monthlyUSD}/mes
-            </div>
-            <button type="button" onClick={handleCopy} className="portfolio-copy-btn">
-              {copied?<Check size={13}/>:<Copy size={13}/>}
-              <span>{copied?'Copiado':'Copiar'}</span>
-            </button>
+  {/* ── Selector de perfil compacto ── */}
+  <div className="profile-selector-bar">
+    <div className="profile-pills">
+      {Object.entries(INVESTOR_PROFILES).map(([key, p]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => {
+            setInvestorProfile(key);
+            if (key !== 'personalizado') setCustomTargets({ ...p.targets });
+            if (key === 'personalizado') setShowProfilePanel(true);
+          }}
+          className={`profile-pill ${investorProfile === key ? 'active' : ''}`}
+          style={{ '--pill-color': ROLE_COLORS.core }}
+          data-profile={key}
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
+
+    {/* Popover sliders — solo personalizado */}
+    {investorProfile === 'personalizado' && showProfilePanel && (
+      <div className="profile-custom-popover">
+        <div className="profile-popover-header">
+          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(148,163,184,0.8)', letterSpacing: '0.08em' }}>
+            AJUSTE MANUAL
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {(() => {
+              const total = Object.values(customTargets).reduce((s, v) => s + v, 0);
+              return (
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: total === 100 ? '#10b981' : '#f43f5e' }}>
+                  {total}% {total === 100 ? '✓' : `(${total > 100 ? '+' : ''}${total - 100})`}
+                </span>
+              );
+            })()}
+            <button type="button" onClick={() => setShowProfilePanel(false)}
+              style={{ color: 'rgba(148,163,184,0.5)', fontSize: '1rem', lineHeight: 1 }}>✕</button>
           </div>
         </div>
-<MarketHeatmap assets={v3?.assets ?? allAssets} bobRate={bobRate}  />
+        <div className="profile-sliders">
+          {Object.keys(PORTFOLIO_TARGETS).map(role => (
+            <div key={role} className="profile-slider-row">
+              <span className="profile-slider-label" style={{ color: ROLE_COLORS[role] || '#64748b' }}>
+                {role}
+              </span>
+              <input
+                type="range" min={0} max={60} step={1}
+                value={customTargets[role] || 0}
+                onChange={e => setCustomTargets(prev => ({ ...prev, [role]: Number(e.target.value) }))}
+                style={{ accentColor: ROLE_COLORS[role] || '#3b82f6' }}
+              />
+              <span className="profile-slider-value" style={{ color: ROLE_COLORS[role] || '#fff' }}>
+                {customTargets[role] || 0}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+
+  <MarketHeatmap assets={v3?.assets ?? allAssets} bobRate={bobRate} />
+
   {/* ── Dashboard ── */}
       <section className="portfolio-card">
         <div className="portfolio-section-head">

@@ -257,7 +257,34 @@ export const PORTFOLIO_TARGETS = {
   speculative:  3,  // altcoins — cap duro
   trading:      7,  // Quantfury — cap duro
 };
-
+// ─── PERFILES DE INVERSOR ─────────────────────────────────────
+export const INVESTOR_PROFILES = {
+  defensivo: {
+    label: 'Defensivo',
+    description: 'Preservar capital. Bajo riesgo, alta liquidez.',
+    targets: { core: 45, growth: 10, defensive: 25, liquidity: 8, yield: 10, speculative: 1, trading: 1 },
+  },
+  moderado: {
+    label: 'Moderado',
+    description: 'Balance entre crecimiento y protección.',
+    targets: { core: 35, growth: 20, defensive: 15, liquidity: 5, yield: 15, speculative: 3, trading: 7 },
+  },
+  crecimiento: {
+    label: 'Crecimiento',
+    description: 'Maximizar rendimiento a largo plazo.',
+    targets: { core: 25, growth: 35, defensive: 8, liquidity: 5, yield: 12, speculative: 8, trading: 7 },
+  },
+  agresivo: {
+    label: 'Agresivo',
+    description: 'Alto riesgo, alta exposición a crypto y growth.',
+    targets: { core: 15, growth: 35, defensive: 5, liquidity: 5, yield: 10, speculative: 20, trading: 10 },
+  },
+  personalizado: {
+    label: 'Personalizado',
+    description: 'Ajusta manualmente cada porcentaje.',
+    targets: null, // se pasa desde el componente
+  },
+};
 // ─── HELPERS ─────────────────────────────────────────────────
 
 function classifyAsset(name, type, groupKey, symbol) {
@@ -278,7 +305,7 @@ if (type === 'crypto') return { role: 'growth',    assetClass: 'alternativos',  
   return                        { role: 'liquidity', assetClass: 'efectivo',       subClass: 'cash',        horizon: 'short', riskLevel: 2 };
 }
 
-function buildStrategy(role, _name, { speculativePct, cashPct, tradingPct }) {
+function buildStrategy(role, _name, { speculativePct, cashPct, tradingPct,activeTargets  }) {
   const base = {
     core:        { accumulate: true,  hold: true,  reduce: false, useForTrading: false },
     growth:      { accumulate: true,  hold: true,  reduce: false, useForTrading: false },
@@ -292,10 +319,9 @@ function buildStrategy(role, _name, { speculativePct, cashPct, tradingPct }) {
   };
 
   const strat = { ...(base[role] || base.liquidity) };
-  if (role === 'liquidity')   strat.reduce = cashPct        > THRESHOLDS.maxCashPct;
-  if (role === 'speculative') strat.reduce = speculativePct > THRESHOLDS.maxSpeculativePct;
-  if (role === 'trading')     strat.reduce = tradingPct     > THRESHOLDS.maxTradingPct;
-
+if (role === 'liquidity')   strat.reduce = cashPct        > THRESHOLDS.maxCashPct;
+  if (role === 'speculative') strat.reduce = speculativePct > (activeTargets?.speculative ?? THRESHOLDS.maxSpeculativePct);
+  if (role === 'trading')     strat.reduce = tradingPct     > (activeTargets?.trading     ?? THRESHOLDS.maxTradingPct);
   return strat;
 }
 
@@ -308,9 +334,9 @@ function buildRebalancePlan({
   byRolePct,
   investableUSD,
   monthlyUSD,
-  investableCashUSD,   // ← recibe el cash ya filtrado (sin DeFi)
+  investableCashUSD, activeTargets  // ← recibe el cash ya filtrado (sin DeFi)
 }) {
-  const deficits = Object.entries(PORTFOLIO_TARGETS)
+  const deficits = Object.entries(activeTargets)
     .map(([role, target]) => ({
       role, target,
       current: byRolePct[role] || 0,
@@ -401,8 +427,10 @@ export function buildPortfolioV3(input) {
     pendingSELL   = 0,
     grossExposure = 0,
     monthlyUSD    = 287,  // 2000 Bs / 6.96 — configurable desde AppContext
+    customTargets   = null, // para perfil personalizado
   } = input;
-
+  // Usar targets personalizados si se pasan, sino los defaults
+  const activeTargets = customTargets || PORTFOLIO_TARGETS;
   // 1. Enriquecer
   const enriched = allAssets.map(a => {
     const cls    = classifyAsset(a.name, a.type, a.groupKey, a.symbol);
@@ -474,7 +502,7 @@ export function buildPortfolioV3(input) {
   // 5. Estrategias
   const assets = enriched.map(a => ({
     ...a,
-    strategy: buildStrategy(a.classification.role, a.name, { speculativePct, cashPct, tradingPct }),
+    strategy: buildStrategy(a.classification.role, a.name, { speculativePct, cashPct, tradingPct ,activeTargets}),
   }));
 
   // 6. Métricas — AirTM DeFi usa aprPct real
@@ -503,26 +531,26 @@ export function buildPortfolioV3(input) {
   const alerts = {
     lowCash:            cashPct        < THRESHOLDS.minCashPct,
     overCash:           cashPct        > THRESHOLDS.maxCashPct,
-    underCore:          corePct        < THRESHOLDS.coreMinPct,
-    overSpeculative:    speculativePct > THRESHOLDS.maxSpeculativePct,
-    excessTrading:      tradingPct     > THRESHOLDS.maxTradingPct,
+      underCore:       corePct        < (activeTargets.core        ?? THRESHOLDS.coreMinPct),
+  overSpeculative: speculativePct > (activeTargets.speculative  ?? THRESHOLDS.maxSpeculativePct),
+  excessTrading:   tradingPct     > (activeTargets.trading      ?? THRESHOLDS.maxTradingPct),
     highRisk:           portfolioRisk  > 3.5,
     lowDiversification: hhi            > 0.25,
     noPrivateEquity:    !hasLocalPE && !(byClassPct['private_equity'] > 0),
   };
 
-  // 8. Reglas
+// ── 8. Reglas — usar activeTargets ───────────────────────
   const rules = [];
-  if (alerts.underCore)       rules.push('UNDER CORE → comprar VOO este mes');
+  if (alerts.underCore)       rules.push(`UNDER CORE → comprar ${Object.keys(activeTargets).includes('core') ? 'VOO' : 'activo core'} este mes`);
   if (alerts.overCash)        rules.push('EXCESS CASH → desplegar en core/growth progresivamente');
-  if (alerts.overSpeculative) rules.push('REDUCE ALTCOINS → mantener bajo el 5%');
-  if (alerts.excessTrading)   rules.push('REDUCE TRADING → más del 12% en Quantfury');
+  if (alerts.overSpeculative) rules.push(`REDUCE ALTCOINS → mantener bajo el ${activeTargets.speculative || 5}%`);
+  if (alerts.excessTrading)   rules.push(`REDUCE TRADING → más del ${activeTargets.trading || 12}% en Quantfury`);
   if (alerts.highRisk)        rules.push('REDUCIR RIESGO global → rotar a core/defensive');
   if (alerts.noPrivateEquity) rules.push('SIN PRIVATE EQUITY → considerar fondos SAFI o participación directa');
   if (!rules.length)          rules.push('Portfolio balanceado ✓');
 
   // 9. Rebalanceo
-  const rebalance = buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthlyUSD ,investableCashUSD});
+  const rebalance = buildRebalancePlan({ portfolioAssets, byRolePct, investableUSD, monthlyUSD ,investableCashUSD,activeTargets});
 
   return {
     generatedAt: new Date().toISOString(),
@@ -561,5 +589,6 @@ export function buildPortfolioV3(input) {
     ruleEvaluation: rules,
     rebalancePlan:  rebalance,
     assets,
+    activeTargets
   };
 }
