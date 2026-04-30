@@ -36,7 +36,7 @@ export const googleProvider = new GoogleAuthProvider();
 export const getLatestBinanceSnapshot = async () => {
   const q = query(
     collection(db, 'dailyAccountSnapshots'),
-    where('accountId', '==', 'binance_portfolio'),
+    where('accountId', '==', 'binanceportfolio'),
     orderBy('statementDate', 'desc'),
     limit(1)
   );

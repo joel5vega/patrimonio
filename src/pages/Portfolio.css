@@ -1139,3 +1139,155 @@
   font-family: 'JetBrains Mono', monospace;
   flex-shrink: 0;
 }
+
+.v4-target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.v4-target-group-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: rgba(148,163,184,0.7);
+  margin-bottom: 0.3rem;
+}
+
+.v4-target-row {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(15,23,42,0.4);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.v4-target-row:hover {
+  background: rgba(30,41,59,0.6);
+}
+
+.v4-target-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.v4-role-info {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.v4-role-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.v4-target-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-family: monospace;
+}
+
+.v4-target-track {
+  position: relative;
+  height: 6px;
+  background: rgba(148,163,184,0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.v4-target-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.v4-target-marker {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 10px;
+  background: white;
+}
+
+.v4-target-zone {
+  position: absolute;
+  height: 100%;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+}
+
+.v4-target-action {
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+  color: #94a3b8;
+}
+
+.v5-target-row {
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(15,23,42,0.45);
+  cursor: pointer;
+  will-change: transform;
+}
+
+.v5-target-row.critical {
+  box-shadow: 0 0 0 1px rgba(244,63,94,0.3);
+}
+
+.v5-target-row.warning {
+  box-shadow: 0 0 0 1px rgba(250,204,21,0.25);
+}
+
+.v5-target-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.v5-role-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.v5-target-track {
+  position: relative;
+  height: 6px;
+  background: rgba(148,163,184,0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.v5-target-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.v5-target-marker {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 10px;
+  background: white;
+}
+
+.v5-target-zone {
+  position: absolute;
+  height: 100%;
+  background: rgba(255,255,255,0.08);
+}
+
+.v5-target-action {
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+  color: #94a3b8;
+}
+.v5-target-row.critical {
+  box-shadow: 0 0 8px rgba(244,63,94,0.4);
+}

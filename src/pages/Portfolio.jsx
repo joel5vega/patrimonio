@@ -9,7 +9,31 @@ import { useApp } from '../context/AppContext';
 import { buildPortfolioV3, PORTFOLIO_TARGETS, MANUAL_RULES,INVESTOR_PROFILES } from '../utils/portfolioAnalysis';
 import './Portfolio.css';
 import MarketHeatmap from '../components/MarketHeatmap';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
+const rowVariants = {
+  hidden: { opacity: 0, y: 8, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.25, ease: 'easeOut' }
+  },
+  exit: {
+    opacity: 0,
+    y: -6,
+    scale: 0.98,
+    transition: { duration: 0.18 }
+  }
+};
+
+const groupVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.04 }
+  }
+};
 const STABLES = ['USDT','USDC','BUSD','DAI','FDUSD'];
 
 const CRYPTO_ICONS = {
@@ -62,7 +86,99 @@ const TypeIcon = ({ type, symbol }) => {
     </span>
   );
 };
+const TargetRow = ({ role, target, current, status, diff, color, onClick }) => {
+  const isUpperBound = role === 'speculative' || role === 'trading';
 
+  return (
+    <motion.div
+      layout
+      variants={rowVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={`v5-target-row ${status}`}
+      onClick={onClick}
+    >
+      {/* HEADER */}
+      <div className="v5-target-head">
+        <div className="v5-role-info">
+          <motion.span
+            className="v5-role-dot"
+            style={{ background: color }}
+            layoutId={`dot-${role}`}
+          />
+          <span className="v5-role-name" style={{ color }}>
+            {role}
+          </span>
+        </div>
+
+        <div className="v5-target-meta">
+          <span className="v5-target-current">{current.toFixed(1)}%</span>
+          <span className="v5-target-goal">
+            {isUpperBound ? '≤' : '≥'}{target}%
+          </span>
+        </div>
+      </div>
+
+      {/* TRACK */}
+      <div className="v5-target-track">
+        {/* zona objetivo */}
+        <motion.div
+          className="v5-target-zone"
+          layout
+          initial={false}
+          animate={{
+            left: `${Math.max(target - 3, 0)}%`,
+            width: `6%`,
+          }}
+        />
+
+        {/* fill */}
+        <motion.div
+          className="v5-target-fill"
+          layout
+          initial={false}
+          animate={{
+            width: `${Math.min(current, 100)}%`,
+            background:
+              status === 'critical' ? '#f43f5e' :
+              status === 'warning' ? '#facc15' :
+              color,
+          }}
+          transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+        />
+
+        {/* marker */}
+        <motion.div
+          className="v5-target-marker"
+          layout
+          initial={false}
+          animate={{
+            left: `${Math.min(target, 100)}%`,
+          }}
+        />
+      </div>
+
+      {/* ACTION */}
+      <AnimatePresence>
+        {Math.abs(diff) > 0.5 && (
+          <motion.div
+            className="v5-target-action"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+          >
+            {diff > 0
+              ? `Reducir ${diff.toFixed(1)}%`
+              : `Aumentar ${Math.abs(diff).toFixed(1)}%`}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 // ─── StatCard ─────────────────────────────────────────────────
 const StatCard = ({ label, value, tone, sub }) => (
   <div className="portfolio-stat-card">
@@ -182,11 +298,11 @@ const RoleTreemap = ({ byRole, byRoleMap }) => {
                 <span className="role-chip__name">{role}</span>
                 <span className="role-chip__pct">{pct.toFixed(1)}%</span>
                 {/* Target indicator */}
-                {activeTargets[role]!=null&&(
+                {/* {activeTargets[role]!=null&&(
                   <span style={{fontSize:'0.6rem',color:'rgba(148,163,184,0.6)',marginLeft:'auto'}}>
                     meta {activeTargets[role]}%
                   </span>
-                )}
+                )} */}
               </div>
               {items.length>0&&(
                 <div className="role-chip__assets">
@@ -456,9 +572,9 @@ const InvestorProfilePanel = ({ profile, onProfileChange, customTargets, onCusto
   );
 };
 // ─── Dashboard ────────────────────────────────────────────────
-const Dashboard = ({ v3 }) => {
+const Dashboard = ({ v3, investorProfile, onProfileChange, customTargets, onCustomChange, showProfilePanel, onTogglePanel }) => {
   if (!v3) return null;
-  const { portfolio, alerts, ruleEvaluation, rebalancePlan, assets, risk, totals,activeTargets } = v3;
+  const { portfolio, alerts, ruleEvaluation, rebalancePlan, assets, risk, totals, activeTargets } = v3;
   const byRole  = portfolio?.byRole  || {};
   const byClass = portfolio?.byAssetClass || {};
 
@@ -496,44 +612,123 @@ const Dashboard = ({ v3 }) => {
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
-    
- {/* Objetivo vs actual */} <StatusBar totals={totals} risk={risk} alerts={alerts}/>
-      <Section eyebrow="Rebalanceo" title="Objetivo vs actual" defaultOpen={true}>
-        <div className="v3-target-list">
-          {Object.entries(activeTargets ||PORTFOLIO_TARGETS).map(([role,target])=>{
-            const current=byRole[role]||0;
-            const ok=role==='speculative'||role==='trading'?current<=target:current>=target;
-            const dir=role==='speculative'||role==='trading'?'≤':'≥';
-            const color=ROLE_COLORS[role]||'#fff';
-            return (
-              <div key={role} className="v3-target-row">
-                <div className="v3-target-head">
-                  <div className="v3-role-info">
-                    <span className="v3-role-dot" style={{background:color}}/>
-                    <span className="v3-role-name" style={{color}}>{role}</span>
-                  </div>
-                  <div className="v3-target-meta">
-                    <span className="v3-target-goal">{dir}{target}%</span>
-                    <span className="v3-target-current">{current.toFixed(1)}%</span>
-                    {ok
-                      ?<CheckCircle2 size={11} style={{color:'#10b981'}}/>
-                      :<XCircle size={11} style={{color:'#f43f5e'}}/>}
-                  </div>
-                </div>
-                <div className="v3-target-track">
-                  <div className="v3-target-fill" style={{width:`${Math.min(current,100)}%`,background:ok?color:'#f43f5e',opacity:0.75}}/>
-                  <div className="v3-target-marker" style={{left:`${Math.min(target,100)}%`}}/>
-                </div>
-                {!ok&&(
-                  <span className="v3-target-diff">
-                    {(current-target)>0?'+':''}{(current-target).toFixed(1)}% vs objetivo
-                  </span>
-                )}
-              </div>
-            );
-          })}
+      {/* ── Selector de perfil ── */}
+      <div className="profile-selector-bar">
+        <div className="profile-pills">
+          {Object.entries(INVESTOR_PROFILES).map(([key, p]) => (
+            <button key={key} type="button"
+              onClick={() => {
+                onProfileChange(key);
+                if (key !== 'personalizado') onCustomChange({ ...p.targets });
+                if (key === 'personalizado') onTogglePanel(true);
+              }}
+              className={`profile-pill${investorProfile === key ? ' active' : ''}`}
+              style={{ '--pill-color': ROLE_COLORS?.core }}
+              data-profile={key}>
+              {p.label}
+            </button>
+          ))}
         </div>
-      </Section>
+
+        {/* Popover sliders — solo perfil personalizado */}
+        {investorProfile === 'personalizado' && showProfilePanel && (
+          <div className="profile-custom-popover">
+            <div className="profile-popover-header">
+              <span style={{ fontSize:'0.7rem', fontWeight:700, color:'rgba(148,163,184,0.8)', letterSpacing:'0.08em' }}>
+                AJUSTE MANUAL
+              </span>
+              <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+                {(() => {
+                  const total = Object.values(customTargets).reduce((s, v) => s + v, 0);
+                  return (
+                    <span style={{ fontSize:'0.68rem', fontWeight:700, color: total === 100 ? '#10b981' : '#f43f5e' }}>
+                      {total}% {total !== 100 ? (total > 100 ? `(+${total - 100} vs 100)` : `(${total - 100} vs 100)`) : '✓'}
+                    </span>
+                  );
+                })()}
+                <button type="button" onClick={() => onTogglePanel(false)}
+                  style={{ color:'rgba(148,163,184,0.5)', fontSize:'1rem', lineHeight:1 }}>✕</button>
+              </div>
+            </div>
+            <div className="profile-sliders">
+              {Object.keys(PORTFOLIO_TARGETS).map((role) => (
+                <div key={role} className="profile-slider-row">
+                  <span className="profile-slider-label" style={{ color: ROLE_COLORS[role] || '#64748b' }}>{role}</span>
+                  <input type="range" min={0} max={60} step={1}
+                    value={customTargets[role] || 0}
+                    onChange={e => onCustomChange(prev => ({ ...prev, [role]: Number(e.target.value) }))}
+                    style={{ accentColor: ROLE_COLORS[role] || '#3b82f6' }} />
+                  <span className="profile-slider-value" style={{ color: ROLE_COLORS[role] || '#fff' }}>
+                    {customTargets[role] || 0}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+    <StatusBar totals={totals} risk={risk} alerts={alerts}/>
+ {/* Objetivo vs actual */} 
+      <Section eyebrow="Rebalanceo" title="Objetivo vs actual" defaultOpen={true}>
+  {(() => {
+    const categorized = Object.entries(activeTargets || PORTFOLIO_TARGETS).map(([role, target]) => {
+      const current = byRole[role] || 0;
+      const isUpperBound = role === 'speculative' || role === 'trading';
+      const diff = current - target;
+
+      let status = 'ok';
+
+      if (isUpperBound) {
+        if (current > target + 2) status = 'critical';
+        else if (current > target) status = 'warning';
+      } else {
+        if (current < target - 3) status = 'critical';
+        else if (current < target) status = 'warning';
+      }
+
+      return { role, target, current, diff, status };
+    });
+
+    const groups = {
+      critical: categorized.filter(x => x.status === 'critical'),
+      warning: categorized.filter(x => x.status === 'warning'),
+      ok: categorized.filter(x => x.status === 'ok'),
+    };
+
+    const scrollToPlan = () => {
+      const el = document.querySelector('.v3-plan-stack');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    return (
+      <div className="v4-target-list">
+        {['critical', 'warning', 'ok'].map(group => {
+          if (!groups[group].length) return null;
+
+          return (
+            <div key={group} className={`v4-target-group ${group}`}>
+              <p className="v4-target-group-title">
+                {group === 'critical' && '🔴 Ajuste urgente'}
+                {group === 'warning' && '🟡 Ajuste menor'}
+                {group === 'ok' && '🟢 En objetivo'}
+              </p>
+
+              {groups[group].map(item => (
+                <TargetRow
+                  key={item.role}
+                  {...item}
+                  color={ROLE_COLORS[item.role] || '#fff'}
+                  onClick={group !== 'ok' ? scrollToPlan : undefined}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    );
+  })()}
+</Section>
  
       {/* Distribución por rol */}
       <Section eyebrow="Motor de reglas" title="Distribución por rol" defaultOpen={false}>
@@ -706,7 +901,16 @@ const [showProfilePanel, setShowProfilePanel] = useState(false);
 
   const stableAssets   = useMemo(()=>cryptoAssets.filter(a=>STABLES.includes(a.symbol)&&a.netExposureUSD>0),[cryptoAssets]);
   const volatileAssets = useMemo(()=>cryptoAssets.filter(a=>!STABLES.includes(a.symbol)&&(a.netExposureUSD>0||a.pendingBuyUSD>0)),[cryptoAssets]);
-
+// cryptoAssets.forEach(a => {
+//   if (a.symbol === 'BTC') {
+//     console.log('BTC DEBUG:', {
+//       quantity: a.quantity,
+//       price: a.currentPrice,
+//       netExposureUSD: a.netExposureUSD,
+//       computed: a.quantity * a.currentPrice,
+//     });
+//   }
+// });
   const groupDefinitions = useMemo(()=>{
     const qAssets = (manualAssets??[]).filter(isQuantfury);
    const mAssets = manualAssets?.filter(a => {
@@ -729,21 +933,44 @@ const [showProfilePanel, setShowProfilePanel] = useState(false);
   },[manualAssets]);
 
   const allAssets = useMemo(()=>[
-    ...volatileAssets.map(a=>({
-      id:`crypto-${a.symbol}`,groupKey:'crypto',type:'crypto',
-      symbol:a.symbol,name:a.symbol,
-      subtitle:`${a.quantity?.toFixed(4)??0} ${a.symbol}`,
-      price:a.currentPrice,
-      valueUSD:a.netExposureUSD+(a.pendingBuyUSD??0),
-      pnl:null,pnlPct:null,
-      extra:a.pendingBuyUSD>0?`${Number(a.pendingBuyUSD).toLocaleString(undefined,{maximumFractionDigits:2})} orden`:null,
-    })),
-    ...stableAssets.map(a=>({
-      id:`stable-${a.symbol}`,groupKey:'stable',type:'stable',
-      symbol:a.symbol,name:`${a.symbol} Cash`,
-      subtitle:`${a.quantity?.toFixed(2)??0} ${a.symbol}`,
-      price:1,valueUSD:a.netExposureUSD,pnl:null,pnlPct:null,extra:null,
-    })),
+    // ── Crypto volátil (BTC, ETH, etc.) ──
+  ...volatileAssets.map(a => ({
+    id:       `crypto-${a.symbol}`,
+    groupKey: 'crypto',
+    type:     'crypto',
+    symbol:   a.symbol,
+    name:     a.symbol,
+    subtitle: `${a.quantity?.toFixed(4) ?? 0} ${a.symbol}`,
+    price:    a.currentPrice,
+    // ✅ FIX: recomputa desde quantity × price, no de netExposureUSD
+    valueUSD: (a.quantity > 0 && a.currentPrice > 0)
+      ? Number((a.quantity * a.currentPrice).toFixed(2))
+      : a.netExposureUSD,
+    pnl:     null,
+    pnlPct:  null,
+    extra:   a.pendingBuyUSD > 0
+      ? `Orden activa: $${Number(a.pendingBuyUSD).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+      : null,
+  })),
+
+  // ── Stablecoins (USDT, USDC, etc.) ──
+  ...stableAssets.map(a => ({
+    id:       `stable-${a.symbol}`,
+    groupKey: 'stable',
+    type:     'stable',
+    symbol:   a.symbol,
+    name:     `${a.symbol} Cash`,
+    subtitle: `${a.quantity?.toFixed(2) ?? 0} ${a.symbol}`,
+    price:    1,
+    // ✅ FIX: stablecoins siempre son $1 por unidad
+    valueUSD: a.quantity > 0
+      ? Number(a.quantity.toFixed(2))
+      : a.netExposureUSD,
+    pnl:     null,
+    pnlPct:  null,
+    extra:   null,
+  })),
+  
     ...inversionPositions.map(p=>({
       id:`etf-${p.id}`,groupKey:'etf',type:'etf',
       symbol:p.symbol,name:p.symbol,
@@ -757,7 +984,13 @@ const [showProfilePanel, setShowProfilePanel] = useState(false);
   const rule = MANUAL_RULES[(a.name || '').toLowerCase().trim()];
   const role = rule?.role;
   const isNonInvestable = role === 'reserve' || role === 'patrimony';
-
+console.table(cryptoAssets.map(a => ({
+  symbol: a.symbol,
+  qty: a.quantity,
+  price: a.currentPrice,
+  computed: a.quantity * a.currentPrice,
+  netExposure: a.netExposureUSD
+})));
   return {
     id: `manual-${a.id}`, rawId: a.id,
     groupKey: isQuantfury(a) ? 'quantfury' : `manual-${a.id}`,
@@ -786,12 +1019,10 @@ const [showProfilePanel, setShowProfilePanel] = useState(false);
   },[groupDefinitions,allAssets]);
 
   const totalBrutoUSD = useMemo(()=>allAssets.reduce((s,a)=>s+(a.valueUSD||0),0),[allAssets]);
-const activeTargets = useMemo(() =>
-  investorProfile === 'personalizado'
-    ? customTargets
-    : { ...(INVESTOR_PROFILES[investorProfile]?.targets ?? PORTFOLIO_TARGETS) }
-    //  ↑ spread crea nueva referencia siempre
-, [investorProfile, customTargets]);
+const activeTargets = useMemo(() => {
+  if (investorProfile === 'personalizado') return customTargets;
+  return INVESTOR_PROFILES[investorProfile]?.targets ?? PORTFOLIO_TARGETS;
+}, [investorProfile, customTargets])
 const v3 = useMemo(() => {
 
   return buildPortfolioV3({
@@ -815,7 +1046,7 @@ const v3 = useMemo(() => {
 ]);
   // pieData: solo activos investables (excluye reserve y patrimony)
   const pieData = useMemo(()=>{
-    const cryptoVal = volatileAssets.reduce((s,a)=>s+a.netExposureUSD+(a.pendingBuyUSD??0),0);
+    const cryptoVal = volatileAssets.reduce((s,a)=>s+a.netExposureUSD,0);
     const stableVal = stableAssets.reduce((s,a)=>s+a.netExposureUSD,0);
     const etfVal    = inversionPositions.reduce((s,p)=>s+(p.valueUSD??0),0);
     const qAssets   = (manualAssets??[]).filter(isQuantfury);
@@ -905,68 +1136,7 @@ const v3 = useMemo(() => {
     </div>
   </div>
 
-  {/* ── Selector de perfil compacto ── */}
-  <div className="profile-selector-bar">
-    <div className="profile-pills">
-      {Object.entries(INVESTOR_PROFILES).map(([key, p]) => (
-        <button
-          key={key}
-          type="button"
-          onClick={() => {
-            setInvestorProfile(key);
-            if (key !== 'personalizado') setCustomTargets({ ...p.targets });
-            if (key === 'personalizado') setShowProfilePanel(true);
-          }}
-          className={`profile-pill ${investorProfile === key ? 'active' : ''}`}
-          style={{ '--pill-color': ROLE_COLORS.core }}
-          data-profile={key}
-        >
-          {p.label}
-        </button>
-      ))}
-    </div>
-
-    {/* Popover sliders — solo personalizado */}
-    {investorProfile === 'personalizado' && showProfilePanel && (
-      <div className="profile-custom-popover">
-        <div className="profile-popover-header">
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(148,163,184,0.8)', letterSpacing: '0.08em' }}>
-            AJUSTE MANUAL
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {(() => {
-              const total = Object.values(customTargets).reduce((s, v) => s + v, 0);
-              return (
-                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: total === 100 ? '#10b981' : '#f43f5e' }}>
-                  {total}% {total === 100 ? '✓' : `(${total > 100 ? '+' : ''}${total - 100})`}
-                </span>
-              );
-            })()}
-            <button type="button" onClick={() => setShowProfilePanel(false)}
-              style={{ color: 'rgba(148,163,184,0.5)', fontSize: '1rem', lineHeight: 1 }}>✕</button>
-          </div>
-        </div>
-        <div className="profile-sliders">
-          {Object.keys(PORTFOLIO_TARGETS).map(role => (
-            <div key={role} className="profile-slider-row">
-              <span className="profile-slider-label" style={{ color: ROLE_COLORS[role] || '#64748b' }}>
-                {role}
-              </span>
-              <input
-                type="range" min={0} max={60} step={1}
-                value={customTargets[role] || 0}
-                onChange={e => setCustomTargets(prev => ({ ...prev, [role]: Number(e.target.value) }))}
-                style={{ accentColor: ROLE_COLORS[role] || '#3b82f6' }}
-              />
-              <span className="profile-slider-value" style={{ color: ROLE_COLORS[role] || '#fff' }}>
-                {customTargets[role] || 0}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
+  
 
   <MarketHeatmap assets={v3?.assets ?? allAssets} bobRate={bobRate} />
 
@@ -980,7 +1150,12 @@ const v3 = useMemo(() => {
           <BarChart2 size={16} style={{color:'rgba(255,255,255,0.2)'}}/>
         </div>
         <div style={{padding:'0 1.5rem 1.5rem'}}>
-          <Dashboard v3={v3}/>
+          <Dashboard v3={v3}  investorProfile={investorProfile}
+  onProfileChange={setInvestorProfile}
+  customTargets={customTargets}
+  onCustomChange={setCustomTargets}
+  showProfilePanel={showProfilePanel}
+  onTogglePanel={setShowProfilePanel}/>
         </div>
       </section>
         {/* Toggles de grupos */}
