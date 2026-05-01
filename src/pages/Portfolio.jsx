@@ -383,7 +383,7 @@ const MonthlyPlanPanel = ({ rebalancePlan }) => {
   const { monthly=[], lumpSum=[], monthlyUSD=287, deployableCash=0 } = rebalancePlan;
 
   return (
-    <div style={{display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+    <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
 
       {/* Plan mensual */}
       {monthly.length>0&&(
@@ -488,7 +488,7 @@ const InvestorProfilePanel = ({ profile, onProfileChange, customTargets, onCusto
   const isOver = total !== 100;
 
   return (
-    <div style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ padding: '1rem 1.5rem', display: 'flex', flexDirection: 'row', gap: '1rem' }}>
       {/* Selector de perfil */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
         {Object.entries(INVESTOR_PROFILES).map(([key, p]) => (
@@ -523,7 +523,7 @@ const InvestorProfilePanel = ({ profile, onProfileChange, customTargets, onCusto
 
       {/* Sliders de ajuste manual */}
       {profile === 'personalizado' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem' }}>
           {roles.map(role => (
             <div key={role} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span style={{
@@ -584,7 +584,7 @@ const Dashboard = ({ v3, investorProfile, onProfileChange, customTargets, onCust
     {key:'overCash',        label:'Exceso de caja',         desc:'Desplegar en core/growth',            critical:false},
     {key:'overSpeculative', label:'Sobre-especulativo',     desc:'Reducir altcoins al 5%',              critical:true},
     {key:'excessTrading',   label:'Trading excesivo',       desc:'Concentrar Quantfury en 2–3 posiciones', critical:false},
-    {key:'highRisk',        label:'Riesgo alto',            desc:'Rotar a core/defensive',              critical:true},
+    {key:'highRisk',        label:'Riesgo alto',            desc:'Rotar a co       re/defensive',              critical:true},
     {key:'lowDiversification',label:'Baja diversificación',desc:'Diversificar más',                    critical:false},
     {key:'noPrivateEquity', label:'Sin private equity',     desc:'Considerar más fondos SAFI',          critical:false},
   ];
@@ -668,7 +668,7 @@ const Dashboard = ({ v3, investorProfile, onProfileChange, customTargets, onCust
         )}
       </div>
 
-    <StatusBar totals={totals} risk={risk} alerts={alerts}/>
+    {/* <StatusBar totals={totals} risk={risk} alerts={alerts}/> */}
  {/* Objetivo vs actual */} 
       <Section eyebrow="Rebalanceo" title="Objetivo vs actual" defaultOpen={true}>
   {(() => {
@@ -730,10 +730,7 @@ const Dashboard = ({ v3, investorProfile, onProfileChange, customTargets, onCust
   })()}
 </Section>
  
-      {/* Distribución por rol */}
-      <Section eyebrow="Motor de reglas" title="Distribución por rol" defaultOpen={false}>
-        <RoleTreemap byRole={byRole} byRoleMap={byRoleMap}activeTargets={activeTargets || PORTFOLIO_TARGETS}/>
-      </Section>
+     
 
      
 
@@ -754,49 +751,62 @@ const Dashboard = ({ v3, investorProfile, onProfileChange, customTargets, onCust
       </Section>
 
       {/* Alertas */}
-      <Section
-        eyebrow="Sistema de alertas"
-        title="Panel de alertas"
-        defaultOpen={alertDefs.some(a=>alerts?.[a.key]&&a.critical)}
-        badge={alertDefs.some(a=>alerts?.[a.key]&&a.critical)&&<span className="v3-badge critical">!</span>}
-      >
-        <div className="v3-alert-stack">
-          {alertDefs.map(({key,label,desc,critical})=>{
-            const active=alerts?.[key];
-            const cls=active?(critical?'critical':'warning'):'ok';
-            return (
-              <div key={key} className={`v3-alert ${cls}`}>
-                <div className="v3-alert-icon">
-                  {active?(critical?<XCircle size={16}/>:<AlertTriangle size={16}/>):<CheckCircle2 size={16}/>}
-                </div>
-                <div>
-                  <div className="v3-alert-title">
-                    {label}
-                    {active&&<span className="v3-mini-badge">{critical?'CRÍTICO':'AVISO'}</span>}
-                  </div>
-                  {active&&<p className="v3-alert-desc">{desc}</p>}
-                </div>
-              </div>
-            );
-          })}
+{(() => {
+  const activeAlerts = alertDefs.filter(({ key }) => alerts?.[key]);
+  const hasActive = activeAlerts.length > 0 || showTradingWarning;
 
-          {/* Aviso de fragmentación Quantfury */}
-          {showTradingWarning&&(
-            <div className="v3-alert warning">
-              <div className="v3-alert-icon"><AlertTriangle size={16}/></div>
-              <div>
-                <div className="v3-alert-title">
-                  Quantfury fragmentado
-                  <span className="v3-mini-badge">AVISO</span>
-                </div>
-                <p className="v3-alert-desc">
-                  {tradingAssets.length} posiciones pequeñas — concentrar en 2–3 con mayor convicción
-                </p>
-              </div>
+  if (!hasActive) return (
+    <Section eyebrow="Sistema de alertas" title="Panel de alertas" defaultOpen={false}>
+      <div className="v3-alert ok" style={{ justifyContent: 'center', padding: '0.75rem' }}>
+        <CheckCircle2 size={14} />
+        <span style={{ fontSize: '0.75rem', color: 'rgba(148,163,184,0.6)' }}>
+          Todo en orden — sin alertas activas
+        </span>
+      </div>
+    </Section>
+  );
+
+  return (
+    <Section
+      eyebrow="Sistema de alertas"
+      title="Panel de alertas"
+      defaultOpen={activeAlerts.some(a => a.critical)}
+      badge={activeAlerts.some(a => a.critical) && <span className="v3-badge critical">!</span>}
+    >
+      <div className="v3-alert-stack">
+        {activeAlerts.map(({ key, label, desc, critical }) => (
+          <div key={key} className={`v3-alert ${critical ? 'critical' : 'warning'}`}>
+            <div className="v3-alert-icon">
+              {critical ? <XCircle size={16} /> : <AlertTriangle size={16} />}
             </div>
-          )}
-        </div>
-      </Section>
+            <div>
+              <div className="v3-alert-title">
+                {label}
+                <span className="v3-mini-badge">{critical ? 'CRÍTICO' : 'AVISO'}</span>
+              </div>
+              <p className="v3-alert-desc">{desc}</p>
+            </div>
+          </div>
+        ))}
+
+        {showTradingWarning && (
+          <div className="v3-alert warning">
+            <div className="v3-alert-icon"><AlertTriangle size={16} /></div>
+            <div>
+              <div className="v3-alert-title">
+                Quantfury fragmentado
+                <span className="v3-mini-badge">AVISO</span>
+              </div>
+              <p className="v3-alert-desc">
+                {tradingAssets.length} posiciones pequeñas — concentrar en 2–3 con mayor convicción
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </Section>
+  );
+})()}
 
       {/* Flujo de capital */}
       <div className="v3-flow-card">
@@ -811,20 +821,11 @@ const Dashboard = ({ v3, investorProfile, onProfileChange, customTargets, onCust
           ))}
         </div>
       </div>
-
-      {/* Reglas disparadas */}
-      {ruleEvaluation?.length>0&&(
-        <Section eyebrow="Decisiones" title="Reglas disparadas">
-          <ol className="v3-rules-list">
-            {ruleEvaluation.map((r,i)=>(
-              <li key={i} className="v3-rule-row">
-                <span className="v3-rule-num">{i+1}</span>
-                <span className={`v3-rule-text ${r.includes('✓')?'ok':''}`}>{r}</span>
-              </li>
-            ))}
-          </ol>
-        </Section>
-      )}
+ {/* Distribución por rol */}
+      <Section eyebrow="Motor de reglas" title="Distribución por rol" defaultOpen={false}>
+        <RoleTreemap byRole={byRole} byRoleMap={byRoleMap}activeTargets={activeTargets || PORTFOLIO_TARGETS}/>
+      </Section>
+     
     </div>
   );
 };
@@ -901,16 +902,7 @@ const [showProfilePanel, setShowProfilePanel] = useState(false);
 
   const stableAssets   = useMemo(()=>cryptoAssets.filter(a=>STABLES.includes(a.symbol)&&a.netExposureUSD>0),[cryptoAssets]);
   const volatileAssets = useMemo(()=>cryptoAssets.filter(a=>!STABLES.includes(a.symbol)&&(a.netExposureUSD>0||a.pendingBuyUSD>0)),[cryptoAssets]);
-// cryptoAssets.forEach(a => {
-//   if (a.symbol === 'BTC') {
-//     console.log('BTC DEBUG:', {
-//       quantity: a.quantity,
-//       price: a.currentPrice,
-//       netExposureUSD: a.netExposureUSD,
-//       computed: a.quantity * a.currentPrice,
-//     });
-//   }
-// });
+
   const groupDefinitions = useMemo(()=>{
     const qAssets = (manualAssets??[]).filter(isQuantfury);
    const mAssets = manualAssets?.filter(a => {

@@ -33,7 +33,7 @@ const SI_SLUGS = {
   XRP:'xrp', ADA:'cardano', AVAX:'avalanche', DOT:'polkadot',
   MATIC:'polygon', UNI:'uniswap', AAVE:'aave', LINK:'chainlink',
   DOGE:'dogecoin', USDT:'tether', USDC:'usdcoin', DAI:'dai',
-  MELI:'mercadolibre', // <-- Agregado Mercado Libre (Logo oficial)
+  MELI:'mercadolibre',
 };
 
 const SI_COLORS = {
@@ -41,7 +41,7 @@ const SI_COLORS = {
   XRP:'#346aa9', ADA:'#0033ad', AVAX:'#e84142', DOT:'#e6007a',
   MATIC:'#8247e5', UNI:'#ff007a', AAVE:'#b6509e', LINK:'#2a5ada',
   DOGE:'#c2a633', USDT:'#26a17b', USDC:'#2775ca', DAI:'#f5ac37',
-  MELI:'#FFE600', // <-- Color oficial amarillo de Mercado Libre
+  MELI:'#FFE600',
 };
 
 function AssetIcon({ asset, size = 16 }) {
@@ -74,11 +74,9 @@ const SYMBOL_LUCIDE = {
   GLD:{Icon:Gem,color:'#eab308'}, BND:{Icon:Lock,color:'#facc15'},
   TIP:{Icon:Shield,color:'#facc15'}, VNQ:{Icon:Building2,color:'#f97316'},
   SGOV:{Icon:DollarSign,color:'#06b6d4'},
-  
-  /* --- Nuevos agregados --- */
-  MU:   {Icon:Cpu, color:'#60a5fa'},         // Micron: Tecnología
-  LITE: {Icon:Cpu, color:'#60a5fa'},         // Lumentum: Tecnología
-  MELI: {Icon:ShoppingBag, color:'#facc15'}, // Fallback por si falla el logo oficial
+  MU:   {Icon:Cpu, color:'#60a5fa'},
+  LITE: {Icon:Cpu, color:'#60a5fa'},
+  MELI: {Icon:ShoppingBag, color:'#facc15'},
 };
 
 const SECTOR_META = {
@@ -244,19 +242,18 @@ function HeatTile({ asset, roleColor, isSmallBlock }) {
   }, []);
   const onLeave = useCallback(() => { setHover(false); setAnchor(null); }, []);
 
-  const pct       = asset.pnlPct ?? null;
-  const bg        = tileBg(pct, asset);
-  const pctLabel  = fmtPct(pct);
-  const ticker    = (asset.symbol || '').split('/')[0] || asset.name?.slice(0, 5).toUpperCase() || '?';
-  
-  const isMini = isSmallBlock || asset.valueUSD < 500;
+  const pct      = asset.pnlPct ?? null;
+  const bg       = tileBg(pct, asset);
+  const pctLabel = fmtPct(pct);
+  const ticker   = (asset.symbol || '').split('/')[0] || asset.name?.slice(0, 5).toUpperCase() || '?';
+  const isMini   = isSmallBlock || asset.valueUSD < 500;
 
   return (
     <div
       ref={tileRef}
       className={`hm-tile ${isMini ? 'hm-tile--mini' : ''}`}
       style={{
-        flex: `${asset.valueUSD} 1 auto`, 
+        flex: `${asset.valueUSD} 1 auto`,
         background: bg,
         border: `1px solid rgba(255,255,255,0.06)`,
         boxShadow: hover ? `inset 0 0 0 1px rgba(255,255,255,0.3), 0 0 12px ${roleColor}40` : 'none',
@@ -267,8 +264,6 @@ function HeatTile({ asset, roleColor, isSmallBlock }) {
       {!isMini && asset.weightPct != null && (
         <span className="hm-tile__weight">{asset.weightPct.toFixed(1)}%</span>
       )}
-      
-      {/* Contenedor interno que rotará automáticamente si es necesario */}
       <div className="hm-tile__inner">
         <div className="hm-tile__icon-wrap">
           <AssetIcon asset={asset} size={isMini ? 12 : 17} />
@@ -280,27 +275,27 @@ function HeatTile({ asset, roleColor, isSmallBlock }) {
           </span>
         )}
       </div>
-
       {hover && anchorRect && (
         <TooltipPortal asset={asset} anchorRect={anchorRect} pct={pct} pctLabel={pctLabel} />
       )}
     </div>
   );
 }
+
 /* ─── Role Block ─────────────────────────────────────────── */
 function RoleBlock({ role, assets, roleTotalVal, totalGlobalVal }) {
   const meta = ROLE_META[role] ?? { color: '#64748b', Icon: Briefcase, label: role };
   const roleGlobalPct = totalGlobalVal > 0 ? (roleTotalVal / totalGlobalVal) * 100 : 0;
-  const sorted = [...assets].sort((a, b) => (b.valueUSD||0) - (a.valueUSD||0));
-  
-  // Si el bloque representa menos del 12% global, colapsamos el diseño de sus tiles
+
+  // FIX: tiles ordenados de mayor a menor valor dentro del bloque
+  const sorted = [...assets].sort((a, b) => (b.valueUSD || 0) - (a.valueUSD || 0));
   const isSmallBlock = roleGlobalPct < 12;
 
   return (
     <div
       className="hm-group"
       style={{
-        flex: `${roleGlobalPct} 0 0`, // Escala su anchura dentro de la fila según su peso
+        flex: `${roleGlobalPct} 0 0`,
         '--role-color': meta.color,
         border: `2px solid ${meta.color}88`,
         boxShadow: `0 4px 20px -2px ${meta.color}15`,
@@ -309,19 +304,17 @@ function RoleBlock({ role, assets, roleTotalVal, totalGlobalVal }) {
       <div className="hm-group__head" style={{ background: `${meta.color}1a`, borderBottom: `1px solid ${meta.color}40` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <meta.Icon size={12} strokeWidth={2.5} color={meta.color} />
-          <span className="hm-group__title" style={{ color: meta.color }}>{meta.label.toUpperCase()}</span>
+          <span className="hm-group__title" style={{ color: meta.color }}>{meta.label.toUpperCase().slice(0, 7)}</span>
         </div>
         <span className="hm-group__pct" style={{ color: meta.color, opacity: 0.8 }}>{roleGlobalPct.toFixed(1)}%</span>
       </div>
-
-      {/* Aquí es donde Trading brilla: flex-wrap permite saltos de línea suaves */}
       <div className="hm-group__content">
         {sorted.map(a => (
-          <HeatTile 
-            key={a.id || a.name} 
-            asset={a} 
-            roleColor={meta.color} 
-            isSmallBlock={isSmallBlock} 
+          <HeatTile
+            key={a.id || a.name}
+            asset={a}
+            roleColor={meta.color}
+            isSmallBlock={isSmallBlock}
           />
         ))}
       </div>
@@ -354,25 +347,30 @@ export default function MarketHeatmap({ assets }) {
     byRole[role].total += (a.valueUSD || 0);
   });
 
+  // FIX: roles ordenados de mayor a menor peso ANTES de distribuir en filas
   const sortedRoles = Object.entries(byRole)
-    .sort((a, b) => b[1].total - a[1].total)
+    .sort((a, b) => b[1].total - a[1].total)   // ← descendente por valor
     .map(([key, data]) => ({ key, ...data }));
 
-  // Algoritmo de Bin Packing (Treemap) para agrupar roles en 3 filas equilibradas
+  // Bin packing en 3 filas equilibradas
   const rows = [
     { total: 0, roles: [] },
     { total: 0, roles: [] },
-    { total: 0, roles: [] }
+    { total: 0, roles: [] },
   ];
 
   for (const r of sortedRoles) {
-    // Busca la fila que tenga el menor acumulado hasta ahora para meter el rol ahí
     const targetRow = rows.reduce((min, row) => row.total < min.total ? row : min, rows[0]);
     targetRow.roles.push(r);
     targetRow.total += r.total;
   }
 
-  // Ordenar filas de mayor peso (arriba) a menor peso (abajo)
+  // FIX: dentro de cada fila, ordenar bloques de mayor a menor (izquierda → derecha)
+  rows.forEach(row => {
+    row.roles.sort((a, b) => b.total - a.total);
+  });
+
+  // Filas de mayor peso arriba
   rows.sort((a, b) => b.total - a.total);
 
   const up     = investible.filter(a => (a.pnlPct ?? 0) >= 0).length;
@@ -394,10 +392,10 @@ export default function MarketHeatmap({ assets }) {
         {rows.map((row, idx) => {
           if (row.total === 0) return null;
           return (
-            <div 
-              key={idx} 
-              className="hm-row" 
-              style={{ flex: `${row.total} 0 0` }} /* El ALTO de la fila depende de su peso total */
+            <div
+              key={idx}
+              className="hm-row"
+              style={{ flex: `${row.total} 0 0` }}
             >
               {row.roles.map(r => (
                 <RoleBlock
