@@ -448,7 +448,7 @@ const WealthHistory = () => {
           Patrimonio Total (Todo)
         </p>
         <p className="text-4xl font-black">
-          ${(currentTotalUSD + ahorroBsUSD).toFixed(2)} USD
+          ${(currentTotalUSD).toFixed(2)} USD
         </p>
         {primarySeries && (
           <div className="flex items-center gap-2 text-sm font-bold mt-3 w-fit px-3 py-1 rounded-full bg-black/20">
