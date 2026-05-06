@@ -182,26 +182,27 @@ const TxFormFields = ({ form, set }) => {
   return (
     <div className={s.fsBody}>
 
-      {/* Tipo — tabs visuales */}
-      <div className={s.typeTabs}>
-        {Object.entries(TYPE_META).map(([key, meta]) => {
-          const Icon   = meta.icon;
-          const active = form.type === key;
-          return (
-            <button key={key} type="button"
-              onClick={() => handleTypeChange(key)}
-              className={s.typeTab}
-              style={active ? {
-                background:  meta.bgHex,
-                borderColor: meta.colorHex,
-                color:       meta.colorHex,
-              } : {}}>
-              <Icon size={13} />
-              {meta.label}
-            </button>
-          );
-        })}
-      </div>
+    {/* Tipo — tabs visuales mejorados */}
+<div className={s.typeTabs}>
+  {Object.entries(TYPE_META).map(([key, meta]) => {
+    const Icon   = meta.icon;
+    const active = form.type === key;
+    return (
+      <button key={key} type="button"
+        onClick={() => handleTypeChange(key)}
+        className={s.typeTab}
+        style={active ? {
+          background:   meta.bgHex,
+          borderColor:  meta.colorHex + '66',
+          color:        meta.colorHex,
+          boxShadow:    `0 0 12px ${meta.colorHex}22`,
+        } : {}}>
+        <Icon size={14} strokeWidth={2.5} />
+        {meta.label}
+      </button>
+    );
+  })}
+</div>
 
       {/* Concepto */}
       <label className={s.labelModal}>Concepto *</label>
