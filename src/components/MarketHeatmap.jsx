@@ -9,7 +9,7 @@ import {
   ShoppingCart, Droplet, Signal, Globe2, Gem, Box, Smartphone
 } from 'lucide-react';
 import './MarketHeatmap.css';
-
+import {animate, stagger} from 'animejs'
 /* ─── utils ─────────────────────────────────────────────── */
 const fmt    = (v, d = 0) => v == null ? '—' : '$' + Number(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
 const fmtPct = v => v == null ? null : (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
@@ -143,6 +143,7 @@ function tileBg(p, asset) {
 
 /* ─── Portal Tooltip ─────────────────────────────────────── */
 function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
+  const ttRef = useRef(null);
   const [pos, setPos] = useState(null);
   const ttRef = useRef(null);
   useEffect(() => {
@@ -155,6 +156,13 @@ function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
     let left = anchorRect.left + anchorRect.width / 2 - tt.width / 2;
     left = Math.max(8, Math.min(left, vw - tt.width - 8));
     setPos({ top, left });
+       animate(ttRef.current, {
+      opacity: [0, 1],
+      y:       [6, 0],
+      scale:   [0.94, 1],
+      duration: 130,
+      ease:    'outSine',
+    });
   }, [anchorRect]);
 
   const role     = asset.classification?.role;
@@ -284,6 +292,17 @@ function HeatTile({ asset, roleColor, isSmallBlock }) {
 
 /* ─── Role Block ─────────────────────────────────────────── */
 function RoleBlock({ role, assets, roleTotalVal, totalGlobalVal }) {
+  const contentRef = useRef(null);
+  useEffect(() => {
+    if (!contentRef.current) return;
+    animate(contentRef.current.querySelectorAll('.hm-tile'), {
+      opacity:  [0, 1],
+      scale:    [0.75, 1],
+      duration: 280,
+      delay:    stagger(35, { from: 'first' }),
+      ease:     'outExpo',
+    });
+  }, []);
   const meta = ROLE_META[role] ?? { color: '#64748b', Icon: Briefcase, label: role };
   const roleGlobalPct = totalGlobalVal > 0 ? (roleTotalVal / totalGlobalVal) * 100 : 0;
 
@@ -308,7 +327,7 @@ function RoleBlock({ role, assets, roleTotalVal, totalGlobalVal }) {
         </div>
         <span className="hm-group__pct" style={{ color: meta.color, opacity: 0.8 }}>{roleGlobalPct.toFixed(1)}%</span>
       </div>
-      <div className="hm-group__content">
+      <div className="hm-group__content"  ref={contentRef}>
         {sorted.map(a => (
           <HeatTile
             key={a.id || a.name}
@@ -324,6 +343,18 @@ function RoleBlock({ role, assets, roleTotalVal, totalGlobalVal }) {
 
 /* ─── Main ───────────────────────────────────────────────── */
 export default function MarketHeatmap({ assets }) {
+  const gridRef = useRef(null);
+    useEffect(() => {
+    if (!gridRef.current) return;
+    animate(gridRef.current.querySelectorAll('.hm-group'), {
+      opacity:  [0, 1],
+      y:        [16, 0],
+      scale:    [0.96, 1],
+      duration: 380,
+      delay:    stagger(55, { from: 'first' }),
+      ease:     'outExpo',
+    });
+  }, [])
   const investible = (assets || []).filter(a => {
     const r = a.classification?.role ?? a.role;
     return r !== 'reserve' && r !== 'patrimony' && !a.locked && (a.valueUSD || 0) > 1;
@@ -388,7 +419,7 @@ export default function MarketHeatmap({ assets }) {
         </div>
       </div>
 
-      <div className="hm-grid">
+      <div className="hm-grid" ref={gridRef}>
         {rows.map((row, idx) => {
           if (row.total === 0) return null;
           return (
