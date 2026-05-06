@@ -145,7 +145,6 @@ function tileBg(p, asset) {
 function TooltipPortal({ asset, anchorRect, pct, pctLabel }) {
   const ttRef = useRef(null);
   const [pos, setPos] = useState(null);
-  const ttRef = useRef(null);
   useEffect(() => {
     if (!anchorRect || !ttRef.current) return;
     const tt  = ttRef.current.getBoundingClientRect();

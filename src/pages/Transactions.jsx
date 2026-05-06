@@ -1,19 +1,23 @@
 // pages/Transactions.jsx
-import { useState } from 'react';
-import { Filter, Plus, Pencil, Trash2, Check, X } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Filter, Plus, Pencil, Trash2, X, Search, TrendingUp, TrendingDown, ArrowLeftRight, Check } from 'lucide-react';
 import { useTransactions, TX_CATEGORIES, TX_GROUPS } from '../hooks/useTransactions';
 import { isInPeriod } from '../utils/filterByPeriod';
 import s from './Transactions.module.css';
 
-// ─── Helpers de fecha/hora ────────────────────────────────
+// ── Fecha local (fix UTC offset) ──────────────────────────
+const todayLocal = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+};
+
+// ── Helpers de fecha ──────────────────────────────────────
 const toJsDate = (createdAt, dateStr) => {
-  // Prioriza createdAt (Firestore Timestamp) por tener hora exacta
   if (createdAt?.toDate) return createdAt.toDate();
   if (createdAt) {
     const d = new Date(createdAt);
     if (!isNaN(d)) return d;
   }
-  // Fallback: parsear dateStr como local (evita offset UTC)
   if (dateStr) {
     const [y, m, d] = dateStr.split('-').map(Number);
     return new Date(y, m - 1, d);
@@ -21,15 +25,13 @@ const toJsDate = (createdAt, dateStr) => {
   return null;
 };
 
-const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const DAYS   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 const formatDateFull = (createdAt, dateStr) => {
   const d = toJsDate(createdAt, dateStr);
   if (!d) return '—';
-  const day = DAYS[d.getDay()];
-  const month = MONTHS[d.getMonth()];
-  return `${day} ${d.getDate()} ${month} ${d.getFullYear()}`;
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 };
 
 const formatTime = (createdAt) => {
@@ -45,49 +47,60 @@ const toDateInputValue = (createdAt, dateStr) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// ─── Meta helpers ─────────────────────────────────────────
+// ── Meta helpers ──────────────────────────────────────────
 const categoryMeta = (value) =>
-  TX_CATEGORIES.find((c) => c.value === value) ?? { label: value, color: '' };
+  TX_CATEGORIES.find((c) => c.value === value) ?? { label: value, emoji: '📦', color: '' };
 
-// ─── Filtro de período ────────────────────────────────────
+const TYPE_META = {
+  expense:  { label: 'Gasto',         icon: TrendingDown,   colorHex: '#f43f5e', bgHex: 'rgba(244,63,94,0.12)'   },
+  income:   { label: 'Ingreso',       icon: TrendingUp,     colorHex: '#10b981', bgHex: 'rgba(16,185,129,0.12)'  },
+  transfer: { label: 'Transferencia', icon: ArrowLeftRight, colorHex: '#3b82f6', bgHex: 'rgba(59,130,246,0.12)'  },
+};
+
+// Grupos de gasto (excluye ingresos)
+const EXPENSE_GROUPS  = ['hogar', 'familia', 'desarrollo', 'fe', 'inversiones', 'otros'];
+const INCOME_GROUPS   = ['ingresos'];
+
+// Categoría por defecto según tipo
+const DEFAULT_CAT = { expense: 'viveres', income: 'salario', transfer: 'other' };
+
+// ── Períodos ──────────────────────────────────────────────
 const PERIODS = [
-  { label: 'Todo',      value: null },
-  { label: 'Semana',    value: 'week' },
-  { label: 'Mes',       value: 'month' },
+  { label: 'Todo',      value: null      },
+  { label: 'Semana',    value: 'week'    },
+  { label: 'Mes',       value: 'month'   },
   { label: 'Trimestre', value: 'quarter' },
-  { label: 'Año',       value: 'year' },
+  { label: 'Año',       value: 'year'    },
 ];
 
 const PeriodFilter = ({ value, onChange }) => (
   <div className={s.periodFilter}>
     {PERIODS.map((p) => (
-      <button
-        key={p.label}
-        type="button"
+      <button key={p.label} type="button"
         className={`${s.periodBtn} ${value === p.value ? s.periodBtnActive : ''}`}
-        onClick={() => onChange(p.value)}
-      >
+        onClick={() => onChange(p.value)}>
         {p.label}
       </button>
     ))}
   </div>
 );
 
-// ─── Dropdown de categorías (full‑screen picker) ──────────
-const CategoryDropdown = ({ value, onChange, grouped = false }) => {
+// ── CategoryDropdown ──────────────────────────────────────
+const CategoryDropdown = ({ value, onChange, filterGroups }) => {
   const [open, setOpen] = useState(false);
-  const selected = TX_CATEGORIES.find((c) => c.value === value);
+  const selected        = TX_CATEGORIES.find((c) => c.value === value);
+  const handleSelect    = (val) => { onChange(val); setOpen(false); };
 
-  const handleSelect = (val) => { onChange(val); setOpen(false); };
+  const visibleGroups = filterGroups
+    ? TX_GROUPS.filter(g => filterGroups.includes(g.value))
+    : TX_GROUPS;
 
   return (
     <>
-      <div className={s.dropdown}>
-        <button type="button" className={s.dropdownTrigger} onClick={() => setOpen(true)}>
-          <span>{selected ? `${selected.emoji ?? ''} ${selected.label}` : 'Categoría'}</span>
-          <span className={s.dropdownArrow}>▾</span>
-        </button>
-      </div>
+      <button type="button" className={s.dropdownTrigger} onClick={() => setOpen(true)}>
+        <span>{selected ? `${selected.emoji} ${selected.label}` : 'Categoría'}</span>
+        <span className={s.dropdownArrow}>▾</span>
+      </button>
 
       {open && (
         <div className={s.fsOverlay} onClick={() => setOpen(false)}>
@@ -99,36 +112,19 @@ const CategoryDropdown = ({ value, onChange, grouped = false }) => {
               </button>
             </div>
             <div className={s.fsBody}>
-              {grouped ? (
-                TX_GROUPS.map((g) => (
-                  <div key={g.value} className={s.fsGroupBlock}>
-                    <p className={s.fsGroupLabel}>{g.label}</p>
-                    {TX_CATEGORIES.filter((c) => c.parent === g.value).map((c) => (
-                      <button
-                        key={c.value}
-                        type="button"
-                        className={`${s.fsItem} ${c.value === value ? s.fsItemActive : ''}`}
-                        onClick={() => handleSelect(c.value)}
-                      >
-                        <span className={s.fsItemEmoji}>{c.emoji}</span>
-                        <span className={s.fsItemLabel}>{c.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                ))
-              ) : (
-                TX_CATEGORIES.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    className={`${s.fsItem} ${c.value === value ? s.fsItemActive : ''}`}
-                    onClick={() => handleSelect(c.value)}
-                  >
-                    <span className={s.fsItemEmoji}>{c.emoji}</span>
-                    <span className={s.fsItemLabel}>{c.label}</span>
-                  </button>
-                ))
-              )}
+              {visibleGroups.map((g) => (
+                <div key={g.value} className={s.fsGroupBlock}>
+                  <p className={s.fsGroupLabel}>{g.label}</p>
+                  {TX_CATEGORIES.filter((c) => c.parent === g.value).map((c) => (
+                    <button key={c.value} type="button"
+                      className={`${s.fsItem} ${c.value === value ? s.fsItemActive : ''}`}
+                      onClick={() => handleSelect(c.value)}>
+                      <span className={s.fsItemEmoji}>{c.emoji}</span>
+                      <span className={s.fsItemLabel}>{c.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -137,25 +133,22 @@ const CategoryDropdown = ({ value, onChange, grouped = false }) => {
   );
 };
 
-// ─── Dropdown filtro por categoría ───────────────────────
+// ── FilterDropdown (filtro de lista) ─────────────────────
 const FilterDropdown = ({ value, onChange, open, setOpen }) => {
-  const selected = TX_CATEGORIES.find((c) => c.value === value);
+  const selected     = TX_CATEGORIES.find((c) => c.value === value);
   const handleSelect = (val) => { onChange(val); setOpen(false); };
 
   return (
     <div className={s.dropdown} style={{ flex: 1 }}>
       <button type="button" className={s.dropdownTrigger} onClick={() => setOpen((o) => !o)}>
-        <span>{selected ? `${selected.emoji ?? ''} ${selected.label}` : '🗂 Todas las categorías'}</span>
+        <span>{selected ? `${selected.emoji} ${selected.label}` : '🗂 Todas las categorías'}</span>
         <span className={s.dropdownArrow}>{open ? '▲' : '▼'}</span>
       </button>
-
       {open && (
         <div className={s.dropdownMenu}>
-          <button
-            type="button"
+          <button type="button"
             className={`${s.dropdownItem} ${value === null ? s.dropdownItemActive : ''}`}
-            onClick={() => handleSelect(null)}
-          >
+            onClick={() => handleSelect(null)}>
             🗂 Todas las categorías
           </button>
           <hr className={s.dropdownDivider} />
@@ -163,12 +156,9 @@ const FilterDropdown = ({ value, onChange, open, setOpen }) => {
             <div key={g.value}>
               <p className={s.dropdownGroup}>{g.label}</p>
               {TX_CATEGORIES.filter((c) => c.parent === g.value).map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
+                <button key={c.value} type="button"
                   className={`${s.dropdownItem} ${c.value === value ? s.dropdownItemActive : ''}`}
-                  onClick={() => handleSelect(c.value)}
-                >
+                  onClick={() => handleSelect(c.value)}>
                   {c.emoji} {c.label}
                 </button>
               ))}
@@ -180,19 +170,168 @@ const FilterDropdown = ({ value, onChange, open, setOpen }) => {
   );
 };
 
-// ─── Modal de edición completa ────────────────────────────
+// ── TxFormFields (compartido New + Edit) ──────────────────
+const TxFormFields = ({ form, set }) => {
+  const typeMeta = TYPE_META[form.type] || TYPE_META.expense;
+
+  const handleTypeChange = (newType) => {
+    set('type', newType);
+    set('category', DEFAULT_CAT[newType] || 'other');
+  };
+
+  return (
+    <div className={s.fsBody}>
+
+      {/* Tipo — tabs visuales */}
+      <div className={s.typeTabs}>
+        {Object.entries(TYPE_META).map(([key, meta]) => {
+          const Icon   = meta.icon;
+          const active = form.type === key;
+          return (
+            <button key={key} type="button"
+              onClick={() => handleTypeChange(key)}
+              className={s.typeTab}
+              style={active ? {
+                background:  meta.bgHex,
+                borderColor: meta.colorHex,
+                color:       meta.colorHex,
+              } : {}}>
+              <Icon size={13} />
+              {meta.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Concepto */}
+      <label className={s.labelModal}>Concepto *</label>
+      <input className={s.inputModal}
+        placeholder="Ej: Supermercado, salario mayo..."
+        value={form.concept}
+        onChange={(e) => set('concept', e.target.value)}
+      />
+
+      {/* Monto + Moneda */}
+      <div className={s.gridTwo}>
+        <div>
+          <label className={s.labelModal}>Monto *</label>
+          <input className={s.inputModal}
+            placeholder="0.00" type="number" inputMode="decimal"
+            value={form.amount}
+            onChange={(e) => set('amount', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className={s.labelModal}>Moneda</label>
+          <select className={s.inputModal} value={form.currency}
+            onChange={(e) => set('currency', e.target.value)}>
+            <option value="BOB">BOB Bs</option>
+            <option value="USD">USD $</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Categoría — filtrada por tipo */}
+      {form.type !== 'transfer' && (
+        <>
+          <label className={s.labelModal}>Categoría</label>
+          <CategoryDropdown
+            value={form.category}
+            onChange={(val) => set('category', val)}
+            filterGroups={form.type === 'income' ? INCOME_GROUPS : EXPENSE_GROUPS}
+          />
+        </>
+      )}
+
+      {/* Fecha */}
+      <label className={s.labelModal}>Fecha</label>
+      <input className={`${s.inputModal} [color-scheme:dark]`}
+        type="date"
+        value={form.date}
+        max={todayLocal()}
+        onChange={(e) => set('date', e.target.value)}
+      />
+
+      {/* Destinatario */}
+      <label className={s.labelModal}>
+        {form.type === 'income' ? 'Origen' : 'Destinatario'}
+        <span className={s.labelOptional}> (opcional)</span>
+      </label>
+      <input className={s.inputModal}
+        placeholder={form.type === 'income' ? 'Ej: Empresa S.R.L.' : 'Ej: CONDORI TICONA JHON'}
+        value={form.targetOwner}
+        onChange={(e) => set('targetOwner', e.target.value)}
+      />
+
+      {/* Nota */}
+      <label className={s.labelModal}>
+        Nota <span className={s.labelOptional}>(opcional)</span>
+      </label>
+      <input className={s.inputModal}
+        placeholder="Detalle adicional..."
+        value={form.note ?? ''}
+        onChange={(e) => set('note', e.target.value)}
+      />
+    </div>
+  );
+};
+
+// ── Modal nueva transacción ───────────────────────────────
+const NewTxModal = ({ onClose, onAdd }) => {
+  const [form, setForm] = useState({
+    concept: '', amount: '', currency: 'BOB',
+    type: 'expense', category: 'viveres',
+    date: todayLocal(),
+    targetOwner: '', note: '',
+  });
+  const set      = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const isValid  = form.concept.trim() && Number(form.amount) > 0;
+
+  const submit = async () => {
+    if (!isValid) return;
+    const parent = TX_CATEGORIES.find((c) => c.value === form.category)?.parent ?? 'otros';
+    await onAdd({
+      ...form,
+      amount: Number(form.amount),
+      title:  form.concept,
+      parentCategory: parent,
+    });
+    onClose();
+  };
+
+  return (
+    <div className={s.fsOverlay} onClick={onClose}>
+      <div className={s.fsSheet} onClick={(e) => e.stopPropagation()}>
+        <div className={s.fsHeader}>
+          <h2 className={s.fsTitle}>Nueva Transacción</h2>
+          <button type="button" className={s.btnClose} onClick={onClose}>
+            <X size={18} strokeWidth={2.5} />
+          </button>
+        </div>
+        <TxFormFields form={form} set={set} />
+        <div className={s.fsFooter}>
+          <button className={s.btnSubmit} onClick={submit} disabled={!isValid}>
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Modal editar transacción ──────────────────────────────
 const EditTxModal = ({ tx, onClose, onSave }) => {
   const [form, setForm] = useState({
-    concept:  tx.concept || tx.title || '',
-    amount:   String(tx.amount ?? ''),
-    currency: tx.currency || 'BOB',
-    type:     tx.type || 'expense',
-    category: tx.category || 'other',
-    date:     toDateInputValue(tx.createdAt, tx.date),
-    targetOwner: tx.targetOwner || '', 
+    concept:     tx.concept || tx.title || '',
+    amount:      String(tx.amount ?? ''),
+    currency:    tx.currency    || 'BOB',
+    type:        tx.type        || 'expense',
+    category:    tx.category    || 'other',
+    date:        toDateInputValue(tx.createdAt, tx.date),
+    targetOwner: tx.targetOwner || '',
+    note:        tx.note        || '',
   });
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
+  const set     = (k, v) => setForm((p) => ({ ...p, [k]: v }));
   const isValid = form.concept.trim() && Number(form.amount) > 0;
 
   const submit = async () => {
@@ -201,7 +340,7 @@ const EditTxModal = ({ tx, onClose, onSave }) => {
     await onSave(tx.id, {
       ...form,
       amount: Number(form.amount),
-      title: form.concept,
+      title:  form.concept,
       parentCategory: parent,
     });
     onClose();
@@ -216,81 +355,7 @@ const EditTxModal = ({ tx, onClose, onSave }) => {
             <X size={18} strokeWidth={2.5} />
           </button>
         </div>
-
-        <div className={s.fsBody}>
-          <label className={s.labelModal}>Concepto *</label>
-          <input
-            className={s.inputModal}
-            placeholder="Ej: Supermercado, alquiler..."
-            value={form.concept}
-            onChange={(e) => set('concept', e.target.value)}
-          />
-
-          <div className={s.gridTwo}>
-            <div>
-              <label className={s.labelModal}>Monto *</label>
-              <input
-                className={s.inputModal}
-                placeholder="0.00"
-                type="number"
-                inputMode="decimal"
-                value={form.amount}
-                onChange={(e) => set('amount', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={s.labelModal}>Moneda</label>
-              <select
-                className={s.inputModal}
-                value={form.currency}
-                onChange={(e) => set('currency', e.target.value)}
-              >
-                <option value="BOB">BOB Bs</option>
-                <option value="USD">USD $</option>
-              </select>
-            </div>
-          </div>
-
-          <div className={s.gridTwo}>
-            <div>
-              <label className={s.labelModal}>Tipo</label>
-              <select
-                className={s.inputModal}
-                value={form.type}
-                onChange={(e) => set('type', e.target.value)}
-              >
-                <option value="expense">💸 Gasto</option>
-                <option value="income">💵 Ingreso</option>
-                <option value="transfer">↔️ Transferencia</option>
-              </select>
-            </div>
-            <div>
-              <label className={s.labelModal}>Categoría</label>
-              <CategoryDropdown
-                value={form.category}
-                onChange={(val) => set('category', val)}
-                grouped
-              />
-            </div>
-          </div>
-
-          <label className={s.labelModal}>Fecha</label>
-          <input
-            className={s.inputModal}
-            type="date"
-            value={form.date}
-            onChange={(e) => set('date', e.target.value)}
-          />
-
-          <label className={s.labelModal}>Destinatario</label>
-<input
-  className={s.inputModal}
-  placeholder="Nombre del destinatario..."
-  value={form.targetOwner}
-  onChange={(e) => set('targetOwner', e.target.value)}
-/>
-        </div>
-
+        <TxFormFields form={form} set={set} />
         <div className={s.fsFooter}>
           <button className={s.btnSubmit} onClick={submit} disabled={!isValid}>
             Guardar cambios
@@ -301,237 +366,211 @@ const EditTxModal = ({ tx, onClose, onSave }) => {
   );
 };
 
-// ─── Fila de transacción ──────────────────────────────────
+// ── TxRow ─────────────────────────────────────────────────
 const TxRow = ({ tx, onSave, onDelete }) => {
-  const [editOpen, setEditOpen] = useState(false);
+  const [editOpen,   setEditOpen]   = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
 
-  const meta      = categoryMeta(tx.category);
-  const symbol    = tx.currency === 'BOB' ? 'Bs' : '$';
-  const isExpense = tx.type === 'expense';
-  const timeStr   = formatTime(tx.createdAt);
-  const dateStr   = formatDateFull(tx.createdAt, tx.date);
+  const meta     = categoryMeta(tx.category);
+  const typeMeta = TYPE_META[tx.type] || TYPE_META.expense;
+  const Icon     = typeMeta.icon;
+  const symbol   = tx.currency === 'BOB' ? 'Bs' : '$';
+  const timeStr  = formatTime(tx.createdAt);
+  const dateStr  = formatDateFull(tx.createdAt, tx.date);
+  const isExp    = tx.type === 'expense';
+  const isInc    = tx.type === 'income';
 
   return (
     <>
       <div className={s.card}>
+        {/* Stripe lateral de color */}
+        <div className={s.cardStripe} style={{ background: typeMeta.colorHex }} />
+
         <div className={s.cardTop}>
-          <div className={s.cardLeft}>
-            <div>
-              <p className={s.concept}>{tx.concept || tx.title || '—'}</p>
-              <div className={s.meta}>
-                <span className={`${s.badge} ${meta.color}`}>
-                  {meta.emoji ?? ''} {meta.label}
-                </span>
-                <span className={s.date}>
-                  {dateStr}
-                  {timeStr && <span className={s.time}> · {timeStr}</span>}
-                </span>
-              </div>
-            </div>
+          {/* Icono de tipo */}
+          <div className={s.typeIconWrap} style={{ background: typeMeta.bgHex }}>
+            <Icon size={14} style={{ color: typeMeta.colorHex }} />
           </div>
 
-          <p className={isExpense ? s.amountExpense : s.amountIncome}>
-            {isExpense ? '-' : '+'}
-            {symbol}
-            {Math.abs(Number(tx.amount)).toFixed(2)}
-          </p>
-        </div>
+          {/* Info */}
+          <div className={s.cardInfo}>
+            <p className={s.concept}>{tx.concept || tx.title || '—'}</p>
+            <div className={s.meta}>
+              <span className={s.badge}>{meta.emoji} {meta.label}</span>
+              {tx.targetOwner && (
+                <span className={s.targetOwner}>
+                  {isInc ? '← ' : '→ '}{tx.targetOwner}
+                </span>
+              )}
+              <span className={s.date}>
+                {dateStr}
+                {timeStr && <span className={s.time}> · {timeStr}</span>}
+              </span>
+            </div>
+            {tx.note && <p className={s.note}>📝 {tx.note}</p>}
+          </div>
 
-        <div className={s.actions}>
-          <button className={`${s.btnIcon} ${s.btnDelete}`} onClick={() => onDelete(tx.id)}>
-            <Trash2 size={14} />
-          </button>
-          <button className={`${s.btnIcon} ${s.btnEdit}`} onClick={() => setEditOpen(true)}>
-            <Pencil size={14} />
-          </button>
+          {/* Monto + acciones */}
+          <div className={s.cardRight}>
+            <p className={s.amount} style={{ color: typeMeta.colorHex }}>
+              {isExp ? '−' : isInc ? '+' : ''}
+              {symbol} {Math.abs(Number(tx.amount)).toLocaleString('es-BO', {
+                minimumFractionDigits: 2, maximumFractionDigits: 2,
+              })}
+            </p>
+
+            <div className={s.actions}>
+              {confirmDel ? (
+                <>
+                  <button className={`${s.btnIcon} ${s.btnDelete}`}
+                    title="Confirmar eliminación"
+                    onClick={() => onDelete(tx.id)}>
+                    <Check size={14} />
+                  </button>
+                  <button className={s.btnIcon} title="Cancelar"
+                    onClick={() => setConfirmDel(false)}>
+                    <X size={14} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className={`${s.btnIcon} ${s.btnDelete}`}
+                    title="Eliminar"
+                    onClick={() => setConfirmDel(true)}>
+                    <Trash2 size={14} />
+                  </button>
+                  <button className={`${s.btnIcon} ${s.btnEdit}`}
+                    title="Editar"
+                    onClick={() => setEditOpen(true)}>
+                    <Pencil size={14} />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       {editOpen && (
-        <EditTxModal
-          tx={tx}
-          onClose={() => setEditOpen(false)}
-          onSave={onSave}
-        />
+        <EditTxModal tx={tx} onClose={() => setEditOpen(false)} onSave={onSave} />
       )}
     </>
   );
 };
 
-// ─── Modal nueva transacción ──────────────────────────────
-const NewTxModal = ({ onClose, onAdd }) => {
-  const [form, setForm] = useState({
-    concept: '',
-    amount: '',
-    currency: 'BOB',
-    type: 'expense',
-    category: 'viveres',
-    date: new Date().toISOString().slice(0, 10),
-  targetOwner: '',  
-  });
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
-  const isValid = form.concept.trim() && Number(form.amount) > 0;
-
-  const submit = async () => {
-    if (!isValid) return;
-    const parent = TX_CATEGORIES.find((c) => c.value === form.category)?.parent ?? 'otros';
-    await onAdd({ ...form, amount: Number(form.amount), title: form.concept, parentCategory: parent });
-    onClose();
-  };
-
-  return (
-    <div className={s.fsOverlay} onClick={onClose}>
-      <div className={s.fsSheet} onClick={(e) => e.stopPropagation()}>
-        <div className={s.fsHeader}>
-          <h2 className={s.fsTitle}>Nueva Transacción</h2>
-          <button type="button" className={s.btnClose} onClick={onClose}>
-            <X size={18} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        <div className={s.fsBody}>
-          <label className={s.labelModal}>Concepto *</label>
-          <input
-            className={s.inputModal}
-            placeholder="Ej: Supermercado, alquiler..."
-            value={form.concept}
-            onChange={(e) => set('concept', e.target.value)}
-          />
-
-          <div className={s.gridTwo}>
-            <div>
-              <label className={s.labelModal}>Monto *</label>
-              <input
-                className={s.inputModal}
-                placeholder="0.00"
-                type="number"
-                inputMode="decimal"
-                value={form.amount}
-                onChange={(e) => set('amount', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={s.labelModal}>Moneda</label>
-              <select
-                className={s.inputModal}
-                value={form.currency}
-                onChange={(e) => set('currency', e.target.value)}
-              >
-                <option value="BOB">BOB Bs</option>
-                <option value="USD">USD $</option>
-              </select>
-            </div>
-          </div>
-
-          <div className={s.gridTwo}>
-            <div>
-              <label className={s.labelModal}>Tipo</label>
-              <select
-                className={s.inputModal}
-                value={form.type}
-                onChange={(e) => set('type', e.target.value)}
-              >
-                <option value="expense">💸 Gasto</option>
-                <option value="income">💵 Ingreso</option>
-                <option value="transfer">↔️ Transferencia</option>
-              </select>
-            </div>
-            <div>
-              <label className={s.labelModal}>Categoría</label>
-              <CategoryDropdown
-                value={form.category}
-                onChange={(val) => set('category', val)}
-                grouped
-              />
-            </div>
-          </div>
-
-          <label className={s.labelModal}>Fecha</label>
-          <input
-            className={s.inputModal}
-            type="date"
-            value={form.date}
-            onChange={(e) => set('date', e.target.value)}
-          />
-
-       <label className={s.labelModal}>Destinatario</label>
-<input
-  className={s.inputModal}
-  placeholder="Ej: CONDORI TICONA JHON ZACARIAS"
-  value={form.targetOwner}
-  onChange={(e) => set('targetOwner', e.target.value)}
-/>
-        </div>
-
-        <div className={s.fsFooter}>
-          <button className={s.btnSubmit} onClick={submit} disabled={!isValid}>
-            Guardar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── Página principal ─────────────────────────────────────
+// ── Página principal ──────────────────────────────────────
 const Transactions = () => {
-  const { transactions, addTransaction, updateTransaction, removeTransaction } =
-    useTransactions();
+  const { transactions, addTransaction, updateTransaction, removeTransaction } = useTransactions();
+
   const [activeFilter, setActiveFilter] = useState(null);
   const [activePeriod, setActivePeriod] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [search, setSearch] = useState('');
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [showModal,    setShowModal]    = useState(false);
+  const [search,       setSearch]       = useState('');
+  const [filterOpen,   setFilterOpen]   = useState(false);
+  const [typeFilter,   setTypeFilter]   = useState(null);
 
-  // Ordenar por createdAt DESC (hora exacta), fallback a date string
-  const sorted = [...transactions].sort((a, b) => {
-    const aDate = toJsDate(a.createdAt, a.date) ?? new Date(0);
-    const bDate = toJsDate(b.createdAt, b.date) ?? new Date(0);
-    return bDate - aDate;
-  });
+  // Ordenar por fecha desc
+  const sorted = useMemo(() =>
+    [...transactions].sort((a, b) => {
+      const aD = toJsDate(a.createdAt, a.date) ?? new Date(0);
+      const bD = toJsDate(b.createdAt, b.date) ?? new Date(0);
+      return bD - aD;
+    }), [transactions]);
 
-  const filtered = sorted.filter((tx) => {
-    const matchesCategory = activeFilter === null || tx.category === activeFilter;
-    const matchesPeriod   = isInPeriod(tx.date, activePeriod);
-    const term            = search.trim().toLowerCase();
-    const matchesSearch   =
-      !term ||
-      (tx.concept || tx.title || '').toLowerCase().includes(term) ||
-      (tx.note || '').toLowerCase().includes(term);
-    return matchesCategory && matchesPeriod && matchesSearch;
-  });
+  // Filtrar
+  const filtered = useMemo(() => sorted.filter((tx) => {
+    if (activeFilter !== null && tx.category !== activeFilter) return false;
+    if (typeFilter   !== null && tx.type     !== typeFilter)   return false;
+    if (!isInPeriod(tx.date, activePeriod))                    return false;
+    const term = search.trim().toLowerCase();
+    if (term && !(tx.concept || tx.title || '').toLowerCase().includes(term)
+             && !(tx.note    || '').toLowerCase().includes(term))           return false;
+    return true;
+  }), [sorted, activeFilter, typeFilter, activePeriod, search]);
+
+  // Totales del filtrado
+  const totals = useMemo(() => ({
+    exp: filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+    inc: filtered.filter(t => t.type === 'income').reduce((s,  t) => s + t.amount, 0),
+    count: filtered.length,
+  }), [filtered]);
+
+  const hasActiveFilters = activeFilter !== null || typeFilter !== null || search.trim() || activePeriod !== null;
 
   return (
     <div className={s.page}>
+
+      {/* Header */}
       <div className={s.header}>
         <h1 className={s.title}>Movimientos</h1>
-        <button
-          type="button"
-          className={s.filterButton}
-          onClick={() => setFilterOpen((o) => !o)}
-        >
+        <button type="button" className={s.filterButton}
+          onClick={() => setFilterOpen((o) => !o)}>
           <Filter size={18} />
+          {hasActiveFilters && <span className={s.filterDot} />}
         </button>
       </div>
 
+      {/* Período */}
       <PeriodFilter value={activePeriod} onChange={setActivePeriod} />
 
-      <div className={s.searchRow}>
-        <input
-          className={s.searchInput}
-          placeholder="Buscar por concepto o nota..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* Mini resumen del filtrado */}
+      <div className={s.summaryRow}>
+        <div className={s.summaryChip}>
+          <span className={s.summaryLabel}>Gastos</span>
+          <span className={s.summaryExpense}>
+            Bs {totals.exp.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
+          </span>
+        </div>
+        <div className={s.summaryChip}>
+          <span className={s.summaryLabel}>Ingresos</span>
+          <span className={s.summaryIncome}>
+            Bs {totals.inc.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
+          </span>
+        </div>
+        <div className={s.summaryChip}>
+          <span className={s.summaryLabel}>Movimientos</span>
+          <span className={s.summaryCount}>{totals.count}</span>
+        </div>
       </div>
 
+      {/* Filtro por tipo */}
+      <div className={s.typeFilterRow}>
+        {[
+          { key: null,       label: 'Todos'   },
+          { key: 'expense',  label: '💸 Gastos'  },
+          { key: 'income',   label: '💵 Ingresos' },
+          { key: 'transfer', label: '↔️ Transf.'  },
+        ].map(({ key, label }) => (
+          <button key={String(key)} type="button"
+            onClick={() => setTypeFilter(key)}
+            className={`${s.typeFilterBtn} ${typeFilter === key ? s.typeFilterBtnActive : ''}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Búsqueda */}
+      <div className={s.searchRow}>
+        <div className={s.searchWrap}>
+          <Search size={14} className={s.searchIcon} />
+          <input className={s.searchInput}
+            placeholder="Buscar concepto o nota..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button className={s.searchClear} onClick={() => setSearch('')}>
+              <X size={12} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filtro por categoría */}
       <div className={s.filterRow}>
         <FilterDropdown
-          value={activeFilter}
-          onChange={setActiveFilter}
-          open={filterOpen}
-          setOpen={setFilterOpen}
+          value={activeFilter} onChange={setActiveFilter}
+          open={filterOpen} setOpen={setFilterOpen}
         />
         {activeFilter !== null && (
           <button className={s.clearFilter} onClick={() => setActiveFilter(null)}>
@@ -540,16 +579,28 @@ const Transactions = () => {
         )}
       </div>
 
+      {/* Lista */}
       <div className={s.list}>
-        {filtered.length === 0 && <p className={s.empty}>Sin movimientos</p>}
-        {filtered.map((tx) => (
-          <TxRow
-            key={tx.id}
-            tx={tx}
-            onSave={updateTransaction}
-            onDelete={removeTransaction}
-          />
-        ))}
+        {filtered.length === 0 ? (
+          <div className={s.emptyState}>
+            <p className={s.emptyIcon}>🔍</p>
+            <p className={s.empty}>Sin movimientos</p>
+            {hasActiveFilters && (
+              <button className={s.clearAllFilters} onClick={() => {
+                setActiveFilter(null);
+                setTypeFilter(null);
+                setSearch('');
+                setActivePeriod(null);
+              }}>
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        ) : (
+          filtered.map((tx) => (
+            <TxRow key={tx.id} tx={tx} onSave={updateTransaction} onDelete={removeTransaction} />
+          ))
+        )}
       </div>
 
       {showModal && (
