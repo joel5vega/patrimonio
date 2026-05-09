@@ -818,17 +818,6 @@ const WealthHistory = () => {
           ))}
         </div>
 
-        {tradingManual.length > 0 && (
-          <>
-            <p className="wh-section-sublabel">Quantfury — individual</p>
-            <div className="wh-chips-row">
-              {tradingManual.map(t => (
-                <ChipButton key={t.key} type={t} active={vis[t.key]}
-                  onToggle={toggleVisible} currentValue={currentByKey[t.key]} />
-              ))}
-            </div>
-          </>
-        )}
 
         {nonTradingManual.length > 0 && (
           <>

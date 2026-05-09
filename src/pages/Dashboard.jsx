@@ -8,9 +8,9 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useTransactions } from '../hooks/useTransactions';
 import ReactMarkdown from 'react-markdown';
 import { useIdeas } from '../hooks/useIdeas';
-import { useStandouts } from '../hooks/useStandouts';
 import { animate, stagger } from 'animejs';
 import './Dashboard.css';
 
@@ -18,7 +18,7 @@ import './Dashboard.css';
 const excelSerialToDate = (value) => {
   if (value == null) return null;
   const num = Number(value);
-  if (!Number.isNaN(num)) {
+  if (!Number.isNaN(num) && num < 100000) {
     const base = new Date(1899, 11, 30);
     return new Date(base.getTime() + num * 86400000);
   }
@@ -26,24 +26,48 @@ const excelSerialToDate = (value) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-const parseDateMs = (d) => {
-  const dt = excelSerialToDate(d);
-  return dt ? dt.getTime() : 0;
+const parseAnyDate = (raw) => {
+  if (!raw) return null;
+  if (typeof raw?.toDate === 'function') return raw.toDate();
+  if (typeof raw === 'number') {
+    if (raw < 100000) return excelSerialToDate(raw);
+    return new Date(raw);
+  }
+  if (typeof raw === 'string') {
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(raw)) {
+      const [d, m, y] = raw.split('/');
+      return new Date(`${y}-${m}-${d}`);
+    }
+    if (/^\d{4}\.\d{2}\.\d{2}/.test(raw)) {
+      return new Date(raw.replace(/\./g, '-'));
+    }
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return null;
 };
 
 const isTodayRecord = (recordDate) => {
   if (!recordDate) return false;
-  const today  = new Date();
-  const str1   = today.toISOString().slice(0, 10);
-  const str2   = str1.replace(/-/g, '.');
-  if (typeof recordDate === 'string')
-    return recordDate.startsWith(str1) || recordDate.startsWith(str2);
-  const d = excelSerialToDate(recordDate);
+  const today = new Date();
+  if (typeof recordDate === 'string') {
+    const str1 = today.toISOString().slice(0, 10);
+    const str2 = str1.replace(/-/g, '.');
+    if (recordDate.startsWith(str1) || recordDate.startsWith(str2)) return true;
+  }
+  const d = parseAnyDate(recordDate);
   if (!d || isNaN(d.getTime())) return false;
-  return d.getDate() === today.getDate()
-    && d.getMonth()  === today.getMonth()
-    && d.getFullYear() === today.getFullYear();
+  return (
+    d.getDate()     === today.getDate()     &&
+    d.getMonth()    === today.getMonth()    &&
+    d.getFullYear() === today.getFullYear()
+  );
 };
+
+const isTxToday = (tx) =>
+  isTodayRecord(tx.date) ||
+  isTodayRecord(tx.createdAt) ||
+  isTodayRecord(tx.fecha);
 
 // ── Versículos ────────────────────────────────────────────
 const VERSICULOS = [
@@ -63,12 +87,9 @@ const VERSICULOS = [
 
 // ── BibleVerse ────────────────────────────────────────────
 const BibleVerse = () => {
-  const [idx,     setIdx]     = useState(() => Math.floor(Math.random() * VERSICULOS.length));
-  const [phase,   setPhase]   = useState('visible'); // 'visible' | 'out' | 'in'
-  const cardRef   = useRef(null);
-  const quoteRef  = useRef(null);
+  const [idx, setIdx] = useState(() => Math.floor(Math.random() * VERSICULOS.length));
+  const cardRef = useRef(null);
 
-  // Animación de entrada inicial
   useEffect(() => {
     if (!cardRef.current) return;
     animate(cardRef.current, {
@@ -77,30 +98,19 @@ const BibleVerse = () => {
     });
   }, []);
 
-  // Rotación cada 30s
   useEffect(() => {
     const timer = setInterval(() => {
-      // Salida
-      if (cardRef.current) {
-        animate(cardRef.current, {
-          opacity: [1, 0], translateY: [0, -10], scale: [1, 0.97],
-          duration: 350, ease: 'inExpo',
-        });
-      }
+      if (cardRef.current)
+        animate(cardRef.current, { opacity: [1, 0], translateY: [0, -10], scale: [1, 0.97], duration: 350, ease: 'inExpo' });
       setTimeout(() => {
         setIdx(prev => {
           let next;
           do { next = Math.floor(Math.random() * VERSICULOS.length); } while (next === prev);
           return next;
         });
-        // Entrada
         setTimeout(() => {
-          if (cardRef.current) {
-            animate(cardRef.current, {
-              opacity: [0, 1], translateY: [10, 0], scale: [0.97, 1],
-              duration: 500, ease: 'outExpo',
-            });
-          }
+          if (cardRef.current)
+            animate(cardRef.current, { opacity: [0, 1], translateY: [10, 0], scale: [0.97, 1], duration: 500, ease: 'outExpo' });
         }, 50);
       }, 380);
     }, 30000);
@@ -108,19 +118,16 @@ const BibleVerse = () => {
   }, []);
 
   const v = VERSICULOS[idx];
-
   return (
     <div ref={cardRef} className="db-verse-card" style={{ opacity: 0 }}>
-      <div className="db-verse-icon-wrap">
-        <BookOpen size={16} />
-      </div>
+      <div className="db-verse-icon-wrap"><BookOpen size={16} /></div>
       <blockquote className="db-verse-text">"{v.text}"</blockquote>
       <cite className="db-verse-ref">— {v.ref}</cite>
     </div>
   );
 };
 
-// ── Contador animado ──────────────────────────────────────
+// ── AnimatedNumber ────────────────────────────────────────
 const AnimatedNumber = ({ value, prefix = '', decimals = 2, className = '' }) => {
   const ref     = useRef(null);
   const prevRef = useRef(0);
@@ -130,98 +137,56 @@ const AnimatedNumber = ({ value, prefix = '', decimals = 2, className = '' }) =>
     const from = prevRef.current;
     const to   = Number(value) || 0;
     prevRef.current = to;
-
     if (from === to) return;
-
-    const duration  = 900;
-    const startTime = performance.now();
+    const duration    = 900;
+    const startTime   = performance.now();
     const easeOutExpo = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
-
     const tick = (now) => {
-      const elapsed  = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased    = easeOutExpo(progress);
-      const current  = from + (to - from) * eased;
-
-      if (ref.current) {
-        ref.current.textContent =
-          prefix +
-          current
-            .toFixed(decimals)
-            .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      }
-
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
+      const progress = Math.min((now - startTime) / duration, 1);
+      const current  = from + (to - from) * easeOutExpo(progress);
+      if (ref.current)
+        ref.current.textContent = prefix + current.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      if (progress < 1) rafRef.current = requestAnimationFrame(tick);
     };
-
     cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(tick);
-
     return () => cancelAnimationFrame(rafRef.current);
   }, [value]);
 
-  const formatted = (Number(value) || 0)
-    .toFixed(decimals)
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-  return (
-    <span ref={ref} className={className}>
-      {prefix}{formatted}
-    </span>
-  );
+  const formatted = (Number(value) || 0).toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return <span ref={ref} className={className}>{prefix}{formatted}</span>;
 };
 
-// ── Mini Sparkline SVG ────────────────────────────────────
+// ── Sparkline ─────────────────────────────────────────────
 const Sparkline = ({ data = [], color = '#14b8a6', height = 36 }) => {
   if (data.length < 2) return null;
   const W = 80;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
+  const max = Math.max(...data), min = Math.min(...data);
   const range = max - min || 1;
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * W;
-    const y = height - ((v - min) / range) * (height - 4) - 2;
-    return `${x},${y}`;
-  }).join(' ');
+  const pts = data.map((v, i) => `${(i / (data.length - 1)) * W},${height - ((v - min) / range) * (height - 4) - 2}`).join(' ');
   return (
     <svg width={W} height={height} className="db-sparkline">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 };
 
 // ── StatCard ──────────────────────────────────────────────
-const StatCard = ({ label, value, prefix = '$', color, icon: Icon, trend, sparkData, delay = 0 }) => {
+const StatCard = ({ label, value, prefix = '$', color, icon: Icon, delay = 0 }) => {
   const ref = useRef(null);
   useEffect(() => {
     if (!ref.current) return;
-    animate(ref.current, {
-      opacity: [0, 1], translateY: [20, 0], scale: [0.95, 1],
-      duration: 500, ease: 'outExpo', delay,
-    });
+    animate(ref.current, { opacity: [0, 1], translateY: [20, 0], scale: [0.95, 1], duration: 500, ease: 'outExpo', delay });
   }, []);
-
   return (
     <div ref={ref} className="db-stat-card" style={{ opacity: 0 }}>
       <div className="db-stat-top">
-        <div className="db-stat-icon" style={{ color }}>
-          <Icon size={16} />
-        </div>
-        {sparkData && <Sparkline data={sparkData} color={color} />}
+        <div className="db-stat-icon" style={{ color }}><Icon size={16} /></div>
       </div>
       <p className="db-stat-label">{label}</p>
       <p className="db-stat-value" style={{ color }}>
         {prefix}{Number(value || 0).toLocaleString('es-BO', { maximumFractionDigits: 0 })}
       </p>
-      {trend != null && (
-        <div className={`db-stat-trend ${trend >= 0 ? 'db-stat-trend--up' : 'db-stat-trend--down'}`}>
-          {trend >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-          {Math.abs(trend).toFixed(1)}%
-        </div>
-      )}
     </div>
   );
 };
@@ -241,9 +206,7 @@ const TransactionItem = ({ type, concept, title, dateLabel, amount, currency }) 
   return (
     <div className={`db-tx-item ${isIncome ? 'db-tx-item--income' : 'db-tx-item--expense'}`}>
       <div className="db-tx-icon">
-        {isIncome
-          ? <ArrowUpRight size={16} strokeWidth={2.5} />
-          : <ArrowDownRight size={16} strokeWidth={2.5} />}
+        {isIncome ? <ArrowUpRight size={16} strokeWidth={2.5} /> : <ArrowDownRight size={16} strokeWidth={2.5} />}
       </div>
       <div className="db-tx-info">
         <p className="db-tx-concept">{concept || title || 'Transacción'}</p>
@@ -260,13 +223,9 @@ const TransactionItem = ({ type, concept, title, dateLabel, amount, currency }) 
 // ── MarkdownCard ──────────────────────────────────────────
 const MarkdownCard = ({ type, title, subtitle, markdown }) => {
   const [expanded, setExpanded] = useState(false);
-  const config = {
-    idea:     { label: 'Idea',     Icon: FileText, color: '#22d3ee' },
-    standout: { label: 'Standout', Icon: BarChart2, color: '#a78bfa' },
-  };
+  const config = { idea: { label: 'Idea', Icon: FileText, color: '#22d3ee' } };
   const { label, Icon, color } = config[type] || config.idea;
   if (!markdown) return null;
-
   return (
     <div className="db-md-card">
       <div className="db-md-header">
@@ -291,121 +250,104 @@ const MarkdownCard = ({ type, title, subtitle, markdown }) => {
 const SectionHeader = ({ title, action, onAction }) => (
   <div className="db-section-header">
     <h3 className="db-section-title">{title}</h3>
-    {action && (
-      <button className="db-section-action" onClick={onAction}>{action}</button>
-    )}
+    {action && <button className="db-section-action" onClick={onAction}>{action}</button>}
   </div>
 );
 
-// ── Dashboard ─────────────────────────────────────────────
+// ── Dashboard (componente principal) ─────────────────────
 const Dashboard = () => {
   const {
-    totalValue      = 0,
-    totalPnl        = 0,
-    transactions    = [],
-    totalCryptoUSD  = 0,
+    totalValue        = 0,
+    totalPnl          = 0,
+    totalCryptoUSD    = 0,
     totalInversionUSD = 0,
-    totalManualUSD  = 0,
-    bobRate         = 6.96,
-    loading         = false,
-    monthlyReturn   = 0,
+    totalManualUSD    = 0,
+    bobRate           = 6.96,
+    loading           = false,
+    monthlyReturn     = 0,
   } = useApp();
 
-  const { ideas,     loading: loadingIdeas }     = useIdeas();
-  const { standouts, loading: loadingStandouts } = useStandouts();
+  // ✅ Transacciones desde su propio hook
+  const { transactions } = useTransactions();
+  const { ideas, loading: loadingIdeas } = useIdeas();
 
   const [timeFilter, setTimeFilter] = useState('today');
   const navigate = useNavigate();
 
-  // Refs para animar secciones
   const heroRef    = useRef(null);
   const metricsRef = useRef(null);
   const txRef      = useRef(null);
 
   useEffect(() => {
     if (loading) return;
-    // Hero
-    if (heroRef.current) {
-      animate(heroRef.current, {
-        opacity: [0, 1], translateY: [-20, 0],
-        duration: 600, ease: 'outExpo', delay: 100,
-      });
-    }
-    // Métricas con stagger
-    if (metricsRef.current) {
+    if (heroRef.current)
+      animate(heroRef.current, { opacity: [0, 1], translateY: [-20, 0], duration: 600, ease: 'outExpo', delay: 100 });
+    if (metricsRef.current)
       animate(metricsRef.current.querySelectorAll('.db-stat-card'), {
         opacity: [0, 1], translateY: [24, 0], scale: [0.94, 1],
         duration: 500, ease: 'outExpo', delay: stagger(80, { start: 300 }),
       });
-    }
   }, [loading]);
 
-  // Animar transacciones al cambiar filtro
   useEffect(() => {
     if (!txRef.current) return;
-    animate(txRef.current.querySelectorAll('.db-tx-item'), {
-      opacity: [0, 1], translateX: [-12, 0],
-      duration: 280, ease: 'outExpo', delay: stagger(40),
-    });
-  }, [timeFilter]);
+    const items = txRef.current.querySelectorAll('.db-tx-item');
+    if (!items.length) return;
+    animate(items, { opacity: [0, 1], translateX: [-12, 0], duration: 280, ease: 'outExpo', delay: stagger(40) });
+  }, [timeFilter, transactions]);
 
-  if (loading) return (
-    <div className="db-loading">
-      <div className="db-loading-spinner" />
-    </div>
-  );
+  if (loading) return <div className="db-loading"><div className="db-loading-spinner" /></div>;
 
   const isPositive = totalPnl >= 0;
   const usdValue   = bobRate > 0 ? totalValue / bobRate : 0;
 
-  // Porcentaje de cada segmento sobre el total
   const totalUSD  = totalCryptoUSD + totalInversionUSD + (totalManualUSD ?? 0);
-  const pctCrypto = totalUSD > 0 ? (totalCryptoUSD / totalUSD * 100) : 0;
+  const pctCrypto = totalUSD > 0 ? (totalCryptoUSD    / totalUSD * 100) : 0;
   const pctEtf    = totalUSD > 0 ? (totalInversionUSD / totalUSD * 100) : 0;
   const pctManual = totalUSD > 0 ? ((totalManualUSD ?? 0) / totalUSD * 100) : 0;
 
-  // Filtrado
-  const filteredIdeas     = timeFilter === 'today'
-    ? ideas.filter(i => isTodayRecord(i.date || i.createdAt))
-    : ideas;
-  const filteredStandouts = timeFilter === 'today'
-    ? standouts.filter(s => isTodayRecord(s.date || s.createdAt))
-    : standouts;
+  // ── Ordenar por fecha más reciente ───────────────────────
+  const sortedTx = [...transactions].sort((a, b) => {
+    const aDate = parseAnyDate(a.createdAt) || parseAnyDate(a.date);
+    const bDate = parseAnyDate(b.createdAt) || parseAnyDate(b.date);
+    return (bDate?.getTime() ?? 0) - (aDate?.getTime() ?? 0);
+  });
 
-  const sortedTx = [...(transactions || [])].sort((a, b) => parseDateMs(b.date) - parseDateMs(a.date));
-  const recent   = sortedTx
-    .filter(tx => typeof tx.amount === 'number' && (timeFilter === 'history' || isTodayRecord(tx.date)))
+  // ── Filtrar transacciones ────────────────────────────────
+  const recent = sortedTx
+    .filter(tx => {
+      if (typeof tx.amount !== 'number') return false;
+      if (timeFilter === 'history') return true;
+      return isTxToday(tx);
+    })
     .slice(0, timeFilter === 'history' ? 20 : 10)
     .map(tx => {
-      const d = excelSerialToDate(tx.date);
+      const rawDate = tx.createdAt || tx.date;
+      const d = parseAnyDate(rawDate);
       const dateLabel = d
         ? d.toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' })
         : '';
       return { ...tx, dateLabel };
     });
 
-  // Totales de ingresos/egresos del período visible
   const totalIncome  = recent.filter(t => t.type === 'income') .reduce((s, t) => s + t.amount, 0);
   const totalExpense = recent.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const balance      = totalIncome - totalExpense;
 
+  const filteredIdeas = timeFilter === 'today'
+    ? ideas.filter(i => isTodayRecord(i.date || i.createdAt))
+    : ideas;
+
   return (
     <div className="db-page">
 
-      {/* ── Versículo ── */}
-      <div className="db-verse-wrap">
-        <BibleVerse />
-      </div>
+      {/* Versículo */}
+      <div className="db-verse-wrap"><BibleVerse /></div>
 
-      {/* ── Hero ── */}
+      {/* Hero */}
       <div ref={heroRef} className="db-hero" style={{ opacity: 0 }}>
         <div className="db-hero-bg-glow" />
-
-        <div className="db-hero-eyebrow">
-          <Wallet size={13} />
-          Patrimonio Total
-        </div>
-
+        <div className="db-hero-eyebrow"><Wallet size={13} /> Patrimonio Total</div>
         <div className="db-hero-main">
           <div className="db-hero-bs">
             Bs <AnimatedNumber value={totalValue} prefix="" decimals={2} className="db-hero-bs-num" />
@@ -417,15 +359,12 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Barra de distribución */}
+        {/* Barra distribución */}
         <div className="db-hero-alloc">
           <div className="db-alloc-bar">
-            <div className="db-alloc-seg db-alloc-seg--crypto"
-              style={{ width: `${pctCrypto}%` }} />
-            <div className="db-alloc-seg db-alloc-seg--etf"
-              style={{ width: `${pctEtf}%` }} />
-            <div className="db-alloc-seg db-alloc-seg--manual"
-              style={{ width: `${pctManual}%` }} />
+            <div className="db-alloc-seg db-alloc-seg--crypto" style={{ width: `${pctCrypto}%` }} />
+            <div className="db-alloc-seg db-alloc-seg--etf"    style={{ width: `${pctEtf}%` }} />
+            <div className="db-alloc-seg db-alloc-seg--manual" style={{ width: `${pctManual}%` }} />
           </div>
           <div className="db-alloc-legend">
             <span className="db-alloc-dot db-alloc-dot--crypto" />
@@ -437,48 +376,26 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Badges P&L */}
+        {/* P&L badges */}
         <div className="db-hero-badges">
           <div className={`db-badge ${isPositive ? 'db-badge--up' : 'db-badge--down'}`}>
             {isPositive ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
             {isPositive ? '+' : '-'}${Math.abs(totalPnl).toFixed(2)} P&amp;L
           </div>
           <div className="db-badge db-badge--teal">
-            <Zap size={13} />
-            +{monthlyReturn}% este mes
+            <Zap size={13} /> +{monthlyReturn}% este mes
           </div>
         </div>
       </div>
 
-      {/* ── Stats Grid ── */}
+      {/* Stats grid */}
       <div ref={metricsRef} className="db-stats-grid">
-        <StatCard
-          label="Crypto"
-          value={totalCryptoUSD}
-          color="#f97316"
-          icon={Activity}
-          trend={null}
-          delay={0}
-        />
-        <StatCard
-          label="ETFs"
-          value={totalInversionUSD}
-          color="#3b82f6"
-          icon={PieChart}
-          trend={null}
-          delay={80}
-        />
-        <StatCard
-          label="Manual"
-          value={totalManualUSD ?? 0}
-          color="#10b981"
-          icon={Target}
-          trend={null}
-          delay={160}
-        />
+        <StatCard label="Crypto" value={totalCryptoUSD}    color="#f97316" icon={Activity} delay={0}   />
+        <StatCard label="ETFs"   value={totalInversionUSD} color="#3b82f6" icon={PieChart} delay={80}  />
+        <StatCard label="Manual" value={totalManualUSD ?? 0} color="#10b981" icon={Target} delay={160} />
       </div>
 
-      {/* ── Resumen flujo del período ── */}
+            {/* Flujo */}
       <div className="db-flow-card">
         <p className="db-flow-title">
           <Calendar size={13} />
@@ -504,7 +421,6 @@ const Dashboard = () => {
             color={balance >= 0 ? '#34d399' : '#fb7185'}
           />
         </div>
-        {/* Barra visual ingreso vs egreso */}
         {(totalIncome + totalExpense) > 0 && (
           <div className="db-flow-bar-wrap">
             <div className="db-flow-bar">
@@ -515,7 +431,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* ── Filtro de tiempo ── */}
+      {/* Filtro de tiempo */}
       <div className="db-filter-bar">
         <button
           className={`db-filter-btn ${timeFilter === 'today' ? 'db-filter-btn--active' : ''}`}
@@ -531,7 +447,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* ── Actividad reciente ── */}
+      {/* Actividad reciente */}
       <div className="db-section">
         <SectionHeader
           title="Actividad Reciente"
@@ -541,7 +457,17 @@ const Dashboard = () => {
         <div ref={txRef} className="db-tx-list">
           {recent.length === 0 ? (
             <div className="db-empty">
-              Sin actividad {timeFilter === 'today' ? 'hoy' : 'reciente'}
+              {timeFilter === 'today'
+                ? 'Sin actividad hoy'
+                : 'Sin actividad reciente'}
+              {timeFilter === 'today' && transactions.length > 0 && (
+                <button
+                  className="db-empty-hint"
+                  onClick={() => setTimeFilter('history')}
+                >
+                  Ver histórico ({transactions.length} registros)
+                </button>
+              )}
             </div>
           ) : (
             recent.map(tx => (
@@ -558,8 +484,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-
-      {/* ── Ideas del día ── */}
+            {/* Ideas */}
       {!loadingIdeas && filteredIdeas.length > 0 && (
         <div className="db-section">
           <SectionHeader title="Ideas" />
@@ -577,36 +502,20 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* ── Standouts ── */}
-      {!loadingStandouts && filteredStandouts.length > 0 && (
-        <div className="db-section">
-          <SectionHeader title="Standouts" />
-          <div className="db-cards-list">
-            {filteredStandouts.map((s, i) => (
-              <MarkdownCard
-                key={s.id ?? i}
-                type="standout"
-                title={s.title || s.symbol || 'Sin título'}
-                subtitle={s.subtitle || s.ticker || ''}
-                markdown={s.markdown || s.content || s.notes}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Accesos rápidos ── */}
+      {/* Accesos rápidos */}
       <div className="db-section">
         <SectionHeader title="Accesos Rápidos" />
         <div className="db-shortcuts">
           {[
-            { label: 'Portafolio',  icon: PieChart,   path: '/portfolio',    color: '#3b82f6' },
-            { label: 'Historial',   icon: Activity,   path: '/wealth',       color: '#14b8a6' },
-            { label: 'Análisis',    icon: BarChart2,  path: '/analytics',    color: '#a78bfa' },
-            { label: 'Inversiones', icon: TrendingUp, path: '/investments',  color: '#f97316' },
+            { label: 'Portafolio', icon: PieChart,  path: '/portfolio',  color: '#3b82f6' },
+            { label: 'Historial',  icon: Activity,  path: '/wealth',     color: '#14b8a6' },
+            { label: 'Análisis',   icon: BarChart2, path: '/analytics',  color: '#a78bfa' },
           ].map(({ label, icon: Icon, path, color }) => (
             <button key={path} className="db-shortcut" onClick={() => navigate(path)}>
-              <div className="db-shortcut-icon" style={{ color, background: color + '18', borderColor: color + '33' }}>
+              <div
+                className="db-shortcut-icon"
+                style={{ color, background: color + '18', borderColor: color + '33' }}
+              >
                 <Icon size={20} />
               </div>
               <span className="db-shortcut-label">{label}</span>
@@ -615,11 +524,8 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ── FAB ── */}
-      <button
-        className="db-fab"
-        onClick={() => navigate('/new-transaction')}
-      >
+      {/* FAB */}
+      <button className="db-fab" onClick={() => navigate('/new-transaction')}>
         <Plus size={26} strokeWidth={2.5} />
       </button>
 
