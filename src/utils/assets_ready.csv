@@ -1,8 +1,5 @@
 name,type,currency,amount,note,since
-ABT,stock,USD,57.2,Importado Quantfury | Leverage 19.23x,2026-05-08
-CEG,stock,USD,74.27,Importado Quantfury | Leverage 19.23x,2026-05-08
-JNJ,stock,USD,41.6,Importado Quantfury | Leverage 19.23x,2026-05-08
-KTOS,stock,USD,29.27,Importado Quantfury | Leverage 19.23x,2026-05-08
-MELI,stock,USD,146.14,Importado Quantfury | Leverage 19.23x,2026-05-08
-POL/USDT,crypto,USD,26.67,Importado Quantfury | Leverage 19.23x,2026-05-08
-SLV,stock,USD,181.85,Importado Quantfury | Leverage 19.23x,2026-05-08
+ABT,stock,USD,63.71,Importado Quantfury | Leverage 23.54x,2026-05-19
+CEG,stock,USD,90.42,Importado Quantfury | Leverage 23.54x,2026-05-19
+KTOS,stock,USD,23.92,Importado Quantfury | Leverage 23.54x,2026-05-19
+MELI,stock,USD,144.95000000000002,Importado Quantfury | Leverage 23.54x,2026-05-19

@@ -4,7 +4,7 @@ import {
   TrendingUp, TrendingDown, Activity, Plus,
   ArrowUpRight, ArrowDownRight, FileText, BarChart2,
   ChevronDown, ChevronUp, Calendar, History,
-  Wallet, PieChart, Zap, Target, BookOpen,
+  Wallet, PieChart, Zap, Target, BookOpen, 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -510,6 +510,7 @@ const Dashboard = () => {
             { label: 'Portafolio', icon: PieChart,  path: '/portfolio',  color: '#3b82f6' },
             { label: 'Historial',  icon: Activity,  path: '/wealth',     color: '#14b8a6' },
             { label: 'Análisis',   icon: BarChart2, path: '/analytics',  color: '#a78bfa' },
+             { label: 'Trading',   icon: TrendingUp , path: '/trading-history',  color: '#ffa75bfa' },
           ].map(({ label, icon: Icon, path, color }) => (
             <button key={path} className="db-shortcut" onClick={() => navigate(path)}>
               <div

@@ -4,7 +4,7 @@ import {
   Plus, Trash2, Pencil, Check, X,
   Wallet, Upload, FileSpreadsheet,
   TrendingUp, Bitcoin, BarChart2,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, FileText
 } from 'lucide-react';
 import Papa from 'papaparse';
 
@@ -301,7 +301,7 @@ const ManualAssets = () => {
     addAsset,
     removeAsset,
     updateAsset,
-    replaceImportedAssetsBulk,
+    replaceImportedAssetsBulk, replaceTradingHistoryBulk,
     BOB_PER_USD,
   } = useApp();
 
@@ -311,6 +311,12 @@ const ManualAssets = () => {
   const [editData, setEditData] = useState({});
   const [isImporting, setIsImporting] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+  
+  // Novedades para Quantfury API
+  const [showQuantfuryModal, setShowQuantfuryModal] = useState(false);
+  const [quantfuryEquity, setQuantfuryEquity] = useState('');
+  const quantfuryFileRef = useRef(null);
+  
   const fileInputRef = useRef(null);
 
   // ── Separar activos por origen ────────────────────────────────────────────
@@ -352,6 +358,85 @@ const ManualAssets = () => {
     if (!n || isNaN(n)) return null;
     return currency === 'BOB' ? `≈ $${(n / BOB_PER_USD).toFixed(2)} USD` : `≈ Bs ${(n * BOB_PER_USD).toFixed(2)}`;
   };
+
+  // ── Importar Quantfury API ──────────────────────────────────────────────────
+const handleQuantfuryImport = async () => {
+  const file = quantfuryFileRef.current?.files?.[0];
+  const equity = parseFloat(quantfuryEquity);
+
+  if (!file) {
+    setImportMsg('Por favor selecciona un PDF');
+    return;
+  }
+
+  if (!equity || Number.isNaN(equity) || equity <= 0) {
+    setImportMsg('Por favor ingresa un Equity válido');
+    return;
+  }
+
+  setIsImporting(true);
+  setImportMsg('Procesando PDF en la nube...');
+  setShowQuantfuryModal(false);
+
+  try {
+    const formData = new FormData();
+    formData.append('pdf', file);
+    formData.append('equity', String(equity));
+
+    const API_URL = 'https://procesar-quantfury-rzopmhvocq-uc.a.run.app';
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(errText || 'No se pudo procesar el PDF');
+    }
+
+    const result = await response.json();
+
+    const openPositions = Array.isArray(result?.open_positions)
+      ? result.open_positions
+      : [];
+
+    const tradingHistory = Array.isArray(result?.trading_history)
+      ? result.trading_history
+      : [];
+
+    const summary = result?.summary || null;
+
+    if (!openPositions.length && !tradingHistory.length) {
+      setImportMsg('El PDF se procesó pero no devolvió datos utilizables.');
+      return;
+    }
+
+    if (openPositions.length) {
+      await replaceImportedAssetsBulk(openPositions, 'quantfury');
+    }
+
+    if (tradingHistory.length) {
+      await replaceTradingHistoryBulk(tradingHistory, {
+        source: 'quantfury',
+        equity_real: equity,
+        summary,
+        imported_at: new Date().toISOString(),
+        file_name: file.name,
+      });
+    }
+
+    setImportMsg(
+      `✅ Importación exitosa: ${openPositions.length} posiciones abiertas, ${tradingHistory.length} operaciones históricas guardadas.`
+    );
+  } catch (err) {
+    setImportMsg(`Error al procesar: ${err.message}`);
+  } finally {
+    setIsImporting(false);
+    setQuantfuryEquity('');
+    if (quantfuryFileRef.current) quantfuryFileRef.current.value = '';
+  }
+};
 
   // ── Importar CSV ──────────────────────────────────────────────────────────
   const handleImportFile = async (e) => {
@@ -402,21 +487,34 @@ const ManualAssets = () => {
   //  RENDER
   // ════════════════════════════════════════════════════════════════════════
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 relative">
       <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportFile} className="hidden" />
 
       {/* ── Header ── */}
       <div className="flex justify-between items-center gap-3 flex-wrap">
         <h1 className="text-2xl font-black">Activos Manuales</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          
+          {/* Botón Quantfury */}
+          <button
+            onClick={() => setShowQuantfuryModal(true)}
+            disabled={isImporting}
+            className="flex items-center gap-2 bg-brand-teal/10 border border-brand-teal/30 text-brand-teal font-bold text-sm px-4 py-2 rounded-xl hover:bg-brand-teal/20 transition-all disabled:opacity-50"
+          >
+            {isImporting ? <FileText size={16} /> : <BarChart2 size={16} />}
+            Importar Quantfury
+          </button>
+
+          {/* Botón CSV Antiguo */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isImporting}
-            className="flex items-center gap-2 bg-white/5 border border-white/10 text-white font-bold text-sm px-4 py-2 rounded-xl active:scale-95 transition-transform disabled:opacity-50"
+            className="flex items-center gap-2 bg-white/5 border border-white/10 text-white font-bold text-sm px-4 py-2 rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50"
           >
             {isImporting ? <FileSpreadsheet size={16} /> : <Upload size={16} />}
-            {isImporting ? 'Importando...' : 'Importar CSV'}
+            CSV
           </button>
+          
           <button
             onClick={() => setShowForm((v) => !v)}
             className="flex items-center gap-2 bg-brand-teal text-black font-bold text-sm px-4 py-2 rounded-xl active:scale-95 transition-transform"
@@ -428,9 +526,8 @@ const ManualAssets = () => {
 
       {/* ── Mensaje importación ── */}
       {importMsg && (
-        <div className="bg-brand-card rounded-2xl border border-white/5 px-4 py-3">
-          <p className="text-sm text-white/70">{importMsg}</p>
-          <p className="text-[11px] text-white/30 mt-1">Columnas: name, asset_type, currency, amount, note, since</p>
+        <div className={`rounded-2xl border px-4 py-3 ${importMsg.includes('Error') ? 'bg-rose-500/10 border-rose-500/30' : 'bg-brand-card border-white/5'}`}>
+          <p className={`text-sm ${importMsg.includes('Error') ? 'text-rose-400' : 'text-white/70'}`}>{importMsg}</p>
         </div>
       )}
 
@@ -521,6 +618,57 @@ const ManualAssets = () => {
           onEdit={startEdit}
           onRemove={removeAsset}
         />
+      )}
+
+      {/* ── Modal Quantfury PDF (overlay) ── */}
+      {showQuantfuryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowQuantfuryModal(false); }}>
+          <div className="w-full max-w-sm bg-[#1a1a1a] rounded-3xl border border-brand-teal/30 p-6 space-y-4">
+            <div className="flex items-center gap-3 text-brand-teal">
+              <BarChart2 size={24} />
+              <h3 className="font-bold text-lg">Importar PDF Quantfury</h3>
+            </div>
+            
+            <p className="text-sm text-white/60">
+              Sube el "Informe de Historial de Trading" en formato PDF y asigna el Equity actual de tu cuenta.
+            </p>
+
+            <div className="space-y-1">
+              <label className="text-xs text-white/40 uppercase font-bold pl-1">Equity Real (USD)</label>
+              <input
+                type="number" step="0.01" placeholder="Ej: 323.50"
+                value={quantfuryEquity}
+                onChange={(e) => setQuantfuryEquity(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-teal"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-white/40 uppercase font-bold pl-1">Archivo PDF</label>
+              <input
+                type="file" accept="application/pdf"
+                ref={quantfuryFileRef}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white/70 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-teal/10 file:text-brand-teal hover:file:bg-brand-teal/20 outline-none focus:border-brand-teal cursor-pointer"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button 
+                onClick={handleQuantfuryImport}
+                className="flex-1 bg-brand-teal text-black font-bold py-2.5 rounded-xl text-sm"
+              >
+                Procesar PDF
+              </button>
+              <button 
+                onClick={() => setShowQuantfuryModal(false)}
+                className="px-4 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-white/60 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Modal de edición (overlay) ── */}

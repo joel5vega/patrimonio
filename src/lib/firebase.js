@@ -16,21 +16,23 @@ import {
   orderBy,
   limit,
   getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db   = getFirestore(app);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
+
 
 // ─── getLatestBinanceSnapshot ───────────────────────────────
 export const getLatestBinanceSnapshot = async () => {
@@ -45,6 +47,7 @@ export const getLatestBinanceSnapshot = async () => {
   return { id: snap.docs[0].id, ...snap.docs[0].data() };
 };
 
+
 // ─── getSnapshotHistory ─────────────────────────────────────
 export const getSnapshotHistory = async (n = 30) => {
   const q = query(
@@ -54,11 +57,14 @@ export const getSnapshotHistory = async (n = 30) => {
     limit(n)
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({
-    date: d.data().statementDate,
-    totalPortfolioUSD: d.data().snapshot?.balancesUSD ?? 0,
-  })).reverse();
+  return snap.docs
+    .map((d) => ({
+      date: d.data().statementDate,
+      totalPortfolioUSD: d.data().snapshot?.balancesUSD ?? 0,
+    }))
+    .reverse();
 };
+
 
 // ─── getAdmiralsSnapshots ──────────────────────────────────
 export const getAdmiralsSnapshots = async () => {
@@ -72,6 +78,7 @@ export const getAdmiralsSnapshots = async () => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
+
 // ─── getStatements ─────────────────────────────────────────
 export const getStatements = async (n = 50) => {
   const q = query(
@@ -83,13 +90,16 @@ export const getStatements = async (n = 50) => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
+
 // ─── getReports ────────────────────────────────────────────
 export const getReports = async (n = 20) => {
   const results = [];
+
   try {
     const snap = await getDocs(
       query(collection(db, 'standoutsReports'), orderBy('date', 'desc'), limit(n))
     );
+
     snap.docs.forEach((d) =>
       results.push({
         id: d.id,
@@ -110,6 +120,7 @@ export const getReports = async (n = 20) => {
         limit(50)
       )
     );
+
     snap.docs
       .filter((d) => !!d.data().report)
       .slice(0, n)
@@ -133,13 +144,15 @@ export const getReports = async (n = 20) => {
   return results.slice(0, n);
 };
 
+
 // =============================================================================
 // MANUAL ASSETS
 // =============================================================================
 
 export const subscribeManualAssets = (uid, callback) => {
   const col = collection(db, 'users', uid, 'manualAssets');
-  const q   = query(col, orderBy('createdAt', 'desc'));
+  const q = query(col, orderBy('createdAt', 'desc'));
+
   return onSnapshot(q, (snap) => {
     const assets = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     callback(assets);
@@ -148,12 +161,12 @@ export const subscribeManualAssets = (uid, callback) => {
 
 export const addManualAsset = (uid, asset) =>
   addDoc(collection(db, 'users', uid, 'manualAssets'), {
-    name:      asset.name,
-    currency:  asset.currency,
-      type:      asset.type || 'manual', 
-    amount:    parseFloat(asset.amount),
-    note:      asset.note || '',
-    since:     asset.since ?? null,
+    name: asset.name,
+    currency: asset.currency,
+    type: asset.type || 'manual',
+    amount: parseFloat(asset.amount),
+    note: asset.note || '',
+    since: asset.since ?? null,
     createdAt: serverTimestamp(),
   });
 
@@ -163,13 +176,15 @@ export const removeManualAsset = (uid, id) =>
 export const updateManualAsset = (uid, id, updates) =>
   updateDoc(doc(db, 'users', uid, 'manualAssets', id), updates);
 
+
 // =============================================================================
 // TRANSACTIONS
 // =============================================================================
 
 export const subscribeTransactions = (uid, callback, n = 100) => {
   const col = collection(db, 'users', uid, 'transactions');
-  const q   = query(col, orderBy('date', 'desc'), limit(n));
+  const q = query(col, orderBy('date', 'desc'), limit(n));
+
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   });
@@ -177,14 +192,14 @@ export const subscribeTransactions = (uid, callback, n = 100) => {
 
 export const addTransaction = (uid, tx) =>
   addDoc(collection(db, 'users', uid, 'transactions'), {
-    title:     tx.title,
-    concept:   tx.concept || '',
-    amount:    parseFloat(tx.amount),
-    currency:  tx.currency || 'USD',
-    type:      tx.type,
-    category:  tx.category,
-    date:      tx.date,
-    note:      tx.note || '',
+    title: tx.title,
+    concept: tx.concept || '',
+    amount: parseFloat(tx.amount),
+    currency: tx.currency || 'USD',
+    type: tx.type,
+    category: tx.category,
+    date: tx.date,
+    note: tx.note || '',
     createdAt: serverTimestamp(),
   });
 
@@ -194,20 +209,21 @@ export const updateTransaction = (uid, id, updates) =>
 export const removeTransaction = (uid, id) =>
   deleteDoc(doc(db, 'users', uid, 'transactions', id));
 
+
 // =============================================================================
 // PORTFOLIO HISTORY
 // =============================================================================
-// Sobrescribe el documento completo (sin merge) — elimina campos obsoletos
+
 export async function replacePortfolioSnapshot(uid, date, data) {
   const ref = doc(db, 'users', uid, 'portfolioHistory', date);
   await setDoc(ref, { ...data, date, updatedAt: new Date().toISOString() });
-  // sin merge: true → campos viejos desaparecen
 }
+
 export async function savePortfolioSnapshot(uid, data) {
   const date = data.date ?? new Date().toISOString().split('T')[0];
-  const ref  = doc(db, 'users', uid, 'portfolioHistory', date);
+  const ref = doc(db, 'users', uid, 'portfolioHistory', date);
 
-  const cryptoUSD    = data.cryptoUSD    ?? 0;
+  const cryptoUSD = data.cryptoUSD ?? 0;
   const inversionUSD = data.inversionUSD ?? 0;
 
   const manualFieldsUSD = Object.entries(data)
@@ -255,7 +271,7 @@ export async function getPortfolioHistory(uid) {
 
 export async function getAllDailySnapshots() {
   try {
-    const ref  = collection(db, 'dailyAccountSnapshots');
+    const ref = collection(db, 'dailyAccountSnapshots');
     const snap = await getDocs(ref);
     console.log('✅ getAllDailySnapshots:', snap.size, 'docs');
     return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -265,6 +281,11 @@ export async function getAllDailySnapshots() {
   }
 }
 
+
+// =============================================================================
+// IDEAS / STANDOUTS
+// =============================================================================
+
 export const subscribeIdeas = (callback) => {
   const q = query(
     collection(db, 'ideaTasks'),
@@ -272,15 +293,19 @@ export const subscribeIdeas = (callback) => {
     limit(5)
   );
 
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    callback(data);
-  }, (error) => {
-    console.error("Error en subscribeIdeas:", error);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((docu) => ({
+        id: docu.id,
+        ...docu.data(),
+      }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error en subscribeIdeas:', error);
+    }
+  );
 };
 
 export const subscribeStandouts = (callback) => {
@@ -290,15 +315,19 @@ export const subscribeStandouts = (callback) => {
     limit(3)
   );
 
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    callback(data);
-  }, (error) => {
-    console.error("Error en subscribeStandouts:", error);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const data = snapshot.docs.map((docu) => ({
+        id: docu.id,
+        ...docu.data(),
+      }));
+      callback(data);
+    },
+    (error) => {
+      console.error('Error en subscribeStandouts:', error);
+    }
+  );
 };
 
 export async function getPortfolioSnapshotByDate(userId, date) {
@@ -316,4 +345,105 @@ export async function getLatestPortfolioAnalysis(userId) {
   const snap = await getDocs(q);
   if (snap.empty) return null;
   return { id: snap.docs[0].id, ...snap.docs[0].data() };
+}
+
+
+// =============================================================================
+// TRADING HISTORY
+// =============================================================================
+
+async function commitDeleteBatches(docs) {
+  for (let i = 0; i < docs.length; i += 400) {
+    const batch = writeBatch(db);
+    docs.slice(i, i + 400).forEach((snap) => {
+      batch.delete(snap.ref);
+    });
+    await batch.commit();
+  }
+}
+
+async function commitInsertBatches(colRef, rows, meta, batchId) {
+  for (let i = 0; i < rows.length; i += 400) {
+    const batch = writeBatch(db);
+
+    rows.slice(i, i + 400).forEach((row) => {
+      const ref = doc(colRef);
+      batch.set(ref, {
+        ...row,
+        source: meta.source ?? 'quantfury',
+        import_batch_id: batchId,
+        equity_real: meta.equity_real ?? null,
+        import_summary: meta.summary ?? null,
+        file_name: meta.file_name ?? null,
+        importedAt: serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+  }
+}
+
+export async function replaceTradingHistoryBulk(uid, rows, meta = {}) {
+  if (!uid) throw new Error('uid requerido');
+
+  const normalizedRows = Array.isArray(rows) ? rows.filter(Boolean) : [];
+  const colRef = collection(db, 'users', uid, 'tradingHistory');
+
+  const existingSnap = await getDocs(colRef);
+  await commitDeleteBatches(existingSnap.docs);
+
+  if (normalizedRows.length === 0) {
+    return { batchId: null, count: 0 };
+  }
+
+  const batchId = `qf_${Date.now()}`;
+  await commitInsertBatches(colRef, normalizedRows, meta, batchId);
+
+  return { batchId, count: normalizedRows.length };
+}
+
+// En firebase.js
+
+export const getTradingHistory = async (uid, n = 500) => {
+  try {
+    const q = query(
+      collection(db, 'users', uid, 'tradingHistory'),
+      orderBy('time', 'desc'), // Asumiendo que el PDF arroja una fecha/hora, revisa qué campo exacto usó la API
+      limit(n)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.error('❌ getTradingHistory error:', e);
+    return [];
+  }
+};
+
+// =============================================================================
+// QUANTFURY PDF PROCESSOR
+// =============================================================================
+
+export async function procesarQuantfuryPdf({ file, equity }) {
+  if (!file) throw new Error('Archivo PDF requerido');
+  if (equity == null || equity === '') throw new Error('Equity requerido');
+
+  const formData = new FormData();
+  formData.append('pdf', file);
+  formData.append('equity', String(equity));
+
+  const endpoint =
+    import.meta.env.VITE_QUANTFURY_PARSER_URL ||
+    'https://procesar-quantfury-rzopmhvocq-uc.a.run.app';
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Error procesando PDF de Quantfury');
+  }
+
+  return await res.json();
 }

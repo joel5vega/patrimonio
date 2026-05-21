@@ -12,6 +12,7 @@ import BankImport from './pages/BankImport';
 import Login from './pages/Login';
 import Budget from './pages/Budget';
 import QuantDashboard from './pages/QuantDashboard'
+import TradingHistory from './pages/TradingHistory';
 function AppRoutes() {
   const { user, loading } = useAuth();
 
@@ -30,6 +31,7 @@ function AppRoutes() {
         <Route path="manual" element={<ManualAssets />} />
         <Route path="budget" element={<Budget />} />
         <Route path="quant" element={<QuantDashboard />} />
+        <Route path="trading-history" element={<TradingHistory />} />
       </Route>
       <Route path="/new-transaction" element={<NewTransaction />} />
       <Route path="/bank-import" element={<BankImport />} />
