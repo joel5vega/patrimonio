@@ -301,8 +301,7 @@ const ManualAssets = () => {
     addAsset,
     removeAsset,
     updateAsset,
-    replaceImportedAssetsBulk, replaceTradingHistoryBulk,
-    BOB_PER_USD,
+    BOB_PER_USD,processQuantfuryPdf,replaceImportedAssetsBulk
   } = useApp();
 
   const [form, setForm] = useState(EMPTY);
@@ -379,55 +378,17 @@ const handleQuantfuryImport = async () => {
   setShowQuantfuryModal(false);
 
   try {
-    const formData = new FormData();
-    formData.append('pdf', file);
-    formData.append('equity', String(equity));
+    const result = await processQuantfuryPdf({ file, equity });
 
-    const API_URL = 'https://procesar-quantfury-rzopmhvocq-uc.a.run.app';
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(errText || 'No se pudo procesar el PDF');
-    }
-
-    const result = await response.json();
-
-    const openPositions = Array.isArray(result?.open_positions)
-      ? result.open_positions
-      : [];
-
-    const tradingHistory = Array.isArray(result?.trading_history)
-      ? result.trading_history
-      : [];
-
-    const summary = result?.summary || null;
-
-    if (!openPositions.length && !tradingHistory.length) {
-      setImportMsg('El PDF se procesó pero no devolvió datos utilizables.');
-      return;
-    }
-
-    if (openPositions.length) {
-      await replaceImportedAssetsBulk(openPositions, 'quantfury');
-    }
-
-    if (tradingHistory.length) {
-      await replaceTradingHistoryBulk(tradingHistory, {
-        source: 'quantfury',
-        equity_real: equity,
-        summary,
-        imported_at: new Date().toISOString(),
-        file_name: file.name,
-      });
-    }
+    const openPositions =
+      result?.open_positions_reported ??
+      result?.open_positions ??
+      [];
 
     setImportMsg(
-      `✅ Importación exitosa: ${openPositions.length} posiciones abiertas, ${tradingHistory.length} operaciones históricas guardadas.`
+      `Importación exitosa: ${openPositions.length} posiciones abiertas y ${
+        result?.trading_history?.length ?? result?.raw_legs?.length ?? 0
+      } operaciones históricas.`
     );
   } catch (err) {
     setImportMsg(`Error al procesar: ${err.message}`);
@@ -439,49 +400,96 @@ const handleQuantfuryImport = async () => {
 };
 
   // ── Importar CSV ──────────────────────────────────────────────────────────
-  const handleImportFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsImporting(true);
-    setImportMsg('');
+const handleImportFile = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async ({ data, errors }) => {
-        try {
-          if (errors?.length) { setImportMsg('El CSV tiene errores de lectura.'); return; }
-          if (!data?.length)  { setImportMsg('El archivo está vacío.'); return; }
-          const headers = Object.keys(data[0] || {});
-          const missing = ['name', 'currency', 'amount'].filter((c) => !headers.includes(c));
-          if (missing.length) { setImportMsg(`Faltan columnas: ${missing.join(', ')}`); return; }
+  setIsImporting(true);
+  setImportMsg('');
 
-          const rows = data.map((row) => {
-            const name     = String(row.name || '').trim();
-            const currency = normalizeCurrency(row.currency);
-            const amount   = parseAmount(row.amount);
-            const note     = String(row.note || '').trim();
-            const since    = String(row.since || '').trim() || today;
-            const rawType  = String(row.asset_type || row.type || 'stock').trim().toLowerCase();
-            const type     = ['stock', 'crypto', 'future'].includes(rawType) ? rawType : 'stock';
-            if (!name || !currency || isNaN(amount) || amount <= 0) return null;
-            return { name, type, currency, amount, note, since };
-          }).filter(Boolean);
-
-          const skipped = data.length - rows.length;
-          const summary = rows.reduce((acc, r) => { acc[r.type] = (acc[r.type] || 0) + 1; return acc; }, {});
-          await replaceImportedAssetsBulk(rows, 'quantfury');
-          setImportMsg(`✅ ${Object.entries(summary).map(([t, n]) => `${n} ${t}`).join(', ')}. Omitidos: ${skipped}.`);
-        } catch (err) {
-          setImportMsg('No se pudo importar el archivo.');
-        } finally {
-          setIsImporting(false);
-          e.target.value = '';
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: async ({ data, errors }) => {
+      try {
+        if (errors?.length) {
+          setImportMsg('El CSV tiene errores de lectura.');
+          return;
         }
-      },
-      error: () => { setImportMsg('Error al procesar el archivo.'); setIsImporting(false); e.target.value = ''; },
-    });
-  };
+
+        if (!data?.length) {
+          setImportMsg('El archivo está vacío.');
+          return;
+        }
+
+        const headers = Object.keys(data[0] || {});
+        const missing = ['name', 'currency', 'amount'].filter((c) => !headers.includes(c));
+
+        if (missing.length) {
+          setImportMsg(`Faltan columnas: ${missing.join(', ')}`);
+          return;
+        }
+
+        const rows = data
+          .map((row) => {
+            const name = String(row.name || '').trim();
+            const currency = normalizeCurrency(row.currency);
+            const amount = parseAmount(row.amount);
+            const note = String(row.note || '').trim();
+            const since = String(row.since || '').trim() || today;
+            const rawType = String(row.asset_type || row.type || 'manual')
+              .trim()
+              .toLowerCase();
+
+            const type = ['stock', 'crypto', 'future', 'manual'].includes(rawType)
+              ? rawType
+              : 'manual';
+
+            if (!name || !currency || Number.isNaN(amount) || amount <= 0) return null;
+
+            return {
+              name,
+              type,
+              currency,
+              amount,
+              note,
+              since,
+            };
+          })
+          .filter(Boolean);
+
+        if (!rows.length) {
+          setImportMsg('No se encontraron filas válidas para importar.');
+          return;
+        }
+
+        const skipped = data.length - rows.length;
+        const summary = rows.reduce((acc, r) => {
+          acc[r.type] = (acc[r.type] || 0) + 1;
+          return acc;
+        }, {});
+
+        await replaceImportedAssetsBulk(rows, 'csv');
+
+        setImportMsg(
+          `✅ ${Object.entries(summary)
+            .map(([t, n]) => `${n} ${t}`)
+            .join(', ')}. Omitidos: ${skipped}.`
+        );
+      } catch (err) {
+        setImportMsg(`No se pudo importar el archivo: ${err.message || 'error desconocido'}`);
+      } finally {
+        setIsImporting(false);
+        e.target.value = '';
+      }
+    },
+    error: () => {
+      setImportMsg('Error al procesar el archivo.');
+      setIsImporting(false);
+      e.target.value = '';
+    },
+  });
+};
 
   // ════════════════════════════════════════════════════════════════════════
   //  RENDER

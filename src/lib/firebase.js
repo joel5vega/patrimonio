@@ -402,23 +402,21 @@ export async function replaceTradingHistoryBulk(uid, rows, meta = {}) {
   return { batchId, count: normalizedRows.length };
 }
 
-// En firebase.js
-
 export const getTradingHistory = async (uid, n = 500) => {
   try {
     const q = query(
       collection(db, 'users', uid, 'tradingHistory'),
-      orderBy('time', 'desc'), // Asumiendo que el PDF arroja una fecha/hora, revisa qué campo exacto usó la API
+      orderBy('date', 'desc'),
+      orderBy('time', 'desc'),
       limit(n)
     );
     const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   } catch (e) {
     console.error('❌ getTradingHistory error:', e);
     return [];
   }
 };
-
 // =============================================================================
 // QUANTFURY PDF PROCESSOR
 // =============================================================================
@@ -446,4 +444,53 @@ export async function procesarQuantfuryPdf({ file, equity }) {
   }
 
   return await res.json();
+}
+
+export async function removeQuantfuryManualAssets(uid) {
+  if (!uid) throw new Error('uid requerido');
+
+  const colRef = collection(db, 'users', uid, 'manualAssets');
+  const snap = await getDocs(colRef);
+
+  const quantfuryDocs = snap.docs.filter((d) => {
+    const data = d.data() || {};
+    const note = String(data.note || '').toLowerCase();
+    return note.includes('quantfury');
+  });
+
+  for (let i = 0; i < quantfuryDocs.length; i += 400) {
+    const batch = writeBatch(db);
+    quantfuryDocs.slice(i, i + 400).forEach((docSnap) => {
+      batch.delete(docSnap.ref);
+    });
+    await batch.commit();
+  }
+
+  return { count: quantfuryDocs.length };
+}
+
+export async function addManualAssetsBulk(uid, assets = []) {
+  if (!uid) throw new Error('uid requerido');
+  const colRef = collection(db, 'users', uid, 'manualAssets');
+
+  for (let i = 0; i < assets.length; i += 400) {
+    const batch = writeBatch(db);
+
+    assets.slice(i, i + 400).forEach((asset) => {
+      const ref = doc(colRef);
+      batch.set(ref, {
+        name: asset.name,
+        currency: asset.currency ?? 'USD',
+        type: asset.type ?? 'stock',
+        amount: Number(asset.amount ?? 0),
+        note: asset.note ?? '',
+        since: asset.since ?? null,
+        createdAt: serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+  }
+
+  return { count: assets.length };
 }

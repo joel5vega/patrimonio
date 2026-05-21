@@ -20,7 +20,8 @@ import {
   getLatestPortfolioAnalysis,
   replaceTradingHistoryBulk as replaceTradingHistoryBulkDb,
   getTradingHistory,
-  procesarQuantfuryPdf,
+  procesarQuantfuryPdf,  removeQuantfuryManualAssets,
+  addManualAssetsBulk,
 } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { useManualAssets, BOB_PER_USD } from '../hooks/useManualAssets';
@@ -93,8 +94,7 @@ const mapUiNameToLogical = (uiName) => {
 
 const isQuantfuryAsset = (a) =>
   String(a?.note || '').toLowerCase().includes('[quantfury]') ||
-  String(a?.note || '').toLowerCase().includes('quantfury') ||
-  String(a?.type || '').toLowerCase() === 'stock';
+  String(a?.note || '').toLowerCase().includes('quantfury');
 
 const normalizeSnapshotDate = (snap) => {
   const raw =
@@ -583,59 +583,82 @@ export const AppProvider = ({ children }) => {
   }, [user]);
 
   // ─── Quantfury: procesar PDF ───────────────────────────────────────────────
-  const processQuantfuryPdf = useCallback(
-    async ({ file, equity }) => {
-      if (!user?.uid) throw new Error('Usuario no autenticado');
+const processQuantfuryPdf = useCallback(
+  async ({ file, equity }) => {
+    if (!user?.uid) throw new Error('Usuario no autenticado');
 
-      setQuantfuryLoading(true);
-      try {
-        const result = await procesarQuantfuryPdf({ file, equity });
+    setQuantfuryLoading(true);
 
-        if (!result?.ok) {
-          throw new Error('No se pudo procesar el PDF');
-        }
+    try {
+      const result = await procesarQuantfuryPdf({ file, equity });
 
-        const importBatchId = `qf_${Date.now()}`;
-        const fileName = file?.name || 'Informe Quantfury.pdf';
-
-        const rowsToSave = (result.raw_legs || []).map((row) => ({
-          ...row,
-          source: 'quantfury',
-          equity_real: Number(result.summary?.equity_real ?? equity ?? 0),
-          file_name: fileName,
-          import_batch_id: importBatchId,
-          import_summary: result.summary ?? {},
-        }));
-
-        await replaceTradingHistoryBulkDb(user.uid, rowsToSave, {
-          source: 'quantfury',
-          import_batch_id: importBatchId,
-          file_name: fileName,
-          equity_real: Number(result.summary?.equity_real ?? equity ?? 0),
-          summary: result.summary ?? {},
-        });
-
-        setTradingHistory(rowsToSave);
-        setQuantfuryAnalysis({
-          summary: result.summary ?? {},
-          analytics: {
-            ...(result.analytics ?? {}),
-            by_asset_type:
-              result.analytics?.by_asset_type ??
-              buildQuantfuryAnalysisFromHistory(rowsToSave)?.analytics?.by_asset_type ??
-              [],
-          },
-          round_trips: result.round_trips ?? [],
-          raw_legs: rowsToSave,
-        });
-
-        return result;
-      } finally {
-        setQuantfuryLoading(false);
+      if (!result?.ok) {
+        throw new Error('No se pudo procesar el PDF');
       }
-    },
-    [user?.uid, buildQuantfuryAnalysisFromHistory]
-  );
+
+      const importBatchId = `qf_${Date.now()}`;
+      const fileName = file?.name || 'Informe Quantfury.pdf';
+      const equityReal = Number(result.summary?.equity_real ?? equity ?? 0);
+
+      const rowsToSave = (result.raw_legs || []).map((row) => ({
+        ...row,
+        source: 'quantfury',
+        equity_real: equityReal,
+        file_name: fileName,
+        import_batch_id: importBatchId,
+        import_summary: result.summary ?? {},
+      }));
+
+      await replaceTradingHistoryBulkDb(user.uid, rowsToSave, {
+        source: 'quantfury',
+        import_batch_id: importBatchId,
+        file_name: fileName,
+        equity_real: equityReal,
+        summary: result.summary ?? {},
+      });
+
+      const dedupedOpenPositions = Array.from(
+        new Map(
+          (result.open_positions || [])
+            .filter((pos) => pos?.name && Number(pos?.amount || 0) > 0)
+            .map((pos) => [
+              String(pos.name).trim().toUpperCase(),
+              {
+                name: String(pos.name).trim().toUpperCase(),
+                type: pos.type || 'stock',
+                currency: pos.currency || 'USD',
+                amount: Number(pos.amount || 0),
+                note: `${pos.note || 'Importado Quantfury'} [quantfury]`,
+                since: pos.since || null,
+              },
+            ])
+        ).values()
+      );
+
+      await removeQuantfuryManualAssets(user.uid);
+      await addManualAssetsBulk(user.uid, dedupedOpenPositions);
+
+      setTradingHistory(rowsToSave);
+      setQuantfuryAnalysis({
+        summary: result.summary ?? {},
+        analytics: {
+          ...(result.analytics ?? {}),
+          by_asset_type:
+            result.analytics?.by_asset_type ??
+            buildQuantfuryAnalysisFromHistory(rowsToSave)?.analytics?.by_asset_type ??
+            [],
+        },
+        round_trips: result.round_trips ?? [],
+        raw_legs: rowsToSave,
+      });
+
+      return result;
+    } finally {
+      setQuantfuryLoading(false);
+    }
+  },
+  [user?.uid, buildQuantfuryAnalysisFromHistory]
+);
 
   // ─── fetchAll ──────────────────────────────────────────────────────────────
   const fetchAll = useCallback(
@@ -862,54 +885,7 @@ export const AppProvider = ({ children }) => {
     [manualCtx, withSnapshot]
   );
 
-  const replaceImportedAssetsBulk = useCallback(
-    async (rows, sourceTag = 'quantfury') => {
-      const tag = `[${sourceTag.toLowerCase()}]`;
-
-      const cleanedRows = rows
-        .map((row) => {
-          const name = String(row.name || '').trim();
-          const currency = String(row.currency || '').toUpperCase() === 'BOB' ? 'BOB' : 'USD';
-          const amount = parseFloat(row.amount);
-          const since = row.since ?? null;
-          const baseNote = String(row.note || '').trim();
-
-          if (!name || Number.isNaN(amount) || amount <= 0) return null;
-
-          const rawType = String(row.type || row.asset_type || 'stock').trim().toLowerCase();
-          const type = ['stock', 'crypto', 'future', 'manual'].includes(rawType)
-            ? rawType
-            : 'stock';
-
-          return {
-            name,
-            type,
-            currency,
-            amount,
-            since,
-            note: baseNote ? `${baseNote} ${tag}` : `Importado ${tag}`,
-          };
-        })
-        .filter(Boolean);
-
-      if (cleanedRows.length === 0) return;
-
-      await withSnapshot(async () => {
-        const existingImported = (manualCtx.manualAssets ?? []).filter((a) =>
-          String(a.note || '').toLowerCase().includes(tag)
-        );
-
-        for (const old of existingImported) {
-          await manualCtx.removeAsset(old.id);
-        }
-
-        for (const row of cleanedRows) {
-          await manualCtx.addAsset(row);
-        }
-      });
-    },
-    [manualCtx, withSnapshot]
-  );
+ 
 
   const replaceTradingHistoryBulk = useCallback(
     async (rows, meta = {}) => {
@@ -955,7 +931,7 @@ export const AppProvider = ({ children }) => {
     addAsset,
     removeAsset,
     updateAsset,
-    replaceImportedAssetsBulk,
+    
     replaceTradingHistoryBulk,
     refreshAll: fetchAll,
     refreshPortfolioAnalysis,

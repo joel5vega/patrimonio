@@ -25,23 +25,27 @@ const TradingHistory = () => {
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
 
-  const data = useMemo(() => {
-    if (!quantfuryAnalysis) {
-      return {
-        summary: null,
-        analytics: null,
-        round_trips: [],
-        raw_legs: [],
-      };
-    }
-
+const data = useMemo(() => {
+  if (!quantfuryAnalysis) {
     return {
-      summary: quantfuryAnalysis.summary ?? null,
-      analytics: quantfuryAnalysis.analytics ?? null,
-      round_trips: quantfuryAnalysis.round_trips ?? [],
-      raw_legs: quantfuryAnalysis.raw_legs ?? [],
+      summary: null,
+      analytics: null,
+      round_trips: [],
+      raw_legs: [],
+      open_positions_reported: [],
+      open_positions_fifo: [],
     };
-  }, [quantfuryAnalysis]);
+  }
+
+  return {
+    summary: quantfuryAnalysis.summary ?? null,
+    analytics: quantfuryAnalysis.analytics ?? null,
+    round_trips: quantfuryAnalysis.round_trips ?? [],
+    raw_legs: quantfuryAnalysis.raw_legs ?? [],
+    open_positions_reported: quantfuryAnalysis.open_positions_reported ?? [],
+    open_positions_fifo: quantfuryAnalysis.open_positions_fifo ?? [],
+  };
+}, [quantfuryAnalysis]);
 
   const aiJsonPayload = useMemo(() => {
     if (!data.summary) return '';
@@ -97,7 +101,7 @@ const TradingHistory = () => {
   const topWinners = analytics.top_winners_symbols ?? [];
   const topLosers = analytics.top_losers_symbols ?? [];
   const bySymbol = analytics.by_symbol ?? [];
-  const byAssetType = analytics.by_asset_type ?? [];
+ const byAssetType = analytics.by_asset_type_stats ?? []
   const roundTrips = data.round_trips ?? [];
 
   const bestTrades = [...roundTrips]
@@ -176,20 +180,20 @@ const TradingHistory = () => {
         />
 
         <MetricCard
-          title="Ops"
-          value={`${summary.total_trades ?? 0}`}
-          sub={`${summary.closed_trades ?? 0} cerradas · ${summary.open_trades ?? 0} abiertas`}
-          tone="neutral"
-          icon={<Layers3 size={16} />}
-        />
+  title="Ops"
+  value={summary.total_trades ?? 0}
+  sub={`${summary.closed_legs_with_pnl ?? 0} cierres · ${summary.open_legs ?? 0} abiertas`}
+  tone="neutral"
+  icon={<Layers3 size={16} />}
+/>
 
-        <MetricCard
-          title="Equity / lev"
-          value={fmtPlainUsd(summary.equity_real)}
-          sub={`${Number(summary.estimated_leverage ?? 0).toFixed(2)}x`}
-          tone="neutral"
-          icon={<AlertTriangle size={16} />}
-        />
+<MetricCard
+  title="Equity / lev."
+  value={fmtPlainUsd(summary.equity_real)}
+  sub={`${Number(summary.estimated_leverage_reported ?? 0).toFixed(2)}x`}
+  tone="neutral"
+  icon={<AlertTriangle size={16} />}
+/>
       </div>
 
       <div className="grid xl:grid-cols-2 gap-4">
@@ -293,27 +297,20 @@ const TradingHistory = () => {
 
       <Panel title="Por clase de activo">
         <div className="grid md:grid-cols-3 gap-4">
-          {byAssetType.map((row) => (
-            <div
-              key={row.assetType}
-              className="rounded-2xl border border-white/5 bg-white/5 p-4"
-            >
-              <p className="text-xs text-white/35 uppercase mb-1">{row.assetType}</p>
-              <p
-                className={`text-2xl font-black ${
-                  Number(row.totalPnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                }`}
-              >
-                {fmtUsd(row.totalPnl)}
-              </p>
-              <p className="text-sm text-white/45 mt-2">
-                {row.legs ?? 0} legs · {row.closingLegs ?? 0} cierres
-              </p>
-              <p className="text-sm text-white/45">
-                Notional {fmtPlainUsd(row.totalNotional)}
-              </p>
-            </div>
-          ))}
+         {byAssetType.map((row) => (
+  <div key={row.asset_type} className="rounded-2xl border border-white/5 bg-white/5 p-4">
+    <p className="text-xs text-white/35 uppercase mb-1">{row.asset_type}</p>
+    <p className={`text-2xl font-black ${Number(row.total_realized_pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+      {fmtUsd(row.total_realized_pnl)}
+    </p>
+    <p className="text-sm text-white/45 mt-2">
+      {row.trades ?? 0} legs · {row.symbols ?? 0} símbolos
+    </p>
+    <p className="text-sm text-white/45">
+      Notional {fmtPlainUsd(row.total_notional)}
+    </p>
+  </div>
+))}
         </div>
       </Panel>
     </div>
