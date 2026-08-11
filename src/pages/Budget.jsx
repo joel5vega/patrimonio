@@ -13,9 +13,9 @@ import { animate, stagger } from 'animejs';
 // ── Montos por defecto para subcategorías ─────────────────────
 const DEFAULT_SUBCAT_BUDGETS = {
   alquiler: 1300,
-  servicios: 500,
+  comunicaciones: 500, // Ajustado
   viveres: 600,
-  pasajes: 324,
+  transporte: 324,     // Ajustado
   ahorro: 4000,
   utiles: 100,
   ropa: 200,
@@ -499,20 +499,21 @@ const BudgetCard = ({ groupKey, label, transactions, subcategories, budgets, wee
     setEditing(true);
   };
 
-  const handleSave = () => {
+ 
+const handleSave = () => {
     if (subcategories.length > 0) {
+      const newBudgets = {};
       subcategories.forEach(cat => {
-        const val = inputs[cat.value];
-        if (val !== undefined) {
-          onSave(cat.value, val);
+        if (inputs[cat.value] !== undefined) {
+          newBudgets[cat.value] = Number(inputs[cat.value] || 0);
         }
       });
+      onSave(newBudgets); // Guarda todas las subcategorías en un solo lote
     } else {
       onSave(groupKey, singleInput);
     }
     setEditing(false);
   };
-
   return (
     <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-3">
       {/* Título y Acciones */}

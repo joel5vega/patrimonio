@@ -1,5 +1,5 @@
 // pages/Transactions.jsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Filter, Plus, Pencil, Trash2, X, Search, TrendingUp, TrendingDown, ArrowLeftRight, Check } from 'lucide-react';
 import { useTransactions, TX_CATEGORIES, TX_GROUPS } from '../hooks/useTransactions';
 import { isInPeriod } from '../utils/filterByPeriod';
@@ -16,7 +16,7 @@ const toJsDate = (createdAt, dateStr) => {
   if (createdAt?.toDate) return createdAt.toDate();
   if (createdAt) {
     const d = new Date(createdAt);
-    if (!isNaN(d)) return d;
+    if (!isNaN(d.getTime())) return d;
   }
   if (dateStr) {
     const [y, m, d] = dateStr.split('-').map(Number);
@@ -58,8 +58,11 @@ const TYPE_META = {
 };
 
 // Grupos de gasto (excluye ingresos)
-const EXPENSE_GROUPS  = ['hogar', 'familia', 'desarrollo', 'fe', 'inversiones', 'otros'];
 const INCOME_GROUPS   = ['ingresos'];
+const EXPENSE_GROUPS = TX_GROUPS
+  .map((g) => g.value)
+  .filter((gValue) => !INCOME_GROUPS.includes(gValue));
+
 
 // Categoría por defecto según tipo
 const DEFAULT_CAT = { expense: 'viveres', income: 'salario', transfer: 'other' };
@@ -172,8 +175,6 @@ const FilterDropdown = ({ value, onChange, open, setOpen }) => {
 
 // ── TxFormFields (compartido New + Edit) ──────────────────
 const TxFormFields = ({ form, set }) => {
-  const typeMeta = TYPE_META[form.type] || TYPE_META.expense;
-
   const handleTypeChange = (newType) => {
     set('type', newType);
     set('category', DEFAULT_CAT[newType] || 'other');
@@ -181,28 +182,27 @@ const TxFormFields = ({ form, set }) => {
 
   return (
     <div className={s.fsBody}>
-
-    {/* Tipo — tabs visuales mejorados */}
-<div className={s.typeTabs}>
-  {Object.entries(TYPE_META).map(([key, meta]) => {
-    const Icon   = meta.icon;
-    const active = form.type === key;
-    return (
-      <button key={key} type="button"
-        onClick={() => handleTypeChange(key)}
-        className={s.typeTab}
-        style={active ? {
-          background:   meta.bgHex,
-          borderColor:  meta.colorHex + '66',
-          color:        meta.colorHex,
-          boxShadow:    `0 0 12px ${meta.colorHex}22`,
-        } : {}}>
-        <Icon size={14} strokeWidth={2.5} />
-        {meta.label}
-      </button>
-    );
-  })}
-</div>
+      {/* Tipo — tabs visuales mejorados */}
+      <div className={s.typeTabs}>
+        {Object.entries(TYPE_META).map(([key, meta]) => {
+          const Icon   = meta.icon;
+          const active = form.type === key;
+          return (
+            <button key={key} type="button"
+              onClick={() => handleTypeChange(key)}
+              className={s.typeTab}
+              style={active ? {
+                background:   meta.bgHex,
+                borderColor:  meta.colorHex + '66',
+                color:        meta.colorHex,
+                boxShadow:    `0 0 12px ${meta.colorHex}22`,
+              } : {}}>
+              <Icon size={14} strokeWidth={2.5} />
+              {meta.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Concepto */}
       <label className={s.labelModal}>Concepto *</label>
@@ -253,7 +253,7 @@ const TxFormFields = ({ form, set }) => {
         onChange={(e) => set('date', e.target.value)}
       />
 
-      {/* Destinatario */}
+      {/* Destinatario / Origen */}
       <label className={s.labelModal}>
         {form.type === 'income' ? 'Origen' : 'Destinatario'}
         <span className={s.labelOptional}> (opcional)</span>
@@ -277,26 +277,56 @@ const TxFormFields = ({ form, set }) => {
   );
 };
 
-// ── Modal nueva transacción ───────────────────────────────
+// ── Modal nueva transacción (Optimizado) ──────────────────
 const NewTxModal = ({ onClose, onAdd }) => {
   const [form, setForm] = useState({
-    concept: '', amount: '', currency: 'BOB',
-    type: 'expense', category: 'viveres',
+    concept: '',
+    amount: '',
+    currency: 'BOB',
+    type: 'expense',
+    category: DEFAULT_CAT.expense,
     date: todayLocal(),
-    targetOwner: '', note: '',
+    targetOwner: '',
+    note: '',
   });
-  const set      = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-  const isValid  = form.concept.trim() && Number(form.amount) > 0;
+
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const isValid = form.concept.trim() !== '' && Number(form.amount) > 0;
+
+  // Mantener categoría válida si cambia el tipo
+  useEffect(() => {
+    if (form.type === 'transfer') {
+      set('category', 'other');
+    } else {
+      const validGroups = form.type === 'income' ? INCOME_GROUPS : EXPENSE_GROUPS;
+      const currentCat = TX_CATEGORIES.find((c) => c.value === form.category);
+      if (!currentCat || !validGroups.includes(currentCat.parent)) {
+        set('category', DEFAULT_CAT[form.type] || 'other');
+      }
+    }
+  }, [form.type]);
 
   const submit = async () => {
     if (!isValid) return;
-    const parent = TX_CATEGORIES.find((c) => c.value === form.category)?.parent ?? 'otros';
+
+    const parent = form.type === 'transfer' 
+      ? 'transfer' 
+      : (TX_CATEGORIES.find((c) => c.value === form.category)?.parent ?? 'otros');
+
     await onAdd({
-      ...form,
+      concept: form.concept.trim(),
+      title: form.concept.trim(),
       amount: Number(form.amount),
-      title:  form.concept,
+      currency: form.currency,
+      type: form.type,
+      category: form.type === 'transfer' ? 'other' : form.category,
       parentCategory: parent,
+      date: form.date,
+      createdAt: new Date(),
+      targetOwner: form.targetOwner.trim(),
+      note: form.note.trim(),
     });
+
     onClose();
   };
 
@@ -333,15 +363,19 @@ const EditTxModal = ({ tx, onClose, onSave }) => {
     note:        tx.note        || '',
   });
   const set     = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-  const isValid = form.concept.trim() && Number(form.amount) > 0;
+  const isValid = form.concept.trim() !== '' && Number(form.amount) > 0;
 
   const submit = async () => {
     if (!isValid) return;
-    const parent = TX_CATEGORIES.find((c) => c.value === form.category)?.parent ?? 'otros';
+    const parent = form.type === 'transfer' 
+      ? 'transfer' 
+      : (TX_CATEGORIES.find((c) => c.value === form.category)?.parent ?? 'otros');
+
     await onSave(tx.id, {
       ...form,
-      amount: Number(form.amount),
-      title:  form.concept,
+      concept: form.concept.trim(),
+      title:   form.concept.trim(),
+      amount:  Number(form.amount),
       parentCategory: parent,
     });
     onClose();
@@ -384,16 +418,13 @@ const TxRow = ({ tx, onSave, onDelete }) => {
   return (
     <>
       <div className={s.card}>
-        {/* Stripe lateral de color */}
         <div className={s.cardStripe} style={{ background: typeMeta.colorHex }} />
 
         <div className={s.cardTop}>
-          {/* Icono de tipo */}
           <div className={s.typeIconWrap} style={{ background: typeMeta.bgHex }}>
             <Icon size={14} style={{ color: typeMeta.colorHex }} />
           </div>
 
-          {/* Info */}
           <div className={s.cardInfo}>
             <p className={s.concept}>{tx.concept || tx.title || '—'}</p>
             <div className={s.meta}>
@@ -411,7 +442,6 @@ const TxRow = ({ tx, onSave, onDelete }) => {
             {tx.note && <p className={s.note}>📝 {tx.note}</p>}
           </div>
 
-          {/* Monto + acciones */}
           <div className={s.cardRight}>
             <p className={s.amount} style={{ color: typeMeta.colorHex }}>
               {isExp ? '−' : isInc ? '+' : ''}
@@ -491,8 +521,8 @@ const Transactions = () => {
 
   // Totales del filtrado
   const totals = useMemo(() => ({
-    exp: filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
-    inc: filtered.filter(t => t.type === 'income').reduce((s,  t) => s + t.amount, 0),
+    exp: filtered.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount || 0), 0),
+    inc: filtered.filter(t => t.type === 'income').reduce((s,  t) => s + Number(t.amount || 0), 0),
     count: filtered.length,
   }), [filtered]);
 
@@ -500,7 +530,6 @@ const Transactions = () => {
 
   return (
     <div className={s.page}>
-
       {/* Header */}
       <div className={s.header}>
         <h1 className={s.title}>Movimientos</h1>
