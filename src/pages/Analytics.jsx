@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 import { useTransactions, TX_CATEGORIES, TX_GROUPS } from '../hooks/useTransactions';
 import {
   BarChart2, PieChart, TrendingDown, TrendingUp, Lightbulb,
-  Target, ArrowUpRight, Calendar, ChevronRight, X,
+  Target, ArrowUpRight, Calendar, ChevronRight, X, PiggyBank,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { animate, stagger } from 'animejs';
@@ -60,6 +60,7 @@ function getMonthStart(monthsAgo) {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
 }
+
 function getMonthEnd(monthsAgo) {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth() - monthsAgo + 1, 0);
@@ -94,7 +95,7 @@ function getPreviousRange(period, customStart, customEnd) {
   }
 }
 
-// ── UI Helpers ────────────────────────────────────────────────
+// ── UI Helpers & Paletas de Grupos Actualizadas ──────────────
 const Bar = ({ pct, color }) => (
   <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
     <div
@@ -106,28 +107,30 @@ const Bar = ({ pct, color }) => (
 
 const GROUP_COLORS = {
   hogar:       'bg-blue-500',
-  familia:     'bg-pink-500',
-  desarrollo:  'bg-purple-500',
+  estilo_vida: 'bg-pink-500',
+  bienestar:   'bg-purple-500',
   fe:          'bg-yellow-500',
-  inversiones: 'bg-emerald-500',
+  finanzas:    'bg-emerald-500',
   ingresos:    'bg-teal-500',
   otros:       'bg-white/30',
 };
+
 const GROUP_TEXT = {
   hogar:       'text-blue-400',
-  familia:     'text-pink-400',
-  desarrollo:  'text-purple-400',
+  estilo_vida: 'text-pink-400',
+  bienestar:   'text-purple-400',
   fe:          'text-yellow-400',
-  inversiones: 'text-emerald-400',
+  finanzas:    'text-emerald-400',
   ingresos:    'text-teal-400',
   otros:       'text-white/40',
 };
+
 const GROUP_HEX = {
   hogar:       '#3b82f6',
-  familia:     '#ec4899',
-  desarrollo:  '#a855f7',
+  estilo_vida: '#ec4899',
+  bienestar:   '#a855f7',
   fe:          '#eab308',
-  inversiones: '#10b981',
+  finanzas:    '#10b981',
   ingresos:    '#14b8a6',
   otros:       'rgba(255,255,255,0.3)',
 };
@@ -169,34 +172,46 @@ const DeltaBadge = ({ current, previous, invert = false }) => {
   );
 };
 
-function getInsights({ savingsRate, byGroup, totalExp, monthlyTrend }) {
+function getInsights({ savingsRate, byGroup, totalExp, monthlyTrend, expenses }) {
   const tips = [];
-  if (savingsRate < 0)
-    tips.push({ icon: '🚨', color: 'text-rose-400', msg: 'Estás gastando más de lo que ingresas. Revisa gastos no esenciales.' });
-  else if (savingsRate < 10)
-    tips.push({ icon: '⚠️', color: 'text-yellow-400', msg: `Tu tasa de ahorro es ${savingsRate.toFixed(0)}%. Lo recomendado es ≥20%.` });
-  else if (savingsRate >= 20)
-    tips.push({ icon: '✅', color: 'text-emerald-400', msg: `¡Excelente! Estás ahorrando el ${savingsRate.toFixed(0)}% de tus ingresos.` });
+  
+  if (savingsRate < 0) {
+    tips.push({ icon: '🚨', color: 'text-rose-400', msg: 'Tus gastos superan tus ingresos en este período. Revisa tus compras discrecionales.' });
+  } else if (savingsRate < 15) {
+    tips.push({ icon: '⚠️', color: 'text-yellow-400', msg: `Tu tasa de ahorro está en ${savingsRate.toFixed(0)}%. Intenta acercarte a la meta del 20%.` });
+  } else if (savingsRate >= 20) {
+    tips.push({ icon: '🎉', color: 'text-emerald-400', msg: `¡Excelente disciplina! Estás ahorrando e invirtiendo el ${savingsRate.toFixed(0)}% de tus ingresos.` });
+  }
 
   const topGroup = byGroup[0];
   if (topGroup && totalExp > 0) {
     const pct = (topGroup.total / totalExp) * 100;
-    if (pct > 40)
-      tips.push({ icon: '📊', color: 'text-orange-400', msg: `"${topGroup.key}" consume el ${pct.toFixed(0)}% de tus gastos.` });
+    const groupLabel = TX_GROUPS.find(g => g.value === topGroup.key)?.label || topGroup.key;
+    if (pct > 35) {
+      tips.push({ icon: '📊', color: 'text-orange-400', msg: `"${groupLabel}" absorbe el ${pct.toFixed(0)}% de tus egresos.` });
+    }
+  }
+
+  // Alerta específica de compras
+  const salidasyOcio = expenses.filter(e => e.category === 'citas_salidas' || e.category === 'comida_fuera').reduce((s, e) => s + e.amount, 0);
+  if (totalExp > 0 && (salidasyOcio / totalExp) > 0.25) {
+    tips.push({ icon: '🍔', color: 'text-pink-400', msg: 'Las salidas y restaurantes representan más del 25% de tus gastos actuales.' });
   }
 
   if (monthlyTrend.length >= 2) {
     const last   = monthlyTrend[monthlyTrend.length - 1].exp;
     const prev   = monthlyTrend[monthlyTrend.length - 2].exp;
     const change = ((last - prev) / (prev || 1)) * 100;
-    if (change > 15)
-      tips.push({ icon: '📈', color: 'text-rose-300', msg: `Tus gastos subieron ${change.toFixed(0)}% vs el mes anterior.` });
-    else if (change < -10)
-      tips.push({ icon: '📉', color: 'text-teal-400', msg: `¡Bien! Redujiste gastos un ${Math.abs(change).toFixed(0)}% vs el mes pasado.` });
+    if (change > 15) {
+      tips.push({ icon: '📈', color: 'text-rose-300', msg: `Tus gastos aumentaron un ${change.toFixed(0)}% con respecto al mes anterior.` });
+    } else if (change < -10) {
+      tips.push({ icon: '📉', color: 'text-teal-400', msg: `¡Buen trabajo! Redujiste tus gastos un ${Math.abs(change).toFixed(0)}% respecto al mes pasado.` });
+    }
   }
 
-  if (tips.length === 0)
-    tips.push({ icon: '💡', color: 'text-white/50', msg: 'Registra más transacciones para recibir consejos personalizados.' });
+  if (tips.length === 0) {
+    tips.push({ icon: '💡', color: 'text-white/50', msg: 'Registra tus movimientos diariamente para obtener mejores proyecciones.' });
+  }
 
   return tips;
 }
@@ -448,8 +463,7 @@ const DateRangePicker = ({ startDate, endDate, onStartChange, onEndChange, onCle
         {[
           { label: 'Este mes',   fn: () => { const n = new Date(); onStartChange(new Date(n.getFullYear(), n.getMonth(), 1)); onEndChange(new Date()); }},
           { label: 'Mes pasado', fn: () => { const n = new Date(); onStartChange(new Date(n.getFullYear(), n.getMonth() - 1, 1)); onEndChange(new Date(n.getFullYear(), n.getMonth(), 0)); }},
-          { label: 'Ene 2025',   fn: () => { onStartChange(new Date('2025-01-01')); onEndChange(new Date('2025-12-31')); }},
-          { label: 'Q1 2025',    fn: () => { onStartChange(new Date('2025-01-01')); onEndChange(new Date('2025-03-31')); }},
+          { label: 'Año 2026',   fn: () => { onStartChange(new Date('2026-01-01')); onEndChange(new Date('2026-12-31')); }},
         ].map(s => (
           <button key={s.label} type="button" onClick={s.fn}
             className="text-[10px] px-2.5 py-1 rounded-full border border-white/10 text-white/40 hover:text-brand-teal hover:border-brand-teal/40 transition-all font-semibold">
@@ -594,7 +608,7 @@ const CategoryRow = ({ groupKey, total, totalExp, categories, maxGroup, prevTota
   );
 };
 
-// ── Componente principal ──────────────────────────────────────
+// ── Componente Principal ──────────────────────────────────────
 const Analytics = () => {
   const { user }         = useAuth();
   const { transactions } = useTransactions();
@@ -627,7 +641,7 @@ const Analytics = () => {
   const balance     = totalInc - totalExp;
   const savingsRate = totalInc > 0 ? ((totalInc - totalExp) / totalInc) * 100 : 0;
 
-  // ── Gastos/ingresos del mes actual (independiente del filtro) ──
+  // ── Gastos/ingresos del mes actual ────────────────────────
   const currentMonthExp = useMemo(() => {
     const now   = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -674,7 +688,6 @@ const Analytics = () => {
     return last3.reduce((s, m) => s + m.exp, 0) / 3;
   }, [monthlyTrend]);
 
-  // ✅ FIX: proyección usa solo gastos del mes actual
   const projectedExp = useMemo(() => {
     if (period !== '1m') return null;
     const now         = new Date();
@@ -684,7 +697,7 @@ const Analytics = () => {
     return (currentMonthExp / day) * daysInMonth;
   }, [currentMonthExp, period]);
 
-  // ── Agrupaciones ─────────────────────────────────────────
+  // ── Agrupaciones con las Claves Actualizadas ─────────────
   const byGroup = useMemo(() => {
     const map = {};
     for (const tx of expenses) {
@@ -730,18 +743,17 @@ const Analytics = () => {
     return map;
   }, [prevExpenses]);
 
-  // ── Derived ───────────────────────────────────────────────
+  // ── Auxiliares de Cálculo ──────────────────────────────────
   const maxGroup           = byGroup[0]?.total || 1;
   const filteredByCategory = activeGroup ? byCategory.filter(c => c.parent === activeGroup) : byCategory;
 
   const now          = new Date();
   const daysInMonth  = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const daysLeft     = daysInMonth - now.getDate();
-  // ✅ FIX: dailyBudget usa mes actual, no el período filtrado
   const monthBalance = currentMonthInc - currentMonthExp;
   const dailyBudget  = monthBalance > 0 ? monthBalance / (daysLeft || 1) : 0;
 
-  const insights = getInsights({ savingsRate, byGroup, totalExp, monthlyTrend });
+  const insights = getInsights({ savingsRate, byGroup, totalExp, monthlyTrend, expenses });
 
   useEffect(() => {
     if (!cardsRef.current) return;
@@ -765,7 +777,7 @@ const Analytics = () => {
       {/* Header */}
       <div className="flex justify-between items-center pt-2">
         <div>
-          <h1 className="text-2xl font-bold">Análisis</h1>
+          <h1 className="text-2xl font-bold">Análisis Financiero</h1>
           {period === 'custom' && (customStart || customEnd) && (
             <p className="text-[11px] text-brand-teal mt-0.5">{periodLabel}</p>
           )}
@@ -782,7 +794,7 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Period Pills */}
+      {/* Selector de Período */}
       <div className="flex gap-1.5">
         {PERIODS.map(p => (
           <button key={p.value} onClick={() => setPeriod(p.value)}
@@ -815,10 +827,10 @@ const Analytics = () => {
         totalExp={totalExp} totalInc={totalInc}
       />
 
-      {/* Contenido animado */}
+      {/* Tarjetas y Paneles */}
       <div ref={cardsRef} className="space-y-5">
 
-        {/* Summary Cards */}
+        {/* Resumen General */}
         <div className="grid grid-cols-3 gap-3 analytics-card">
           {[
             { label: 'Ingresos', value: totalInc,          prev: prevTotalInc, color: 'text-emerald-400', invert: false },
@@ -837,7 +849,7 @@ const Analytics = () => {
           ))}
         </div>
 
-        {/* KPIs */}
+        {/* Indicadores Clave (KPIs) */}
         <div className="grid grid-cols-2 gap-3 analytics-card">
           <div className="bg-brand-card rounded-2xl p-4 border border-white/5">
             <div className="flex justify-between items-start mb-2">
@@ -865,7 +877,6 @@ const Analytics = () => {
             <p className="text-[10px] text-white/30 mt-1">Últimos 3 meses</p>
           </div>
 
-          {/* ✅ Proyección usa currentMonthExp */}
           {projectedExp !== null && (
             <div className="bg-brand-card rounded-2xl p-4 border border-white/5">
               <div className="flex justify-between items-start mb-2">
@@ -875,32 +886,31 @@ const Analytics = () => {
               <p className={`text-xl font-bold ${projectedExp > (currentMonthInc || avgMonthlyExp) ? 'text-rose-400' : 'text-white/80'}`}>
                 Bs {projectedExp.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
               </p>
-              <p className="text-[10px] text-white/30 mt-1">Al ritmo actual (día {now.getDate()})</p>
+              <p className="text-[10px] text-white/30 mt-1">Ritmo actual (día {now.getDate()})</p>
             </div>
           )}
 
-          {/* ✅ Disponible/día usa currentMonthInc - currentMonthExp */}
           {period === '1m' && (
             <div className="bg-brand-card rounded-2xl p-4 border border-white/5">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-[10px] text-white/40">Disponible/día</p>
-                <span className="text-[10px] text-white/30">{daysLeft}d left</span>
+                <span className="text-[10px] text-white/30">{daysLeft}d restantes</span>
               </div>
               <p className={`text-xl font-bold ${dailyBudget > 0 ? 'text-teal-400' : 'text-rose-400'}`}>
                 Bs {Math.max(dailyBudget, 0).toLocaleString('es-BO', { maximumFractionDigits: 0 })}
               </p>
               <p className="text-[10px] text-white/30 mt-1">
                 {currentMonthInc > 0
-                  ? `Ingr. mes: Bs ${currentMonthInc.toLocaleString('es-BO', { maximumFractionDigits: 0 })}`
-                  : 'Sin ingresos este mes'}
+                  ? `Ingreso: Bs ${currentMonthInc.toLocaleString('es-BO', { maximumFractionDigits: 0 })}`
+                  : 'Sin ingresos registrados'}
               </p>
             </div>
           )}
         </div>
 
-        {/* Tendencia 6 meses */}
+        {/* Tendencia 6 Meses */}
         <div className="bg-brand-card rounded-2xl border border-white/5 p-4 analytics-card">
-          <h3 className="font-bold text-sm mb-4">Tendencia 6 meses</h3>
+          <h3 className="font-bold text-sm mb-4">Tendencia Semestral</h3>
           <div className="flex items-end gap-2 h-20">
             {monthlyTrend.map((m, i) => {
               const maxVal = Math.max(...monthlyTrend.map(x => Math.max(x.exp, x.inc)), 1);
@@ -913,7 +923,7 @@ const Analytics = () => {
                     <div className={`flex-1 rounded-t transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-emerald-500/30'}`}
                       style={{ height: `${(m.inc / maxVal) * 100}%` }} />
                   </div>
-                  <span className="text-[9px] text-white/30">{m.label}</span>
+                  <span className="text-[9px] text-white/30 capitalize">{m.label}</span>
                 </div>
               );
             })}
@@ -924,7 +934,7 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Diagnóstico */}
+        {/* Diagnóstico Financiero */}
         <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-3 analytics-card">
           <div className="flex items-center gap-2">
             <Lightbulb size={14} className="text-yellow-400" />
@@ -938,10 +948,10 @@ const Analytics = () => {
           ))}
         </div>
 
-        {/* Dona + grupos */}
+        {/* Gráfico de Dona y Grupos */}
         <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-4 analytics-card">
           <div className="flex justify-between items-center">
-            <h3 className="font-bold text-sm">Gastos por grupo</h3>
+            <h3 className="font-bold text-sm">Distribución por grupo</h3>
             {activeGroup && (
               <button type="button" onClick={() => setActiveGroup(null)} style={{
                 display: 'flex', alignItems: 'center', gap: '0.3rem',
@@ -957,7 +967,7 @@ const Analytics = () => {
           </div>
 
           {byGroup.length === 0
-            ? <p className="text-white/30 text-sm text-center py-4">Sin datos en este período</p>
+            ? <p className="text-white/30 text-sm text-center py-4">Sin datos registrados en este período</p>
             : <DonutAnalytics byGroup={byGroup} totalExp={totalExp} expenses={expenses} onGroupClick={setActiveGroup} activeGroup={activeGroup} />
           }
 
@@ -993,11 +1003,11 @@ const Analytics = () => {
           )}
         </div>
 
-        {/* Vista plana por categoría */}
+        {/* Vista por Categoría Plana */}
         {viewMode === 'categories' && (
           <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-3 analytics-card">
-            <h3 className="font-bold text-sm">Gastos por categoría</h3>
-            {byCategory.length === 0 && <p className="text-white/30 text-sm text-center py-4">Sin datos en este período</p>}
+            <h3 className="font-bold text-sm">Detalle por categoría</h3>
+            {byCategory.length === 0 && <p className="text-white/30 text-sm text-center py-4">Sin gastos registrados</p>}
             {byCategory.map(({ key, total, label, emoji, parent }) => (
               <div key={key} className="space-y-1">
                 <div className="flex justify-between items-center text-xs">
@@ -1010,25 +1020,25 @@ const Analytics = () => {
                     <span className="text-white/30 ml-1">({((total / totalExp) * 100).toFixed(0)}%)</span>
                   </span>
                 </div>
-                <Bar pct={(total / byCategory[0].total) * 100} color={GROUP_COLORS[parent] || 'bg-white/20'} />
+                <Bar pct={(total / (byCategory[0]?.total || 1)) * 100} color={GROUP_COLORS[parent] || 'bg-white/20'} />
               </div>
             ))}
           </div>
         )}
 
-        {/* Top 5 gastos */}
+        {/* Top 5 Mayor Impacto */}
         <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-2 analytics-card">
-          <h3 className="font-bold text-sm mb-3">Top gastos del período</h3>
-          {expenses.length === 0 && <p className="text-white/30 text-sm text-center py-3">Sin gastos en este período</p>}
+          <h3 className="font-bold text-sm mb-3">Mayores egresos del período</h3>
+          {expenses.length === 0 && <p className="text-white/30 text-sm text-center py-3">Sin registro de gastos</p>}
           {[...expenses].sort((a, b) => b.amount - a.amount).slice(0, 5).map(tx => {
             const meta = TX_CATEGORIES.find(c => c.value === tx.category);
             return (
-              <div key={tx.id} className="flex justify-between items-center text-xs">
+              <div key={tx.id || tx.concept + tx.amount} className="flex justify-between items-center text-xs py-1">
                 <div className="flex items-center gap-2">
-                  <span>{meta?.emoji || '📦'}</span>
+                  <span className="text-sm">{meta?.emoji || '📦'}</span>
                   <div>
-                    <p className="font-semibold">{tx.concept || tx.title}</p>
-                    <p className="text-white/30">{fmtDate(tx.date)}</p>
+                    <p className="font-semibold text-white/90">{tx.concept || tx.title || 'Gasto'}</p>
+                    <p className="text-[10px] text-white/30">{fmtDate(tx.date)}</p>
                   </div>
                 </div>
                 <span className="text-rose-400 font-bold">
@@ -1039,7 +1049,7 @@ const Analytics = () => {
           })}
         </div>
 
-      </div>{/* fin cardsRef */}
+      </div>
     </div>
   );
 };

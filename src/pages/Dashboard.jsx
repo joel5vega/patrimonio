@@ -262,7 +262,7 @@ const Dashboard = () => {
     totalCryptoUSD    = 0,
     totalInversionUSD = 0,
     totalManualUSD    = 0,
-    bobRate           = 6.96,
+    bobRate,
     loading           = false,
     monthlyReturn     = 0,
   } = useApp();
@@ -353,9 +353,9 @@ const Dashboard = () => {
             Bs <AnimatedNumber value={totalValue} prefix="" decimals={2} className="db-hero-bs-num" />
           </div>
           <div className="db-hero-usd">
-            <AnimatedNumber value={usdValue} prefix="$" decimals={2} className="db-hero-usd-num" />
+            <AnimatedNumber value={usdValue} prefix="$" decimals={1} className="db-hero-usd-num" />
             <span className="db-hero-usd-label">USD</span>
-            <span className="db-hero-rate">Bs {bobRate.toFixed(2)}/USD</span>
+            <span className="db-hero-rate">Bs {bobRate?bobRate.toFixed(2): '0.00'}/USD</span>
           </div>
         </div>
 

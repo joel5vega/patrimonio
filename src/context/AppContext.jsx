@@ -24,7 +24,7 @@ import {
   addManualAssetsBulk,
 } from '../lib/firebase';
 import { useAuth } from './AuthContext';
-import { useManualAssets, BOB_PER_USD } from '../hooks/useManualAssets';
+import { useManualAssets } from '../hooks/useManualAssets';
 import { buildPortfolioV3 } from '../utils/portfolioAnalysis';
 
 const AppContext = createContext(null);
@@ -32,47 +32,6 @@ const AppContext = createContext(null);
 // ─── Constantes de módulo ───────────────────────────────────────────────────
 const STABLES = ['USDT', 'USDC', 'BUSD', 'DAI', 'FDUSD'];
 
-const MANUAL_HISTORY = {
-  Ahorro: [
-    { date: '2025-01-30', valueUSD: 950 },
-    { date: '2025-03-21', valueUSD: 1070 },
-    { date: '2025-07-06', valueUSD: 1300 },
-    { date: '2025-10-13', valueUSD: 1500 },
-  ],
-  AirTM: [
-    { date: '2025-12-18', valueUSD: 100 },
-    { date: '2025-12-19', valueUSD: 500.24 },
-    { date: '2026-02-19', valueUSD: 518.24 },
-    { date: '2026-03-07', valueUSD: 618.24 },
-    { date: '2026-03-08', valueUSD: 1018.24 },
-    { date: '2026-03-19', valueUSD: 1032.42 },
-  ],
-  SAFI: [
-    { date: '2025-10-03', valueUSD: 964.12 },
-    { date: '2025-11-03', valueUSD: 964.89 },
-    { date: '2025-12-03', valueUSD: 965.5 },
-    { date: '2026-01-03', valueUSD: 966.31 },
-    { date: '2026-02-03', valueUSD: 966.94 },
-    { date: '2026-03-05', valueUSD: 967.61 },
-  ],
-  AhorroBs: [
-    { date: '2020-01-25', valueBOB: 10000 },
-    { date: '2022-01-25', valueBOB: 20000 },
-    { date: '2023-01-25', valueBOB: 30000 },
-    { date: '2024-01-25', valueBOB: 40000 },
-    { date: '2025-08-25', valueBOB: 45587 },
-    { date: '2025-09-25', valueBOB: 56955 },
-    { date: '2025-10-25', valueBOB: 72078 },
-    { date: '2025-11-25', valueBOB: 84007 },
-    { date: '2025-12-25', valueBOB: 79007 },
-    { date: '2026-01-01', valueBOB: 73276 },
-    { date: '2026-02-01', valueBOB: 71276 },
-    { date: '2026-03-01', valueBOB: 69276 },
-    { date: '2026-03-11', valueBOB: 55587 },
-    { date: '2026-03-17', valueBOB: 45587 },
-    { date: '2026-03-18', valueBOB: 48000 },
-  ],
-};
 
 // ─── Utilidades ─────────────────────────────────────────────────────────────
 async function fetchBobRate() {
@@ -154,7 +113,7 @@ export const AppProvider = ({ children }) => {
   const [chartHistory, setChartHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [bobRate, setBobRate] = useState(BOB_PER_USD);
+  const [bobRate, setBobRate] = useState(null);
   const [todayPortfolioV3, setTodayPortfolioV3] = useState(null);
   const [todayPortfolioMeta, setTodayPortfolioMeta] = useState(null);
   const [tradingHistory, setTradingHistory] = useState([]);

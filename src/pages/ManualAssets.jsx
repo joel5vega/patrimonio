@@ -25,8 +25,8 @@ const parseAmount = (value) => {
   return parseFloat(String(value).replace(/,/g, '').trim());
 };
 
-const toUSD = (a, BOB_PER_USD) =>
-  a.currency === 'BOB' ? a.amount / BOB_PER_USD : a.amount;
+const toUSD = (a, bobRate) =>
+  a.currency === 'BOB' ? a.amount / bobRate : a.amount;
 
 // ─── Configuración de tipos ──────────────────────────────────────────────────
 
@@ -97,7 +97,7 @@ const DateField = ({ value, onChange }) => (
 
 // ─── Fila de activo individual ───────────────────────────────────────────────
 
-const AssetRow = ({ a, pct, BOB_PER_USD, onEdit, onRemove }) => {
+const AssetRow = ({ a, pct, bobRate, onEdit, onRemove }) => {
   const cfg = TYPE_CONFIG[String(a.type || 'manual').toLowerCase()] ?? TYPE_CONFIG.manual;
   return (
     <div className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl hover:bg-white/3 transition-colors group">
@@ -126,8 +126,8 @@ const AssetRow = ({ a, pct, BOB_PER_USD, onEdit, onRemove }) => {
           </p>
           <p className="text-[10px] text-white/30">
             {a.currency === 'BOB'
-              ? `≈ $${(a.amount / BOB_PER_USD).toFixed(2)}`
-              : `≈ Bs ${(a.amount * BOB_PER_USD).toFixed(2)}`}
+              ? `≈ $${(a.amount / bobRate).toFixed(2)}`
+              : `≈ Bs ${(a.amount * bobRate).toFixed(2)}`}
           </p>
           <p className={`text-[10px] font-bold ${cfg.color}`}>{pct.toFixed(1)}%</p>
         </div>
@@ -146,7 +146,7 @@ const AssetRow = ({ a, pct, BOB_PER_USD, onEdit, onRemove }) => {
 
 // ─── Grupo colapsable por tipo ───────────────────────────────────────────────
 
-const TypeGroup = ({ type, assets, groupTotal, portfolioTotal, BOB_PER_USD, onEdit, onRemove }) => {
+const TypeGroup = ({ type, assets, groupTotal, portfolioTotal, bobRate, onEdit, onRemove }) => {
   const [open, setOpen] = useState(true);
   const cfg = TYPE_CONFIG[type] ?? TYPE_CONFIG.manual;
   const Icon = cfg.icon;
@@ -190,14 +190,14 @@ const TypeGroup = ({ type, assets, groupTotal, portfolioTotal, BOB_PER_USD, onEd
       {open && (
         <div className="divide-y divide-white/3 bg-brand-card px-1">
           {assets.map((a) => {
-            const usd = toUSD(a, BOB_PER_USD);
+            const usd = toUSD(a, bobRate);
             const assetPct = portfolioTotal > 0 ? (usd / portfolioTotal) * 100 : 0;
             return (
               <AssetRow
                 key={a.id}
                 a={a}
                 pct={assetPct}
-                BOB_PER_USD={BOB_PER_USD}
+                bobRate={bobRate}
                 onEdit={() => onEdit(a)}
                 onRemove={() => onRemove(a.id)}
               />
@@ -211,7 +211,7 @@ const TypeGroup = ({ type, assets, groupTotal, portfolioTotal, BOB_PER_USD, onEd
 
 // ─── Grupo Quantfury (contenedor maestro colapsable) ─────────────────────────
 
-const QuantfuryGroup = ({ assets, tradingTotal, portfolioTotal, BOB_PER_USD, onEdit, onRemove }) => {
+const QuantfuryGroup = ({ assets, tradingTotal, portfolioTotal, bobRate, onEdit, onRemove }) => {
   const [open, setOpen] = useState(true);
   const pct = portfolioTotal > 0 ? (tradingTotal / portfolioTotal) * 100 : 0;
 
@@ -270,7 +270,7 @@ const QuantfuryGroup = ({ assets, tradingTotal, portfolioTotal, BOB_PER_USD, onE
             .filter((t) => byType[t]?.length > 0)
             .map((t) => {
               const groupAssets = byType[t];
-              const groupTotal = groupAssets.reduce((s, a) => s + toUSD(a, BOB_PER_USD), 0);
+              const groupTotal = groupAssets.reduce((s, a) => s + toUSD(a, bobRate), 0);
               return (
                 <TypeGroup
                   key={t}
@@ -278,7 +278,7 @@ const QuantfuryGroup = ({ assets, tradingTotal, portfolioTotal, BOB_PER_USD, onE
                   assets={groupAssets}
                   groupTotal={groupTotal}
                   portfolioTotal={portfolioTotal}
-                  BOB_PER_USD={BOB_PER_USD}
+                  bobRate={bobRate}
                   onEdit={onEdit}
                   onRemove={onRemove}
                 />
@@ -301,7 +301,7 @@ const ManualAssets = () => {
     addAsset,
     removeAsset,
     updateAsset,
-    BOB_PER_USD,processQuantfuryPdf,replaceImportedAssetsBulk
+    bobRate,processQuantfuryPdf,replaceImportedAssetsBulk
   } = useApp();
 
   const [form, setForm] = useState(EMPTY);
@@ -326,10 +326,10 @@ const ManualAssets = () => {
     return {
       quantfuryAssets:  qAssets,
       manualOnlyAssets: mAssets,
-      tradingTotal:     qAssets.reduce((s, a) => s + toUSD(a, BOB_PER_USD), 0),
-      manualOnlyTotal:  mAssets.reduce((s, a) => s + toUSD(a, BOB_PER_USD), 0),
+      tradingTotal:     qAssets.reduce((s, a) => s + toUSD(a, bobRate), 0),
+      manualOnlyTotal:  mAssets.reduce((s, a) => s + toUSD(a, bobRate), 0),
     };
-  }, [manualAssets, BOB_PER_USD]);
+  }, [manualAssets, bobRate]);
 
   // ── Edición ───────────────────────────────────────────────────────────────
   const startEdit = (a) => {
@@ -355,7 +355,7 @@ const ManualAssets = () => {
   const preview = (amount, currency) => {
     const n = parseFloat(amount);
     if (!n || isNaN(n)) return null;
-    return currency === 'BOB' ? `≈ $${(n / BOB_PER_USD).toFixed(2)} USD` : `≈ Bs ${(n * BOB_PER_USD).toFixed(2)}`;
+    return currency === 'BOB' ? `≈ $${(n / bobRate).toFixed(2)} USD` : `≈ Bs ${(n * bobRate).toFixed(2)}`;
   };
 
   // ── Importar Quantfury API ──────────────────────────────────────────────────
@@ -543,12 +543,12 @@ const handleImportFile = async (e) => {
       <div className="bg-brand-card rounded-2xl border border-white/5 p-4 flex justify-between items-center">
         <div>
           <p className="text-xs text-white/40 uppercase font-bold mb-0.5">Tipo de cambio</p>
-          <p className="font-bold text-sm">1 USD = Bs {BOB_PER_USD}</p>
+          <p className="font-bold text-sm">1 USD = Bs {bobRate}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-white/40 uppercase font-bold">Total portafolio</p>
           <p className="text-2xl font-black text-emerald-400">${totalManualUSD.toFixed(2)}</p>
-          <p className="text-xs text-white/40">Bs {(totalManualUSD * BOB_PER_USD).toFixed(2)}</p>
+          <p className="text-xs text-white/40">Bs {(totalManualUSD * bobRate).toFixed(2)}</p>
         </div>
       </div>
 
@@ -609,7 +609,7 @@ const handleImportFile = async (e) => {
           assets={quantfuryAssets}
           tradingTotal={tradingTotal}
           portfolioTotal={totalManualUSD}
-          BOB_PER_USD={BOB_PER_USD}
+          bobRate={bobRate}
           onEdit={startEdit}
           onRemove={removeAsset}
         />
@@ -622,7 +622,7 @@ const handleImportFile = async (e) => {
           assets={manualOnlyAssets}
           groupTotal={manualOnlyTotal}
           portfolioTotal={totalManualUSD}
-          BOB_PER_USD={BOB_PER_USD}
+          bobRate={bobRate}
           onEdit={startEdit}
           onRemove={removeAsset}
         />

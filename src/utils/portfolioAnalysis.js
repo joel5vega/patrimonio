@@ -426,7 +426,7 @@ export function buildPortfolioV3(input) {
     reservedBUY   = 0,
     pendingSELL   = 0,
     grossExposure = 0,
-    monthlyUSD    = 287,  // 2000 Bs / 6.96 — configurable desde AppContext
+    monthlyUSD    = 190,  // 2000 Bs — configurable desde AppContext
     customTargets   = null, // para perfil personalizado
   } = input;
   // Usar targets personalizados si se pasan, sino los defaults

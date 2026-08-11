@@ -1,5 +1,5 @@
-// src/hooks/useManualAssets.js
-import { useState, useEffect, useCallback } from 'react';
+// useManualAssets.js
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   subscribeManualAssets,
@@ -8,9 +8,9 @@ import {
   updateManualAsset,
 } from '../lib/firebase';
 
-export const BOB_PER_USD = 6.96;
+const DEFAULT_BOB_PER_USD = 10;
 
-export function useManualAssets(bobRate = BOB_PER_USD) {
+export function useManualAssets(bobRate = DEFAULT_BOB_PER_USD) {
   const { user } = useAuth();
   const [rawAssets, setRawAssets] = useState([]);
 
@@ -23,40 +23,49 @@ export function useManualAssets(bobRate = BOB_PER_USD) {
     return () => unsub();
   }, [user]);
 
-  const manualAssets = rawAssets.map((a) => ({
-    ...a,
-    type: a.type ?? 'manual',
-    valueUSD: a.currency === 'BOB' ? a.amount / bobRate : a.amount,
-    valueBOB: a.currency === 'BOB' ? a.amount : a.amount * bobRate,
-    since: a.since ?? null,
-  }));
+  const rate = bobRate || DEFAULT_BOB_PER_USD;
 
-  const totalManualUSD = manualAssets.reduce((s, a) => s + a.valueUSD, 0);
+  const manualAssets = useMemo(
+    () =>
+      rawAssets.map((a) => ({
+        ...a,
+        type: a.type ?? 'manual',
+        valueUSD: a.currency === 'BOB' ? a.amount / rate : a.amount,
+        valueBOB: a.currency === 'BOB' ? a.amount : a.amount * rate,
+        since: a.since ?? null,
+      })),
+    [rawAssets, rate]
+  );
+
+  const totalManualUSD = useMemo(
+    () => manualAssets.reduce((s, a) => s + a.valueUSD, 0),
+    [manualAssets]
+  );
 
   const recalcTotal = useCallback(
     (assets) =>
       assets.reduce(
-        (s, a) => s + (a.currency === 'BOB' ? a.amount / bobRate : a.amount),
+        (s, a) => s + (a.currency === 'BOB' ? a.amount / rate : a.amount),
         0
       ),
-    [bobRate]
+    [rate]
   );
 
-const addAsset = useCallback(
-  async (asset) => {
-    if (!user) return;
+  const addAsset = useCallback(
+    async (asset) => {
+      if (!user) return;
 
-    await addManualAsset(user.uid, {
-      name:     String(asset.name || '').trim(),
-      type:     asset.type ?? 'manual',        // ✅ explícito
-      currency: asset.currency ?? 'USD',
-      amount:   parseFloat(asset.amount),
-      note:     asset.note || '',
-      since:    asset.since ?? new Date().toISOString().split('T')[0],
-    });
-  },
-  [user]
-);
+      await addManualAsset(user.uid, {
+        name: String(asset.name || '').trim(),
+        type: asset.type ?? 'manual',
+        currency: asset.currency ?? 'USD',
+        amount: parseFloat(asset.amount),
+        note: asset.note || '',
+        since: asset.since ?? new Date().toISOString().split('T')[0],
+      });
+    },
+    [user]
+  );
 
   const removeAsset = useCallback(
     async (id) => {
@@ -83,7 +92,7 @@ const addAsset = useCallback(
   return {
     manualAssets,
     totalManualUSD,
-    BOB_PER_USD: bobRate,
+    BOB_PER_USD: rate,
     recalcTotal,
     addAsset,
     removeAsset,
