@@ -1091,7 +1091,7 @@ const Portfolio = () => {
           <div className="portfolio-header-pills">
             <div className="portfolio-rate-pill">
               <span className="portfolio-rate-dot"/>
-              Bs {bobRate.toFixed(2)} · ~${monthlyUSD}/mes
+              Bs {bobRate?bobRate.toFixed(2):'0.00'} · ~${monthlyUSD}/mes
             </div>
             <button type="button" onClick={handleCopy} className="portfolio-copy-btn">
               {copied?<Check size={13}/>:<Copy size={13}/>}

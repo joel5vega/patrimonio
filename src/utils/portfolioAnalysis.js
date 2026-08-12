@@ -238,11 +238,12 @@ const RETURN_ASSUMPTIONS = {
 // Ajustados para perfil boliviano, mediano/largo plazo
 const THRESHOLDS = {
   minCashPct:        5,   // alerta lowCash (USDT puro < 5% = crítico)
-  cashRetentionPct:  10,  // buffer mínimo para deployableCash
-  maxCashPct:        35,
-  maxSpeculativePct:  5,
+  cashRetentionPct:  7,  // buffer mínimo para deployableCash
+  maxCashPct:        25,
+  maxSpeculativePct:  3,
   coreMinPct:        30,
-  maxTradingPct:     12,
+  maxTradingPct:     7,
+  maxLeverage: 2,
 };
 
 // ─── TARGETS POR ROL ─────────────────────────────────────────
@@ -251,12 +252,13 @@ const THRESHOLDS = {
 export const PORTFOLIO_TARGETS = {
   core:        35,  // VOO / SPY
   growth:      20,  // QQQM, BTC, ETH, VXUS
-  defensive:   15,  // IAU, BND
+  defensive:   17,  // IAU, BND
   liquidity:    5,  // USDT operativo mínimo
   yield:       15,  // AirTM DeFi 8% — pilar de ingreso pasivo
   speculative:  3,  // altcoins — cap duro
-  trading:      7,  // Quantfury — cap duro
+  trading:      5,  // Quantfury — cap duro
 };
+
 // ─── PERFILES DE INVERSOR ─────────────────────────────────────
 export const INVESTOR_PROFILES = {
   defensivo: {
@@ -267,7 +269,7 @@ export const INVESTOR_PROFILES = {
   moderado: {
     label: 'Moderado',
     description: 'Balance entre crecimiento y protección.',
-    targets: { core: 35, growth: 20, defensive: 15, liquidity: 5, yield: 15, speculative: 3, trading: 7 },
+    targets: { core: 35, growth: 20, defensive: 17, liquidity: 5, yield: 15, speculative: 3, trading: 5 },
   },
   crecimiento: {
     label: 'Crecimiento',
