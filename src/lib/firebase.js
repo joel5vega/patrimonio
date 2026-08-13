@@ -261,7 +261,7 @@ export async function getPortfolioHistory(uid) {
       orderBy('date', 'asc')
     );
     const snap = await getDocs(q);
-    console.log('getPortfolioHistory raw docs:', snap.size, snap.docs.map((d) => d.id));
+    // console.log('getPortfolioHistory raw docs:', snap.size, snap.docs.map((d) => d.id));
     return snap.docs.map((d) => d.data());
   } catch (e) {
     console.error('❌ getPortfolioHistory error:', e.code, e.message);
