@@ -25,7 +25,8 @@ import {
 } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { useManualAssets } from '../hooks/useManualAssets';
-import { buildPortfolioV3 } from '../utils/portfolioAnalysis';
+import { buildPortfolioV3 } from '../features/portfolio/utils/portfolioAnalysis';
+import { buildPortfolioAIReport } from '../features/portfolio/utils/portfolioAIReport';
 
 const AppContext = createContext(null);
 
@@ -119,6 +120,7 @@ export const AppProvider = ({ children }) => {
   const [tradingHistory, setTradingHistory] = useState([]);
   const [quantfuryAnalysis, setQuantfuryAnalysis] = useState(null);
   const [quantfuryLoading, setQuantfuryLoading] = useState(false);
+const [todayPortfolioAI, setTodayPortfolioAI] = useState(null);
 
   const totalsRef = useRef({ cryptoUSD: 0, inversionUSD: 0 });
   const migratedRef = useRef(false);
@@ -515,6 +517,7 @@ export const AppProvider = ({ children }) => {
   }, [user]);
 
   const refreshPortfolioAnalysis = useCallback(async () => {
+    
     if (!user?.uid) {
       setTodayPortfolioV3(null);
       setTodayPortfolioMeta(null);

@@ -18,11 +18,11 @@ const fmtPct = v => v == null ? null : (v >= 0 ? '+' : '') + Number(v).toFixed(1
 const ROLE_META = {
   core:        { color: '#3b82f6', Icon: Landmark,    label: 'Core'        },
   growth:      { color: '#10b981', Icon: TrendingUp,  label: 'Growth'      },
-  defensive:   { color: '#facc15', Icon: ShieldCheck, label: 'Defensive'   },
-  liquidity:   { color: '#06b6d4', Icon: Droplets,    label: 'Liquidity'   },
+  defensive:   { color: '#facc15', Icon: ShieldCheck, label: 'Defense'   },
+  liquidity:   { color: '#06b6d4', Icon: Droplets,    label: 'Liq'   },
   yield:       { color: '#14b8a6', Icon: Zap,         label: 'Yield'       },
-  speculative: { color: '#f43f5e', Icon: Dices,       label: 'Speculative' },
-  trading:     { color: '#a855f7', Icon: RefreshCw,   label: 'Trading'     },
+  speculative: { color: '#f43f5e', Icon: Dices,       label: 'Spec' },
+  trading:     { color: '#a855f7', Icon: RefreshCw,   label: 'Trade'     },
   reserve:     { color: '#94a3b8', Icon: Briefcase,   label: 'Reserve'     },
   patrimony:   { color: '#f97316', Icon: Building2,   label: 'Patrimony'   },
 };
@@ -302,7 +302,7 @@ function RoleBlock({ role, assets, roleTotalVal, totalGlobalVal }) {
       ease:     'outExpo',
     });
   }, []);
-  const meta = ROLE_META[role] ?? { color: '#64748b', Icon: Briefcase, label: role };
+  const meta = ROLE_META[role] ?? { color: '#64748b', Icon: Briefcase, label: role,size: 6 };
   const roleGlobalPct = totalGlobalVal > 0 ? (roleTotalVal / totalGlobalVal) * 100 : 0;
 
   // FIX: tiles ordenados de mayor a menor valor dentro del bloque
