@@ -1,0 +1,45 @@
+# .github/workflows/update-etf-data.yml
+
+name: Update ETF Data
+
+on:
+  schedule:
+    # Ejecutar cada lunes a las 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+    # Permitir ejecución manual desde la UI de GitHub
+
+jobs:
+  update-etf-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: |
+          npm install puppeteer cheerio node-fetch
+      
+      - name: Run ETF scraper
+        run: |
+          node scripts/scrape-etf-data.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add public/data/etf-exposure.json
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "chore: update ETF data $(date -Iseconds)" &&
+            git push
+          )

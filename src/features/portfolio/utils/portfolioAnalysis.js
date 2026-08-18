@@ -342,7 +342,7 @@ const ASSET_RULES = {
     subClass: 'acciones_individuales',
     horizon: 'short',
     riskLevel: 3,
-    sector: 'energia_renovable',
+    sector: 'energia',
   },
   MSFT: {
     role: 'trading',
@@ -535,6 +535,7 @@ export const MANUAL_RULES = {
     role: 'yield',
     assetClass: 'efectivo',
     subClass: 'cash_equivalent',
+    sector: 'stablecoin_yield',
     horizon: 'short',
     riskLevel: 2,
     isLocked: false,
@@ -1297,7 +1298,7 @@ function buildSectorAnalysisInternal(
       ),
   };
 }
-
+import { buildPortfolioSectorExposure } from './portfolioSectorAnalysis.js'
 export function buildPortfolioV3({
   allAssets = [],
   totalUSD = 0,
@@ -1306,7 +1307,9 @@ export function buildPortfolioV3({
   grossExposure = 0,
   monthlyUSD = 190,
   customTargets = null,
+  etfExposure = {}, 
 } = {}) {
+
   const sourceAssets =
     Array.isArray(allAssets)
       ? allAssets
@@ -1423,7 +1426,7 @@ export function buildPortfolioV3({
         getAssetValue(asset),
       0,
     );
-
+  
   const byRoleUSD =
     groupByValue(
       portfolioAssets,
@@ -1731,11 +1734,16 @@ export function buildPortfolioV3({
     });
 
   // Ahora forma parte directamente del análisis principal.
-  const sectorAnalysis =
-    buildSectorAnalysisInternal(
-      portfolioAssets,
-      investableUSD,
-    );
+  const sectorAnalysis = buildPortfolioSectorExposure(
+    portfolioAssets,
+    etfExposure,
+    investableUSD
+  );
+  // const sectorAnalysis =
+  //   buildSectorAnalysisInternal(
+  //     portfolioAssets,
+  //     investableUSD,
+  //   );
 
   const totalsByRoleUSD = {
     ...byRoleUSD,
@@ -1896,6 +1904,7 @@ export function buildPortfolioV3({
     assets,
 
     activeTargets,
+    sectorAnalysis,
   };
 }
 

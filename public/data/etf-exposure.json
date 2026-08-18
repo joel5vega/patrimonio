@@ -1,0 +1,81 @@
+// public/data/etf-exposure.json
+{
+  "lastUpdated": "2026-08-17T00:00:00.000Z",
+  "etfs": {
+    "VOO": {
+      "symbol": "VOO",
+      "issuer": "vanguard",
+      "asOfDate": "2026-08-15",
+      "source": "vanguard_official",
+      "status": "complete",
+      "sectors": [
+        { "sector": "tecnologia", "weightPct": 38.61, "sourceStandard": "GICS" },
+        { "sector": "finanzas", "weightPct": 11.41, "sourceStandard": "GICS" },
+        { "sector": "comunicacion", "weightPct": 9.90, "sourceStandard": "GICS" },
+        { "sector": "consumo_discrecional", "weightPct": 9.50, "sourceStandard": "GICS" },
+        { "sector": "salud", "weightPct": 8.90, "sourceStandard": "GICS" },
+        { "sector": "industria", "weightPct": 8.50, "sourceStandard": "GICS" },
+        { "sector": "consumo_basico", "weightPct": 4.50, "sourceStandard": "GICS" },
+        { "sector": "energia", "weightPct": 3.00, "sourceStandard": "GICS" },
+        { "sector": "materiales", "weightPct": 2.40, "sourceStandard": "GICS" },
+        { "sector": "inmobiliario", "weightPct": 2.30, "sourceStandard": "GICS" },
+        { "sector": "servicios_publicos", "weightPct": 2.20, "sourceStandard": "GICS" }
+      ],
+      "holdings": [
+        { "symbol": "NVDA", "name": "NVIDIA Corporation", "weightPct": 7.50, "sector": "tecnologia" },
+        { "symbol": "AAPL", "name": "Apple Inc", "weightPct": 6.58, "sector": "tecnologia" },
+        { "symbol": "MSFT", "name": "Microsoft Corporation", "weightPct": 4.29, "sector": "tecnologia" },
+        { "symbol": "AMZN", "name": "Amazon.com Inc", "weightPct": 3.61, "sector": "consumo_discrecional" },
+        { "symbol": "GOOGL", "name": "Alphabet Inc Class A", "weightPct": 3.24, "sector": "comunicacion" }
+      ],
+      "totalHoldings": 520,
+      "expenseRatio": 0.03
+    },
+    "VXUS": {
+      "symbol": "VXUS",
+      "issuer": "vanguard",
+      "asOfDate": "2026-08-15",
+      "source": "vanguard_official",
+      "status": "complete",
+      "sectors": [
+        { "sector": "tecnologia", "weightPct": 22.50, "sourceStandard": "GICS" },
+        { "sector": "finanzas", "weightPct": 18.20, "sourceStandard": "GICS" },
+        { "sector": "industria", "weightPct": 13.10, "sourceStandard": "GICS" },
+        { "sector": "salud", "weightPct": 11.80, "sourceStandard": "GICS" },
+        { "sector": "consumo_discrecional", "weightPct": 10.40, "sourceStandard": "GICS" },
+        { "sector": "consumo_basico", "weightPct": 7.90, "sourceStandard": "GICS" },
+        { "sector": "energia", "weightPct": 5.20, "sourceStandard": "GICS" },
+        { "sector": "comunicacion", "weightPct": 4.30, "sourceStandard": "GICS" },
+        { "sector": "materiales", "weightPct": 3.80, "sourceStandard": "GICS" },
+        { "sector": "inmobiliario", "weightPct": 2.80, "sourceStandard": "GICS" }
+      ],
+      "holdings": [
+        { "symbol": "NESN", "name": "Nestle SA", "weightPct": 1.10 },
+        { "symbol": "ASML", "name": "ASML Holding NV", "weightPct": 1.00 },
+        { "symbol": "ROG", "name": "Roche Holding AG", "weightPct": 0.90 }
+      ],
+      "totalHoldings": 7900,
+      "expenseRatio": 0.07
+    },
+    "BND": {
+      "symbol": "BND",
+      "issuer": "vanguard",
+      "asOfDate": "2026-08-15",
+      "source": "vanguard_official",
+      "status": "complete",
+      "bondCategories": {
+        "treasury": 42.1,
+        "corporate": 27.3,
+        "mortgage": 18.2,
+        "government_related": 8.4,
+        "municipal": 2.1,
+        "other": 1.9
+      },
+      "holdings": [],
+      "totalHoldings": 10500,
+      "expenseRatio": 0.03,
+      "averageDuration": 6.2,
+      "averageMaturity": 8.4
+    }
+  }
+}

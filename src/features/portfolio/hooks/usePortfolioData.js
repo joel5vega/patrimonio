@@ -1,3 +1,5 @@
+// hooks/usePortfolioData.js
+
 import { useMemo } from 'react';
 import {
   INVESTOR_PROFILES,
@@ -17,6 +19,7 @@ import {
   selectReserveAssets,
 } from '../utils/portfolioSelectors';
 import { usePortfolioFilters } from './usePortfolioFilters';
+import { useETFExposure } from './useETFExposure';
 
 const EMPTY_PLAN = {
   monthly: [],
@@ -91,7 +94,6 @@ function buildDecisionSupportCompatibility(analysis, aiReport) {
       };
     });
 
-  // SOLUCIÓN AL BUILD DECISSION: Estructurarlo de forma fija para que no devuelva arreglos vacíos por fallback
   return {
     ...ai,
     alerts: {
@@ -117,12 +119,20 @@ export function usePortfolioData({
 } = {}) {
   const allAssets = useMemo(
     () => [...cryptoAssets, ...inversionPositions, ...manualAssets],
-    [cryptoAssets, inversionPositions, manualAssets],
+    [cryptoAssets, inversionPositions, manualAssets]
   );
+
+  // Obtener exposición de ETFs (con fallback a datos hardcodeados)
+  const { 
+    data: etfExposure, 
+    loading: etfLoading, 
+    error: etfError,
+    lastUpdated: etfLastUpdated,
+  } = useETFExposure(allAssets);
 
   const totalUSD = useMemo(
     () => allAssets.reduce((sum, asset) => sum + Number(asset.valueUSD || 0), 0),
-    [allAssets],
+    [allAssets]
   );
 
   const activeTargets = useMemo(() => {
@@ -138,8 +148,9 @@ export function usePortfolioData({
       totalUSD,
       monthlyUSD: bobRate ? Math.round(2000 / bobRate) : 173,
       customTargets: activeTargets,
+      etfExposure, // <-- Pasar datos de ETFs para look-through
     }),
-    [allAssets, totalUSD, bobRate, activeTargets],
+    [allAssets, totalUSD, bobRate, activeTargets, etfExposure]
   );
 
   const legacyAllocation = useMemo(() => {
@@ -155,13 +166,13 @@ export function usePortfolioData({
       ...legacyAllocation,
       ...buildAllocationCompatibility(analysis, activeTargets),
     }),
-    [analysis, activeTargets, legacyAllocation],
+    [analysis, activeTargets, legacyAllocation]
   );
 
-  // SOLUCIÓN A SECTORES 0.0%: Enviar 'investableUSD' para calcular porcentajes reales
+  // Análisis de sectores con look-through de ETFs
   const sectorAnalysis = useMemo(
     () => analysis?.sectorAnalysis || buildSectorAnalysis(analysis?.assets || [], analysis?.totals?.investableUSD || 0),
-    [analysis],
+    [analysis]
   );
 
   const aiReport = useMemo(() => {
@@ -190,12 +201,12 @@ export function usePortfolioData({
       reserves: selectReserveAssets(analysisAssets),
       patrimony: selectPatrimonyAssets(analysisAssets),
     }),
-    [analysisAssets],
+    [analysisAssets]
   );
 
   const decisionSupport = useMemo(
     () => buildDecisionSupportCompatibility(analysis, aiReport),
-    [analysis, aiReport],
+    [analysis, aiReport]
   );
 
   const generatedAt = aiReport?.snapshot?.generatedAt || analysis?.generatedAt || new Date().toISOString();
@@ -210,7 +221,9 @@ export function usePortfolioData({
   const filteredAssets = filters?.filteredAssets || heatmapAssets;
 
   return {
-    loading,
+    loading: loading || etfLoading,
+    etfError, // <-- Error de carga de ETFs (si hay)
+    etfLastUpdated, // <-- Cuándo se actualizaron los datos de ETFs
     analysis,
     aiReport,
     profile: investorProfile,
