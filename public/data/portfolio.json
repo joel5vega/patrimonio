@@ -1,0 +1,1014 @@
+{
+  "schema": {
+    "name": "personal_portfolio_analysis",
+    "version": "5.1",
+    "language": "es",
+    "currency": "USD",
+    "calculationBasis": "current_market_value"
+  },
+  "snapshot": {
+    "generatedAt": "2026-08-17T21:55:09.520Z",
+    "asOfDate": "2026-08-17",
+    "sources": [
+      "binance",
+      "admirals",
+      "quantfury",
+      "manual"
+    ],
+    "bobRate": 11.56
+  },
+  "investorContext": {
+    "profile": "moderado",
+    "monthlyContributionUSD": 287,
+    "horizon": "medium_long",
+    "objective": "wealth_accumulation"
+  },
+  "financialState": {
+    "totalNetWorthUSD": 33200.15,
+    "financialAssetsUSD": 10200.15,
+    "investableAssetsUSD": 7110.38,
+    "reservesUSD": 3089.77,
+    "physicalPatrimonyUSD": 23000,
+    "nonInvestableAssetsUSD": 26089.77,
+    "investablePctOfNetWorth": 21.4167,
+    "reservesPctOfFinancialAssets": 30.2914,
+    "physicalPatrimonyPctOfNetWorth": 69.2768
+  },
+  "investmentUniverse": {
+    "includedRoles": [
+      "core",
+      "growth",
+      "defensive",
+      "liquidity",
+      "yield",
+      "speculative",
+      "trading"
+    ],
+    "excludedRoles": [
+      "reserve",
+      "patrimony"
+    ],
+    "rebalancingMethod": "contributions_first",
+    "lockedAssetsExcluded": true
+  },
+  "allocationAnalysis": {
+    "byRole": {
+      "core": {
+        "role": "core",
+        "currentPct": 34.55877182372813,
+        "targetPct": 35,
+        "differencePct": -0.4412281762718706,
+        "status": "warning",
+        "action": "Aumentar 0.4%",
+        "upperBound": false
+      },
+      "growth": {
+        "role": "growth",
+        "currentPct": 31.63712769219085,
+        "targetPct": 20,
+        "differencePct": 11.637127692190852,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": false
+      },
+      "defensive": {
+        "role": "defensive",
+        "currentPct": 14.710465544738819,
+        "targetPct": 17,
+        "differencePct": -2.2895344552611814,
+        "status": "warning",
+        "action": "Aumentar 2.3%",
+        "upperBound": false
+      },
+      "liquidity": {
+        "role": "liquidity",
+        "currentPct": 0.017017374598825942,
+        "targetPct": 5,
+        "differencePct": -4.982982625401174,
+        "status": "critical",
+        "action": "Aumentar 5.0%",
+        "upperBound": false
+      },
+      "yield": {
+        "role": "yield",
+        "currentPct": 14.210632905695617,
+        "targetPct": 15,
+        "differencePct": -0.7893670943043833,
+        "status": "warning",
+        "action": "Aumentar 0.8%",
+        "upperBound": false
+      },
+      "speculative": {
+        "role": "speculative",
+        "currentPct": 1.6812040987964072,
+        "targetPct": 3,
+        "differencePct": -1.3187959012035928,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": true
+      },
+      "trading": {
+        "role": "trading",
+        "currentPct": 3.1847805602513506,
+        "targetPct": 5,
+        "differencePct": -1.8152194397486494,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": true
+      }
+    },
+    "rows": [
+      {
+        "role": "core",
+        "currentPct": 34.55877182372813,
+        "targetPct": 35,
+        "differencePct": -0.4412281762718706,
+        "status": "warning",
+        "action": "Aumentar 0.4%",
+        "upperBound": false
+      },
+      {
+        "role": "growth",
+        "currentPct": 31.63712769219085,
+        "targetPct": 20,
+        "differencePct": 11.637127692190852,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": false
+      },
+      {
+        "role": "defensive",
+        "currentPct": 14.710465544738819,
+        "targetPct": 17,
+        "differencePct": -2.2895344552611814,
+        "status": "warning",
+        "action": "Aumentar 2.3%",
+        "upperBound": false
+      },
+      {
+        "role": "liquidity",
+        "currentPct": 0.017017374598825942,
+        "targetPct": 5,
+        "differencePct": -4.982982625401174,
+        "status": "critical",
+        "action": "Aumentar 5.0%",
+        "upperBound": false
+      },
+      {
+        "role": "yield",
+        "currentPct": 14.210632905695617,
+        "targetPct": 15,
+        "differencePct": -0.7893670943043833,
+        "status": "warning",
+        "action": "Aumentar 0.8%",
+        "upperBound": false
+      },
+      {
+        "role": "speculative",
+        "currentPct": 1.6812040987964072,
+        "targetPct": 3,
+        "differencePct": -1.3187959012035928,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": true
+      },
+      {
+        "role": "trading",
+        "currentPct": 3.1847805602513506,
+        "targetPct": 5,
+        "differencePct": -1.8152194397486494,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": true
+      }
+    ],
+    "roleRows": [
+      {
+        "role": "core",
+        "currentPct": 34.55877182372813,
+        "targetPct": 35,
+        "differencePct": -0.4412281762718706,
+        "status": "warning",
+        "action": "Aumentar 0.4%",
+        "upperBound": false
+      },
+      {
+        "role": "growth",
+        "currentPct": 31.63712769219085,
+        "targetPct": 20,
+        "differencePct": 11.637127692190852,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": false
+      },
+      {
+        "role": "defensive",
+        "currentPct": 14.710465544738819,
+        "targetPct": 17,
+        "differencePct": -2.2895344552611814,
+        "status": "warning",
+        "action": "Aumentar 2.3%",
+        "upperBound": false
+      },
+      {
+        "role": "liquidity",
+        "currentPct": 0.017017374598825942,
+        "targetPct": 5,
+        "differencePct": -4.982982625401174,
+        "status": "critical",
+        "action": "Aumentar 5.0%",
+        "upperBound": false
+      },
+      {
+        "role": "yield",
+        "currentPct": 14.210632905695617,
+        "targetPct": 15,
+        "differencePct": -0.7893670943043833,
+        "status": "warning",
+        "action": "Aumentar 0.8%",
+        "upperBound": false
+      },
+      {
+        "role": "speculative",
+        "currentPct": 1.6812040987964072,
+        "targetPct": 3,
+        "differencePct": -1.3187959012035928,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": true
+      },
+      {
+        "role": "trading",
+        "currentPct": 3.1847805602513506,
+        "targetPct": 5,
+        "differencePct": -1.8152194397486494,
+        "status": "ok",
+        "action": "Mantener",
+        "upperBound": true
+      }
+    ],
+    "byAssetClass": {
+      "renta_fija": 5.489580022446058,
+      "renta_variable": 50.60643734933999,
+      "alternativos": 29.676332347919534,
+      "efectivo": 14.227650280294442
+    },
+    "bySubClass": {},
+    "targets": {
+      "core": 35,
+      "growth": 20,
+      "defensive": 17,
+      "liquidity": 5,
+      "yield": 15,
+      "speculative": 3,
+      "trading": 5
+    }
+  },
+  "riskAssessment": {
+    "portfolioRisk": 2.31,
+    "expectedReturnPct": 8.32,
+    "concentrationHHI": 0.1842,
+    "cashDragPct": 0,
+    "methodology": "weighted_asset_class_assumptions",
+    "expectedReturnIsGuaranteed": false,
+    "limitations": [
+      "No incluye correlaciones históricas.",
+      "No incluye volatilidad histórica completa.",
+      "El retorno esperado es una estimación."
+    ]
+  },
+  "decisionSupport": {
+    "priority": "resolve_critical_alerts",
+    "alerts": {
+      "items": [
+        {
+          "key": "lowCash",
+          "category": "liquidity",
+          "severity": "critical",
+          "title": "Liquidez insuficiente",
+          "allocation": null
+        }
+      ],
+      "summary": {
+        "active": 1,
+        "critical": 1,
+        "warning": 0,
+        "info": 0
+      }
+    },
+    "rules": [
+      "Portfolio balanceado ✓"
+    ],
+    "recommendations": {
+      "strategy": "contributions_first",
+      "priority": "resolve_critical_alerts",
+      "monthly": [
+        {
+          "reason": "liquidity underweight (0.0% → 5%)",
+          "action": "BUY",
+          "asset": "USDT",
+          "amountUSD": 122.89,
+          "monthsToTarget": 3
+        },
+        {
+          "reason": "trading underweight (3.2% → 7%)",
+          "amountUSD": 94.09,
+          "monthsToTarget": 3,
+          "action": "BUY",
+          "asset": "MELI"
+        },
+        {
+          "reason": "speculative underweight (1.7% → 3%)",
+          "action": "BUY",
+          "amountUSD": 32.52,
+          "asset": "SOL",
+          "monthsToTarget": 3
+        },
+        {
+          "monthsToTarget": 3,
+          "amountUSD": 19.47,
+          "asset": "AirTM",
+          "action": "BUY",
+          "reason": "yield underweight (14.2% → 15%)"
+        }
+      ],
+      "lumpSum": []
+    }
+  },
+  "excludedAssets": {
+    "reserves": {
+      "totalUSD": 3089.77,
+      "assets": [
+        {
+          "groupKey": "manual",
+          "type": "manual",
+          "valueUSD": 1400,
+          "classification": {
+            "horizon": "medium",
+            "isInvestable": false,
+            "isLocked": true,
+            "subClass": "cash_fisico",
+            "role": "reserve",
+            "riskLevel": 1,
+            "assetClass": "efectivo"
+          },
+          "symbol": "Ahorro $",
+          "strategy": {
+            "hold": true,
+            "reduce": false,
+            "accumulate": false,
+            "useForTrading": false
+          },
+          "name": "Ahorro $",
+          "weightPct": 4.22
+        },
+        {
+          "strategy": {
+            "useForTrading": false,
+            "hold": true,
+            "reduce": false,
+            "accumulate": false
+          },
+          "weightPct": 2.93,
+          "type": "manual",
+          "symbol": "SAFI",
+          "valueUSD": 971.24,
+          "groupKey": "manual",
+          "classification": {
+            "assetClass": "efectivo",
+            "subClass": "cash_local",
+            "isInvestable": false,
+            "horizon": "medium",
+            "riskLevel": 2,
+            "isLocked": true,
+            "isLocalPrivateEquity": true,
+            "role": "reserve"
+          },
+          "name": "SAFI"
+        },
+        {
+          "valueUSD": 718.53,
+          "name": "Ahorro en Bs",
+          "groupKey": "manual",
+          "type": "manual",
+          "strategy": {
+            "useForTrading": false,
+            "accumulate": false,
+            "hold": true,
+            "reduce": false
+          },
+          "classification": {
+            "subClass": "cash_local",
+            "role": "reserve",
+            "assetClass": "efectivo",
+            "isLocked": true,
+            "isInvestable": false,
+            "horizon": "medium",
+            "riskLevel": 1
+          },
+          "weightPct": 2.16,
+          "symbol": "Ahorro en Bs"
+        }
+      ]
+    },
+    "patrimony": {
+      "totalUSD": 23000,
+      "assets": [
+        {
+          "strategy": {
+            "hold": true,
+            "accumulate": false,
+            "reduce": false,
+            "useForTrading": false
+          },
+          "type": "manual",
+          "classification": {
+            "subClass": "propiedad_fisica",
+            "horizon": "very_long",
+            "assetClass": "inmobiliario",
+            "riskLevel": 2,
+            "role": "patrimony"
+          },
+          "weightPct": 24.1,
+          "name": "t ACH",
+          "groupKey": "manual",
+          "symbol": "t ACH",
+          "valueUSD": 8000
+        },
+        {
+          "valueUSD": 15000,
+          "type": "manual",
+          "groupKey": "manual",
+          "weightPct": 45.18,
+          "classification": {
+            "assetClass": "inmobiliario",
+            "riskLevel": 2,
+            "horizon": "very_long",
+            "role": "patrimony",
+            "subClass": "propiedad_fisica"
+          },
+          "symbol": "t SAS",
+          "strategy": {
+            "hold": true,
+            "useForTrading": false,
+            "reduce": false,
+            "accumulate": false
+          },
+          "name": "t SAS"
+        }
+      ]
+    }
+  },
+  "exposureBySource": {
+    "binance": 1194.38,
+    "admirals": 4365.57,
+    "quantfury": 540,
+    "manual": 27100.2
+  },
+  "totalsByRoleUSD": {
+    "growth": 2249.52,
+    "speculative": 119.53999999999999,
+    "liquidity": 1.21,
+    "defensive": 1045.97,
+    "core": 2457.26,
+    "trading": 226.45,
+    "reserve": 3089.7699999999995,
+    "patrimony": 23000,
+    "yield": 1010.43
+  },
+  "targets": {
+    "core": 35,
+    "growth": 20,
+    "defensive": 17,
+    "liquidity": 5,
+    "yield": 15,
+    "speculative": 3,
+    "trading": 5
+  },
+  "sectorAnalysis": null,
+  "assets": [
+    {
+      "type": "crypto",
+      "classification": {
+        "subClass": "crypto",
+        "horizon": "long",
+        "riskLevel": 3,
+        "role": "growth",
+        "assetClass": "alternativos"
+      },
+      "symbol": "BTC",
+      "strategy": {
+        "hold": true,
+        "reduce": false,
+        "useForTrading": false,
+        "accumulate": true
+      },
+      "groupKey": "binance",
+      "weightPct": 3.16,
+      "name": "BTC",
+      "valueUSD": 1048.71
+    },
+    {
+      "name": "ETH",
+      "strategy": {
+        "useForTrading": false,
+        "hold": true,
+        "reduce": false,
+        "accumulate": true
+      },
+      "type": "crypto",
+      "classification": {
+        "assetClass": "alternativos",
+        "riskLevel": 3,
+        "horizon": "long",
+        "role": "growth",
+        "subClass": "crypto"
+      },
+      "groupKey": "binance",
+      "weightPct": 0.34,
+      "symbol": "ETH",
+      "valueUSD": 112.02
+    },
+    {
+      "valueUSD": 0.03,
+      "weightPct": 0,
+      "type": "crypto",
+      "symbol": "SOL",
+      "groupKey": "binance",
+      "name": "SOL",
+      "strategy": {
+        "accumulate": false,
+        "useForTrading": false,
+        "hold": false,
+        "reduce": false
+      },
+      "classification": {
+        "role": "speculative",
+        "assetClass": "alternativos",
+        "horizon": "medium",
+        "riskLevel": 4,
+        "subClass": "crypto"
+      }
+    },
+    {
+      "valueUSD": 32.39,
+      "symbol": "ADA",
+      "classification": {
+        "assetClass": "alternativos",
+        "horizon": "medium",
+        "role": "speculative",
+        "subClass": "crypto",
+        "riskLevel": 5
+      },
+      "weightPct": 0.1,
+      "groupKey": "binance",
+      "name": "ADA",
+      "strategy": {
+        "reduce": false,
+        "useForTrading": false,
+        "hold": false,
+        "accumulate": false
+      },
+      "type": "crypto"
+    },
+    {
+      "groupKey": "binance",
+      "type": "crypto",
+      "valueUSD": 0.02,
+      "symbol": "HBAR",
+      "name": "HBAR",
+      "strategy": {
+        "useForTrading": false,
+        "reduce": false,
+        "hold": false,
+        "accumulate": false
+      },
+      "weightPct": 0,
+      "classification": {
+        "role": "speculative",
+        "subClass": "crypto",
+        "riskLevel": 4,
+        "assetClass": "alternativos",
+        "horizon": "medium"
+      }
+    },
+    {
+      "name": "USDT",
+      "classification": {
+        "role": "liquidity",
+        "assetClass": "efectivo",
+        "subClass": "cash",
+        "horizon": "short",
+        "riskLevel": 1
+      },
+      "strategy": {
+        "hold": true,
+        "accumulate": false,
+        "useForTrading": false,
+        "reduce": false
+      },
+      "weightPct": 0,
+      "valueUSD": 1.21,
+      "type": "stablecoin",
+      "symbol": "USDT",
+      "groupKey": "binance"
+    },
+    {
+      "name": "BND",
+      "strategy": {
+        "hold": true,
+        "accumulate": false,
+        "useForTrading": false,
+        "reduce": false
+      },
+      "symbol": "BND",
+      "valueUSD": 390.33,
+      "weightPct": 1.18,
+      "groupKey": "admirals",
+      "type": "etf",
+      "classification": {
+        "riskLevel": 2,
+        "assetClass": "renta_fija",
+        "subClass": "fondos_bonos",
+        "horizon": "long",
+        "role": "defensive"
+      }
+    },
+    {
+      "classification": {
+        "role": "growth",
+        "horizon": "long",
+        "subClass": "fondos_internacionales",
+        "riskLevel": 3,
+        "assetClass": "renta_variable"
+      },
+      "groupKey": "admirals",
+      "valueUSD": 195.82,
+      "name": "EMXC",
+      "symbol": "EMXC",
+      "type": "stock",
+      "strategy": {
+        "useForTrading": false,
+        "accumulate": true,
+        "hold": true,
+        "reduce": false
+      },
+      "weightPct": 0.59
+    },
+    {
+      "type": "etf",
+      "symbol": "IAU",
+      "weightPct": 1.82,
+      "classification": {
+        "subClass": "metales",
+        "horizon": "long",
+        "riskLevel": 1,
+        "role": "defensive",
+        "assetClass": "alternativos"
+      },
+      "strategy": {
+        "useForTrading": false,
+        "reduce": false,
+        "hold": true,
+        "accumulate": false
+      },
+      "groupKey": "admirals",
+      "valueUSD": 603.38,
+      "name": "IAU"
+    },
+    {
+      "classification": {
+        "riskLevel": 2,
+        "horizon": "long",
+        "subClass": "fondos_eeuu",
+        "assetClass": "renta_variable",
+        "role": "core"
+      },
+      "groupKey": "admirals",
+      "type": "etf",
+      "valueUSD": 2457.26,
+      "weightPct": 7.4,
+      "name": "VOO",
+      "symbol": "VOO",
+      "strategy": {
+        "hold": true,
+        "useForTrading": false,
+        "accumulate": true,
+        "reduce": false
+      }
+    },
+    {
+      "type": "etf",
+      "groupKey": "admirals",
+      "valueUSD": 718.78,
+      "weightPct": 2.16,
+      "name": "VXUS",
+      "strategy": {
+        "hold": true,
+        "accumulate": true,
+        "useForTrading": false,
+        "reduce": false
+      },
+      "classification": {
+        "assetClass": "renta_variable",
+        "riskLevel": 3,
+        "subClass": "fondos_internacionales",
+        "role": "growth",
+        "horizon": "long"
+      },
+      "symbol": "VXUS"
+    },
+    {
+      "groupKey": "quantfury",
+      "classification": {
+        "role": "trading",
+        "subClass": "acciones_individuales",
+        "assetClass": "renta_variable",
+        "riskLevel": 4,
+        "horizon": "short"
+      },
+      "weightPct": 0.16,
+      "valueUSD": 52.26,
+      "type": "stock",
+      "symbol": "MELI",
+      "name": "MELI",
+      "strategy": {
+        "accumulate": false,
+        "useForTrading": true,
+        "reduce": false,
+        "hold": false
+      }
+    },
+    {
+      "classification": {
+        "role": "growth",
+        "assetClass": "alternativos",
+        "subClass": "crypto",
+        "riskLevel": 3,
+        "horizon": "long"
+      },
+      "strategy": {
+        "useForTrading": false,
+        "reduce": false,
+        "accumulate": true,
+        "hold": true
+      },
+      "name": "BTC/USD",
+      "type": "crypto",
+      "valueUSD": 174.19,
+      "weightPct": 0.52,
+      "symbol": "BTC/USD",
+      "groupKey": "quantfury"
+    },
+    {
+      "groupKey": "manual",
+      "type": "manual",
+      "valueUSD": 1400,
+      "classification": {
+        "horizon": "medium",
+        "isInvestable": false,
+        "isLocked": true,
+        "subClass": "cash_fisico",
+        "role": "reserve",
+        "riskLevel": 1,
+        "assetClass": "efectivo"
+      },
+      "symbol": "Ahorro $",
+      "strategy": {
+        "hold": true,
+        "reduce": false,
+        "accumulate": false,
+        "useForTrading": false
+      },
+      "name": "Ahorro $",
+      "weightPct": 4.22
+    },
+    {
+      "valueUSD": 17.42,
+      "name": "XRP/USD",
+      "groupKey": "quantfury",
+      "classification": {
+        "subClass": "crypto",
+        "assetClass": "alternativos",
+        "role": "speculative",
+        "riskLevel": 5,
+        "horizon": "medium"
+      },
+      "weightPct": 0.05,
+      "strategy": {
+        "useForTrading": false,
+        "accumulate": false,
+        "reduce": false,
+        "hold": false
+      },
+      "symbol": "XRP/USD",
+      "type": "crypto"
+    },
+    {
+      "strategy": {
+        "useForTrading": false,
+        "hold": true,
+        "reduce": false,
+        "accumulate": false
+      },
+      "weightPct": 2.93,
+      "type": "manual",
+      "symbol": "SAFI",
+      "valueUSD": 971.24,
+      "groupKey": "manual",
+      "classification": {
+        "assetClass": "efectivo",
+        "subClass": "cash_local",
+        "isInvestable": false,
+        "horizon": "medium",
+        "riskLevel": 2,
+        "isLocked": true,
+        "isLocalPrivateEquity": true,
+        "role": "reserve"
+      },
+      "name": "SAFI"
+    },
+    {
+      "weightPct": 0.05,
+      "valueUSD": 17.42,
+      "type": "crypto",
+      "groupKey": "quantfury",
+      "classification": {
+        "subClass": "crypto",
+        "horizon": "medium",
+        "role": "speculative",
+        "riskLevel": 4,
+        "assetClass": "alternativos"
+      },
+      "name": "AVAX/USDT",
+      "strategy": {
+        "useForTrading": false,
+        "accumulate": false,
+        "reduce": false,
+        "hold": false
+      },
+      "symbol": "AVAX/USDT"
+    },
+    {
+      "strategy": {
+        "hold": true,
+        "accumulate": false,
+        "reduce": false,
+        "useForTrading": false
+      },
+      "type": "manual",
+      "classification": {
+        "subClass": "propiedad_fisica",
+        "horizon": "very_long",
+        "assetClass": "inmobiliario",
+        "riskLevel": 2,
+        "role": "patrimony"
+      },
+      "weightPct": 24.1,
+      "name": "t ACH",
+      "groupKey": "manual",
+      "symbol": "t ACH",
+      "valueUSD": 8000
+    },
+    {
+      "strategy": {
+        "useForTrading": false,
+        "accumulate": true,
+        "reduce": false,
+        "hold": true
+      },
+      "weightPct": 3.04,
+      "type": "manual",
+      "symbol": "AirTM",
+      "classification": {
+        "isInvestable": true,
+        "subClass": "cash_equivalent",
+        "isLocked": false,
+        "role": "yield",
+        "horizon": "short",
+        "assetClass": "efectivo",
+        "riskLevel": 2,
+        "isDeFi": true,
+        "aprPct": 8
+      },
+      "valueUSD": 1010.43,
+      "groupKey": "manual",
+      "name": "AirTM"
+    },
+    {
+      "groupKey": "quantfury",
+      "type": "crypto",
+      "valueUSD": 52.26,
+      "classification": {
+        "horizon": "medium",
+        "assetClass": "alternativos",
+        "riskLevel": 4,
+        "subClass": "crypto",
+        "role": "speculative"
+      },
+      "name": "HBAR/USD",
+      "symbol": "HBAR/USD",
+      "weightPct": 0.16,
+      "strategy": {
+        "accumulate": false,
+        "hold": false,
+        "reduce": false,
+        "useForTrading": false
+      }
+    },
+    {
+      "valueUSD": 15000,
+      "type": "manual",
+      "groupKey": "manual",
+      "weightPct": 45.18,
+      "classification": {
+        "assetClass": "inmobiliario",
+        "riskLevel": 2,
+        "horizon": "very_long",
+        "role": "patrimony",
+        "subClass": "propiedad_fisica"
+      },
+      "symbol": "t SAS",
+      "strategy": {
+        "hold": true,
+        "useForTrading": false,
+        "reduce": false,
+        "accumulate": false
+      },
+      "name": "t SAS"
+    },
+    {
+      "valueUSD": 718.53,
+      "name": "Ahorro en Bs",
+      "groupKey": "manual",
+      "type": "manual",
+      "strategy": {
+        "useForTrading": false,
+        "accumulate": false,
+        "hold": true,
+        "reduce": false
+      },
+      "classification": {
+        "subClass": "cash_local",
+        "role": "reserve",
+        "assetClass": "efectivo",
+        "isLocked": true,
+        "isInvestable": false,
+        "horizon": "medium",
+        "riskLevel": 1
+      },
+      "weightPct": 2.16,
+      "symbol": "Ahorro en Bs"
+    },
+    {
+      "weightPct": 0.16,
+      "strategy": {
+        "reduce": false,
+        "accumulate": false,
+        "hold": true,
+        "useForTrading": false
+      },
+      "name": "SLV",
+      "symbol": "SLV",
+      "classification": {
+        "subClass": "metales",
+        "riskLevel": 2,
+        "role": "defensive",
+        "horizon": "long",
+        "assetClass": "alternativos"
+      },
+      "valueUSD": 52.26,
+      "type": "stock",
+      "groupKey": "quantfury"
+    },
+    {
+      "classification": {
+        "assetClass": "renta_variable",
+        "riskLevel": 3,
+        "horizon": "short",
+        "role": "trading",
+        "subClass": "acciones_individuales"
+      },
+      "valueUSD": 174.19,
+      "type": "stock",
+      "groupKey": "quantfury",
+      "symbol": "CEG",
+      "strategy": {
+        "useForTrading": true,
+        "accumulate": false,
+        "reduce": false,
+        "hold": false
+      },
+      "weightPct": 0.52,
+      "name": "CEG"
+    }
+  ],
+  "integrityChecks": {
+    "totalsAvailable": true,
+    "assetsAvailable": true,
+    "classificationAvailable": true,
+    "strategyAvailable": true,
+    "noInvalidNumericValues": true,
+    "investableAssetsReconcile": true
+  }
+}

@@ -1,113 +1,239 @@
 // utils/portfolioSectorAnalysis.js
 
-/**
- * Construye exposición sectorial con look-through de ETFs.
- * 
- * @param {Array} assets - Activos del portfolio
- * @param {Record<string, Object>} etfExposure - Datos de exposición de ETFs
- * @param {number} investableUSD - Total de activos invertibles
- * @returns {Array<{ sector: string, valueUSD: number, pct: number, directValueUSD: number, lookThroughValueUSD: number, sources: string[] }>}
- */
-export function buildPortfolioSectorExposure(assets, etfExposure, investableUSD) {
-  const sectorValues = {};
-  const sectorDetails = {};
+function toFiniteNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
 
-  for (const asset of assets) {
-    const assetValue = Number(asset.valueUSD || 0);
+function round(value, decimals = 2) {
+  const factor = 10 ** decimals;
+  return Math.round((toFiniteNumber(value) + Number.EPSILON) * factor) / factor;
+}
 
-    if (assetValue <= 0) continue;
-    if (asset.classification?.isInvestable === false) continue;
+function normalizeSymbol(value) {
+  const symbol = String(value || '').trim();
+  return symbol || null;
+}
 
-    const etfData = etfExposure[asset.symbol];
+function getAssetSource(asset) {
+  return normalizeSymbol(
+    asset?.symbol ||
+    asset?.name ||
+    asset?.groupKey ||
+    asset?.source ||
+    'unknown',
+  );
+}
 
-    // Si es ETF y tenemos datos de composición con sectores
-    if (asset.type === 'etf' && etfData?.sectors?.length > 0) {
-      for (const sectorData of etfData.sectors) {
-        const sectorValue = assetValue * (Number(sectorData.weightPct || 0) / 100);
+function ensureSector(sectorValues, sectorDetails, sector) {
+  const key = String(sector || 'otros').trim() || 'otros';
 
-        if (!sectorValues[sectorData.sector]) {
-          sectorValues[sectorData.sector] = 0;
-          sectorDetails[sectorData.sector] = {
-            directValueUSD: 0,
-            lookThroughValueUSD: 0,
-            sources: new Set(),
-          };
-        }
-
-        sectorValues[sectorData.sector] += sectorValue;
-        sectorDetails[sectorData.sector].lookThroughValueUSD += sectorValue;
-        sectorDetails[sectorData.sector].sources.add(asset.symbol);
-      }
-      continue;
-    }
-
-    // Si es ETF de bonos (sin sectores, solo bondCategories)
-    if (asset.type === 'etf' && etfData?.bondCategories) {
-      // Para bonos, podrías crear categorías especiales o tratar como "renta_fija"
-      const sector = 'renta_fija';
-
-      if (!sectorValues[sector]) {
-        sectorValues[sector] = 0;
-        sectorDetails[sector] = {
-          directValueUSD: 0,
-          lookThroughValueUSD: 0,
-          sources: new Set(),
-        };
-      }
-
-      sectorValues[sector] += assetValue;
-      sectorDetails[sector].directValueUSD += assetValue;
-      sectorDetails[sector].sources.add(asset.symbol);
-      continue;
-    }
-
-    // Si es ETF pero no tenemos datos de composición, usar sector directo
-    if (asset.type === 'etf') {
-      const sector = asset.classification?.sector || 'otros';
-
-      if (!sectorValues[sector]) {
-        sectorValues[sector] = 0;
-        sectorDetails[sector] = {
-          directValueUSD: 0,
-          lookThroughValueUSD: 0,
-          sources: new Set(),
-        };
-      }
-
-      sectorValues[sector] += assetValue;
-      sectorDetails[sector].directValueUSD += assetValue;
-      sectorDetails[sector].sources.add(asset.symbol);
-      continue;
-    }
-
-    // Activos individuales, crypto, etc.
-    const sector = asset.classification?.sector || 'otros';
-
-    if (!sectorValues[sector]) {
-      sectorValues[sector] = 0;
-      sectorDetails[sector] = {
-        directValueUSD: 0,
-        lookThroughValueUSD: 0,
-        sources: new Set(),
-      };
-    }
-
-    sectorValues[sector] += assetValue;
-    sectorDetails[sector].directValueUSD += assetValue;
-    sectorDetails[sector].sources.add(asset.symbol);
+  if (!sectorValues[key]) {
+    sectorValues[key] = 0;
+    sectorDetails[key] = {
+      directValueUSD: 0,
+      lookThroughValueUSD: 0,
+      sources: new Set(),
+      assets: [],
+    };
   }
 
-  return Object.entries(sectorValues)
-    .map(([sector, valueUSD]) => {
+  return key;
+}
+
+function addDirectExposure({
+  sectorValues,
+  sectorDetails,
+  sector,
+  asset,
+  assetValue,
+}) {
+  const key = ensureSector(sectorValues, sectorDetails, sector);
+  const source = getAssetSource(asset);
+
+  sectorValues[key] += assetValue;
+  sectorDetails[key].directValueUSD += assetValue;
+  sectorDetails[key].sources.add(source);
+  sectorDetails[key].assets.push({
+    symbol: asset?.symbol || asset?.name || null,
+    name: asset?.name || asset?.symbol || null,
+    valueUSD: round(assetValue),
+    pct: 100,
+    lookThroughWeight: null,
+  });
+}
+
+function addLookThroughExposure({
+  sectorValues,
+  sectorDetails,
+  sector,
+  asset,
+  assetValue,
+  weightPct,
+}) {
+  const key = ensureSector(sectorValues, sectorDetails, sector);
+  const source = getAssetSource(asset);
+  const safeWeightPct = Math.max(0, toFiniteNumber(weightPct));
+  const sectorValue = assetValue * (safeWeightPct / 100);
+
+  if (sectorValue <= 0) return;
+
+  sectorValues[key] += sectorValue;
+  sectorDetails[key].lookThroughValueUSD += sectorValue;
+  sectorDetails[key].sources.add(source);
+  sectorDetails[key].assets.push({
+    symbol: asset?.symbol || asset?.name || null,
+    name: asset?.name || asset?.symbol || null,
+    valueUSD: round(sectorValue),
+    pct: safeWeightPct,
+    lookThroughWeight: safeWeightPct,
+  });
+}
+
+function normalizeEtfExposure(etfExposure) {
+  return etfExposure && typeof etfExposure === 'object'
+    ? etfExposure
+    : {};
+}
+
+/**
+ * Construye exposición sectorial con look-through de ETFs.
+ *
+ * La suma de los sectores se limita al valor real del activo.
+ * Si los pesos del proveedor superan 100%, se normalizan.
+ */
+export function buildPortfolioSectorExposure(
+  assets = [],
+  etfExposure = {},
+  investableUSD = 0,
+) {
+  const sourceAssets = Array.isArray(assets) ? assets : [];
+  const exposure = normalizeEtfExposure(etfExposure);
+  const sectorValues = {};
+  const sectorDetails = {};
+  const reconciliation = [];
+
+  for (const asset of sourceAssets) {
+    const assetValue = Math.max(0, toFiniteNumber(asset?.valueUSD));
+
+    if (assetValue <= 0) continue;
+    if (asset?.classification?.isInvestable === false) continue;
+
+    const symbol = normalizeSymbol(asset?.symbol);
+    const etfData = symbol ? exposure[symbol] : null;
+    const etfSectors = Array.isArray(etfData?.sectors)
+      ? etfData.sectors
+      : [];
+
+    if (asset?.type === 'etf' && etfSectors.length > 0) {
+      const validSectors = etfSectors
+        .map((item) => ({
+          sector: item?.sector || 'otros',
+          weightPct: Math.max(0, toFiniteNumber(item?.weightPct)),
+        }))
+        .filter((item) => item.weightPct > 0);
+
+      const rawWeightTotal = validSectors.reduce(
+        (sum, item) => sum + item.weightPct,
+        0,
+      );
+
+      const normalizationFactor = rawWeightTotal > 100
+        ? 100 / rawWeightTotal
+        : 1;
+
+      const appliedWeightTotal = validSectors.reduce(
+        (sum, item) => sum + item.weightPct * normalizationFactor,
+        0,
+      );
+
+      reconciliation.push({
+        symbol,
+        assetValueUSD: round(assetValue),
+        sourceWeightPct: round(rawWeightTotal, 4),
+        appliedWeightPct: round(appliedWeightTotal, 4),
+        normalized: normalizationFactor !== 1,
+      });
+
+      for (const item of validSectors) {
+        addLookThroughExposure({
+          sectorValues,
+          sectorDetails,
+          sector: item.sector,
+          asset,
+          assetValue,
+          weightPct: item.weightPct * normalizationFactor,
+        });
+      }
+
+      continue;
+    }
+
+    if (asset?.type === 'etf' && etfData?.bondCategories) {
+      addDirectExposure({
+        sectorValues,
+        sectorDetails,
+        sector: 'renta_fija',
+        asset,
+        assetValue,
+      });
+      continue;
+    }
+
+    addDirectExposure({
+      sectorValues,
+      sectorDetails,
+      sector: asset?.classification?.sector || 'otros',
+      asset,
+      assetValue,
+    });
+  }
+
+  const safeInvestableUSD = Math.max(0, toFiniteNumber(investableUSD));
+  const sectors = Object.entries(sectorValues)
+    .map(([sector, rawValueUSD]) => {
       const details = sectorDetails[sector];
+      const valueUSD = round(rawValueUSD);
+      const sources = Array.from(details.sources).filter(Boolean);
+      const assetsBySector = details.assets
+        .filter((asset) => asset.symbol || asset.name)
+        .map((asset) => ({
+          ...asset,
+          valueUSD: round(asset.valueUSD),
+        }));
+
       return {
         sector,
-        valueUSD: Math.round(valueUSD * 100) / 100,
-        pct: investableUSD > 0 ? (valueUSD / investableUSD) * 100 : 0,
-        directValueUSD: Math.round(details.directValueUSD * 100) / 100,
-        lookThroughValueUSD: Math.round(details.lookThroughValueUSD * 100) / 100,
-        sources: Array.from(details.sources),
+        valueUSD,
+        pct: safeInvestableUSD > 0
+          ? round((valueUSD / safeInvestableUSD) * 100, 4)
+          : 0,
+        directValueUSD: round(details.directValueUSD),
+        lookThroughValueUSD: round(details.lookThroughValueUSD),
+        sources,
+        assets: assetsBySector,
       };
     })
+    .filter((sector) => sector.valueUSD > 0)
     .sort((a, b) => b.valueUSD - a.valueUSD);
+
+  const totalSectorUSD = round(
+    sectors.reduce((sum, sector) => sum + sector.valueUSD, 0),
+  );
+
+  const differenceUSD = round(totalSectorUSD - safeInvestableUSD);
+
+  return {
+    methodology: 'look_through_etf_and_direct_asset_classification',
+    sectors,
+    dominantSector: sectors[0] || null,
+    totalSectorUSD,
+    reconciliation: {
+      investableUSD: round(safeInvestableUSD),
+      totalSectorUSD,
+      differenceUSD,
+      matches: Math.abs(differenceUSD) < 0.01,
+      etfs: reconciliation,
+    },
+  };
 }

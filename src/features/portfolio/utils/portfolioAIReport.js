@@ -3,101 +3,90 @@ import {
   selectPatrimonyAssets,
   selectReserveAssets,
 } from './portfolioSelectors';
-
-import {
-  round,
-  toNumber,
-} from './portfolioFormatters';
-
+import { round, toNumber } from './portfolioFormatters';
 import {
   buildTargetAnalysis,
   INVESTOR_PROFILES,
   PORTFOLIO_TARGETS,
 } from '../utils/portfolioAnalysis';
 
-// ─────────────────────────────────────────────────────────────
-// CONSTANTES
-// ─────────────────────────────────────────────────────────────
-
 const DEFAULT_INVESTOR_PROFILE = 'moderado';
-
-const INCLUDED_ROLES = [
-  'core',
-  'growth',
-  'defensive',
-  'liquidity',
-  'yield',
-  'speculative',
-  'trading',
-];
-
-const EXCLUDED_ROLES = [
-  'reserve',
-  'patrimony',
-];
-
+const INCLUDED_ROLES = ['core', 'growth', 'defensive', 'liquidity', 'yield', 'speculative', 'trading'];
+const EXCLUDED_ROLES = ['reserve', 'patrimony'];
 const REBALANCING_METHOD = 'contributions_first';
 const INVESTOR_HORIZON = 'medium_long';
 const INVESTOR_OBJECTIVE = 'wealth_accumulation';
-
-// ─────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────
+const RECONCILIATION_TOLERANCE_USD = 0.01;
 
 function safeObject(value) {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? value
-    : {};
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-/**
- * Obtiene los targets efectivos.
- * Prioridad: 1. analysis.activeTargets | 2. perfil del inversor | 3. PORTFOLIO_TARGETS
- */
-function resolveTargets(analysis, investorProfile) {
-  const analysisTargets = safeObject(analysis?.activeTargets);
-
-  if (Object.keys(analysisTargets).length > 0) {
-    return analysisTargets;
-  }
-
-  const profile = INVESTOR_PROFILES[investorProfile];
-
-  if (profile?.targets && typeof profile.targets === 'object') {
-    return profile.targets;
-  }
-
-  return PORTFOLIO_TARGETS;
+function normalizeText(value) {
+  return String(value || '').toLowerCase().trim();
 }
 
-/**
- * Calcula la exposición por fuente/plataforma de manera dinámica e inmune a errores de mapeo.
- */
+function normalizeSymbol(value) {
+  const symbol = String(value || '').trim();
+  return symbol || '';
+}
+
+function resolveTargets(analysis, investorProfile) {
+  const analysisTargets = safeObject(analysis?.activeTargets);
+  if (Object.keys(analysisTargets).length > 0) return analysisTargets;
+  return INVESTOR_PROFILES[investorProfile]?.targets || PORTFOLIO_TARGETS;
+}
+
+function resolveAssetSource(asset) {
+  const explicitSource = normalizeText(
+    asset?.groupKey || asset?.source || asset?.broker || asset?.platform,
+  );
+
+  // "manual" es un fallback, no debe bloquear inferencias posteriores.
+  if (explicitSource && explicitSource !== 'manual') {
+    return explicitSource;
+  }
+
+  const note = normalizeText(asset?.note);
+  const symbol = normalizeSymbol(asset?.symbol).toUpperCase();
+  const type = normalizeText(asset?.type);
+
+  if (note.includes('quantfury')) return 'quantfury';
+  if (note.includes('binance')) return 'binance';
+  if (note.includes('admirals')) return 'admirals';
+
+  if (
+    type === 'crypto' &&
+    ['BTC', 'ETH', 'SOL', 'ADA', 'HBAR', 'USDT', 'XRP'].includes(symbol)
+  ) {
+    return 'binance';
+  }
+
+  if (
+    type === 'etf' &&
+    ['BND', 'EMXC', 'IAU', 'VOO', 'VXUS'].includes(symbol)
+  ) {
+    return 'admirals';
+  }
+
+  if (type === 'stock' && ['CEG', 'MELI', 'SLV'].includes(symbol)) {
+    return 'quantfury';
+  }
+
+  return 'manual';
+}
+
 function calculateSourceExposure(assets) {
   return assets.reduce((acc, asset) => {
-    // Determinar la clave de origen dando prioridad a groupKey, source, broker o platform
-    const rawSource =
-      asset?.groupKey ||
-      asset?.source ||
-      asset?.broker ||
-      asset?.platform ||
-      'manual';
-
-    const sourceKey = String(rawSource).toLowerCase().trim();
-    const value = toNumber(asset?.valueUSD);
-
-    acc[sourceKey] = round((acc[sourceKey] || 0) + value, 2);
+    const source = resolveAssetSource(asset);
+    acc[source] = round((acc[source] || 0) + toNumber(asset?.valueUSD), 2);
     return acc;
   }, {});
 }
-
-// ─────────────────────────────────────────────────────────────
-// ALLOCATION
-// ─────────────────────────────────────────────────────────────
 
 export function buildAllocationAnalysis(
   analysis,
@@ -105,32 +94,21 @@ export function buildAllocationAnalysis(
 ) {
   const portfolio = safeObject(analysis?.portfolio);
   const byRole = safeObject(portfolio.byRole);
-  const byAssetClass = safeObject(portfolio.byAssetClass);
-  const bySubClass = safeObject(portfolio.bySubClass);
-
   const targets = resolveTargets(analysis, investorProfile);
-  const targetRows = buildTargetAnalysis(byRole, targets);
+  const rows = buildTargetAnalysis(byRole, targets);
 
   return {
-    byRole: Object.fromEntries(
-      targetRows.map((row) => [row.role, row]),
-    ),
-    rows: targetRows,
-    // Conservado por retrocompatibilidad con la interfaz
-    roleRows: targetRows,
-    byAssetClass,
-    bySubClass,
+    byRole: Object.fromEntries(rows.map((row) => [row.role, row])),
+    rows,
+    roleRows: rows,
+    byAssetClass: safeObject(portfolio.byAssetClass),
+    bySubClass: safeObject(portfolio.bySubClass),
     targets,
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// ALERTAS
-// ─────────────────────────────────────────────────────────────
-
 function buildAlerts(analysis, allocation) {
   const source = safeObject(analysis?.alerts);
-
   const definitions = [
     ['underCore', 'allocation', 'warning', 'Core por debajo del objetivo'],
     ['lowCash', 'liquidity', 'critical', 'Liquidez insuficiente'],
@@ -163,19 +141,14 @@ function buildAlerts(analysis, allocation) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// RECOMENDACIONES
-// ─────────────────────────────────────────────────────────────
-
 function buildRecommendations(analysis, alerts) {
   const plan = safeObject(analysis?.rebalancePlan);
   const monthly = safeArray(plan.monthly);
   const lumpSum = safeArray(plan.lumpSum);
-  const hasCriticalAlert = alerts?.summary?.critical > 0;
 
   return {
     strategy: REBALANCING_METHOD,
-    priority: hasCriticalAlert
+    priority: alerts?.summary?.critical > 0
       ? 'resolve_critical_alerts'
       : monthly.length
         ? 'monthly_rebalance'
@@ -185,18 +158,12 @@ function buildRecommendations(analysis, alerts) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// ESTADO FINANCIERO
-// ─────────────────────────────────────────────────────────────
-
 function buildFinancialState(analysis) {
   const totals = safeObject(analysis?.totals);
-
   const totalNetWorthUSD = toNumber(totals.totalUSD);
   const investableAssetsUSD = toNumber(totals.investableUSD);
   const reservesUSD = toNumber(totals.reserveUSD);
   const physicalPatrimonyUSD = toNumber(totals.patrimonyUSD);
-
   const financialAssetsUSD = investableAssetsUSD + reservesUSD;
 
   return {
@@ -206,31 +173,14 @@ function buildFinancialState(analysis) {
     reservesUSD: round(reservesUSD, 2),
     physicalPatrimonyUSD: round(physicalPatrimonyUSD, 2),
     nonInvestableAssetsUSD: round(reservesUSD + physicalPatrimonyUSD, 2),
-
-    investablePctOfNetWorth:
-      totalNetWorthUSD > 0
-        ? round((investableAssetsUSD / totalNetWorthUSD) * 100, 4)
-        : 0,
-
-    reservesPctOfFinancialAssets:
-      financialAssetsUSD > 0
-        ? round((reservesUSD / financialAssetsUSD) * 100, 4)
-        : 0,
-
-    physicalPatrimonyPctOfNetWorth:
-      totalNetWorthUSD > 0
-        ? round((physicalPatrimonyUSD / totalNetWorthUSD) * 100, 4)
-        : 0,
+    investablePctOfNetWorth: totalNetWorthUSD > 0 ? round((investableAssetsUSD / totalNetWorthUSD) * 100, 4) : 0,
+    reservesPctOfFinancialAssets: financialAssetsUSD > 0 ? round((reservesUSD / financialAssetsUSD) * 100, 4) : 0,
+    physicalPatrimonyPctOfNetWorth: totalNetWorthUSD > 0 ? round((physicalPatrimonyUSD / totalNetWorthUSD) * 100, 4) : 0,
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// RIESGO
-// ─────────────────────────────────────────────────────────────
-
 function buildRiskAssessment(analysis) {
   const risk = safeObject(analysis?.risk);
-
   return {
     portfolioRisk: risk.portfolioRisk ?? null,
     expectedReturnPct: risk.expectedReturn ?? null,
@@ -240,66 +190,87 @@ function buildRiskAssessment(analysis) {
     expectedReturnIsGuaranteed: false,
     limitations: Array.isArray(risk.limitations)
       ? risk.limitations
-      : [
-          'No incluye correlaciones históricas.',
-          'No incluye volatilidad histórica completa.',
-          'El retorno esperado es una estimación.',
-        ],
+      : ['No incluye correlaciones históricas.', 'No incluye volatilidad histórica completa.', 'El retorno esperado es una estimación.'],
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// INTEGRIDAD
-// ─────────────────────────────────────────────────────────────
-
 function containsInvalidNumber(value) {
-  if (typeof value === 'number') {
-    return !Number.isFinite(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value.some(containsInvalidNumber);
-  }
-
-  if (value && typeof value === 'object') {
-    return Object.values(value).some(containsInvalidNumber);
-  }
-
+  if (typeof value === 'number') return !Number.isFinite(value);
+  if (Array.isArray(value)) return value.some(containsInvalidNumber);
+  if (value && typeof value === 'object') return Object.values(value).some(containsInvalidNumber);
   return false;
 }
 
-function buildIntegrityChecks(analysis) {
-  const assets = safeArray(analysis?.assets);
+function normalizeAssets(analysis) {
+  return safeArray(analysis?.assets).map((asset) => ({
+    ...asset,
+    source: resolveAssetSource(asset),
+    classification: {
+      ...(asset?.classification || {}),
+      sector: asset?.classification?.sector || 'otros',
+    },
+  }));
+}
+
+function normalizeSectorAnalysis(value) {
+  if (Array.isArray(value)) {
+    const sectors = value;
+    return {
+      methodology: 'look_through_etf_and_direct_asset_classification',
+      sectors,
+      dominantSector: sectors[0] || null,
+      totalSectorUSD: round(sectors.reduce((sum, sector) => sum + toNumber(sector?.valueUSD), 0), 2),
+      reconciliation: null,
+    };
+  }
+
+  if (value && typeof value === 'object') {
+    const sectors = safeArray(value.sectors);
+    return {
+      ...value,
+      sectors,
+      dominantSector: value.dominantSector || sectors[0] || null,
+      totalSectorUSD: value.totalSectorUSD != null
+        ? toNumber(value.totalSectorUSD)
+        : round(sectors.reduce((sum, sector) => sum + toNumber(sector?.valueUSD), 0), 2),
+    };
+  }
+
+  return {
+    methodology: 'unavailable',
+    sectors: [],
+    dominantSector: null,
+    totalSectorUSD: 0,
+    reconciliation: null,
+  };
+}
+
+function buildIntegrityChecks(analysis, assets, sectorAnalysis) {
   const totals = safeObject(analysis?.totals);
-
-  const investableAssets = assets.filter((asset) => {
-    const role = asset?.classification?.role;
-    return role !== 'reserve' && role !== 'patrimony';
-  });
-
-  const calculatedInvestable = investableAssets.reduce(
-    (sum, asset) => sum + toNumber(asset?.valueUSD),
-    0,
-  );
-
+  const investableAssets = assets.filter((asset) => !['reserve', 'patrimony'].includes(asset?.classification?.role));
+  const calculatedInvestable = investableAssets.reduce((sum, asset) => sum + toNumber(asset?.valueUSD), 0);
   const declaredInvestable = toNumber(totals.investableUSD);
+  const difference = Math.abs(calculatedInvestable - declaredInvestable);
+
+  const sectorReconciliation = sectorAnalysis?.reconciliation;
+  const sectorDifference = toNumber(sectorReconciliation?.differenceUSD);
 
   return {
     totalsAvailable: Boolean(analysis?.totals),
     assetsAvailable: Array.isArray(analysis?.assets),
-    classificationAvailable: assets.every((asset) =>
-      Boolean(asset?.classification),
-    ),
+    classificationAvailable: assets.every((asset) => Boolean(asset?.classification)),
     strategyAvailable: assets.every((asset) => Boolean(asset?.strategy)),
+    sectorAnalysisAvailable: sectorAnalysis.sectors.length > 0,
     noInvalidNumericValues: !containsInvalidNumber(analysis),
-    investableAssetsReconcile:
-      Math.abs(calculatedInvestable - declaredInvestable) < 0.01,
+    investableAssetsReconcile: difference <= RECONCILIATION_TOLERANCE_USD,
+    sectorReconciliation: sectorReconciliation
+      ? {
+          ...sectorReconciliation,
+          matches: Math.abs(sectorDifference) <= RECONCILIATION_TOLERANCE_USD,
+        }
+      : null,
   };
 }
-
-// ─────────────────────────────────────────────────────────────
-// REPORT
-// ─────────────────────────────────────────────────────────────
 
 export function buildPortfolioAIReport({
   analysis,
@@ -308,114 +279,69 @@ export function buildPortfolioAIReport({
   sources = [],
 } = {}) {
   const safeAnalysis = safeObject(analysis);
-
-  const allocationAnalysis = buildAllocationAnalysis(
-    safeAnalysis,
-    investorProfile,
-  );
-
-  const alerts = buildAlerts(safeAnalysis, allocationAnalysis);
-  const assets = safeArray(safeAnalysis.assets);
-
+  const assets = normalizeAssets(safeAnalysis);
+  const analysisForReport = { ...safeAnalysis, assets };
+  const allocationAnalysis = buildAllocationAnalysis(analysisForReport, investorProfile);
+  const alerts = buildAlerts(analysisForReport, allocationAnalysis);
   const patrimonyAssets = selectPatrimonyAssets(assets);
   const reserveAssets = selectReserveAssets(assets);
-
-  // Cálculo dinámico directo sobre los arreglos filtrados para evitar valores en 0
-  const computedReserveTotalUSD = reserveAssets.reduce(
-    (sum, asset) => sum + toNumber(asset?.valueUSD),
-    0,
-  );
-
-  const computedPatrimonyTotalUSD = patrimonyAssets.reduce(
-    (sum, asset) => sum + toNumber(asset?.valueUSD),
-    0,
-  );
-
-  const recommendations = buildRecommendations(safeAnalysis, alerts);
+  const computedReserveTotalUSD = reserveAssets.reduce((sum, asset) => sum + toNumber(asset?.valueUSD), 0);
+  const computedPatrimonyTotalUSD = patrimonyAssets.reduce((sum, asset) => sum + toNumber(asset?.valueUSD), 0);
+  const recommendations = buildRecommendations(analysisForReport, alerts);
   const targets = allocationAnalysis.targets;
-
-  const generatedAt =
-    safeAnalysis.generatedAt || new Date().toISOString();
+  const sectorAnalysis = normalizeSectorAnalysis(analysisForReport.sectorAnalysis);
+  const generatedAt = analysisForReport.generatedAt || new Date().toISOString();
 
   return {
     schema: {
       name: 'personal_portfolio_analysis',
-      version: '5.1',
+      version: '5.2',
       language: 'es',
       currency: 'USD',
       calculationBasis: 'current_market_value',
     },
-
     snapshot: {
       generatedAt,
-      asOfDate: generatedAt?.slice(0, 10) || null,
+      asOfDate: generatedAt.slice(0, 10),
       sources,
       bobRate,
     },
-
     investorContext: {
       profile: investorProfile,
-      monthlyContributionUSD:
-        safeAnalysis?.rebalancePlan?.monthlyUSD ?? null,
+      monthlyContributionUSD: analysisForReport?.rebalancePlan?.monthlyUSD ?? null,
       horizon: INVESTOR_HORIZON,
       objective: INVESTOR_OBJECTIVE,
     },
-
-    financialState: buildFinancialState(safeAnalysis),
-
+    financialState: buildFinancialState(analysisForReport),
     investmentUniverse: {
       includedRoles: INCLUDED_ROLES,
       excludedRoles: EXCLUDED_ROLES,
       rebalancingMethod: REBALANCING_METHOD,
       lockedAssetsExcluded: true,
     },
-
     allocationAnalysis,
-
-    riskAssessment: buildRiskAssessment(safeAnalysis),
-
+    riskAssessment: buildRiskAssessment(analysisForReport),
     decisionSupport: {
-      priority:
-        alerts.summary.critical > 0
-          ? 'resolve_critical_alerts'
-          : 'rebalance_underweights',
+      priority: alerts.summary.critical > 0 ? 'resolve_critical_alerts' : 'rebalance_underweights',
       alerts,
-      rules: safeArray(safeAnalysis.ruleEvaluation),
+      rules: safeArray(analysisForReport.ruleEvaluation),
       recommendations,
     },
-
     excludedAssets: {
       reserves: {
-        totalUSD: round(
-          safeAnalysis?.reserves?.totalUSD != null
-            ? toNumber(safeAnalysis.reserves.totalUSD)
-            : computedReserveTotalUSD,
-          2,
-        ),
+        totalUSD: round(analysisForReport?.reserves?.totalUSD != null ? toNumber(analysisForReport.reserves.totalUSD) : computedReserveTotalUSD, 2),
         assets: reserveAssets,
       },
       patrimony: {
-        totalUSD: round(
-          safeAnalysis?.patrimony?.totalUSD != null
-            ? toNumber(safeAnalysis.patrimony.totalUSD)
-            : computedPatrimonyTotalUSD,
-          2,
-        ),
+        totalUSD: round(analysisForReport?.patrimony?.totalUSD != null ? toNumber(analysisForReport.patrimony.totalUSD) : computedPatrimonyTotalUSD, 2),
         assets: patrimonyAssets,
       },
     },
-
-    // Agrupación de exposición calculada localmente con total precisión
     exposureBySource: calculateSourceExposure(assets),
-
     totalsByRoleUSD: buildRoleTotals(assets),
-
     targets,
-
-    sectorAnalysis: safeAnalysis?.sectorAnalysis || null,
-
+    sectorAnalysis,
     assets,
-
-    integrityChecks: buildIntegrityChecks(safeAnalysis),
+    integrityChecks: buildIntegrityChecks(analysisForReport, assets, sectorAnalysis),
   };
 }

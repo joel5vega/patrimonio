@@ -142,16 +142,23 @@ export function usePortfolioData({
     return INVESTOR_PROFILES[investorProfile]?.targets || PORTFOLIO_TARGETS;
   }, [investorProfile, customTargets]);
 
-  const analysis = useMemo(
-    () => buildPortfolioV3({
+ const analysis = useMemo(
+  () =>
+    buildPortfolioV3({
       allAssets,
       totalUSD,
       monthlyUSD: bobRate ? Math.round(2000 / bobRate) : 173,
       customTargets: activeTargets,
-      etfExposure, // <-- Pasar datos de ETFs para look-through
+      etfExposure,
     }),
-    [allAssets, totalUSD, bobRate, activeTargets, etfExposure]
-  );
+  [
+    allAssets,
+    totalUSD,
+    bobRate,
+    activeTargets,
+    etfExposure,
+  ],
+);
 
   const legacyAllocation = useMemo(() => {
     try {
@@ -175,23 +182,47 @@ export function usePortfolioData({
     [analysis]
   );
 
-  const aiReport = useMemo(() => {
-    try {
-      return buildPortfolioAIReport({
-        analysis: todayPortfolioV3 || analysis,
-        investorProfile,
-        bobRate,
-        sources: ['binance', 'admirals', 'quantfury', 'manual'],
-      });
-    } catch {
-      return {
-        snapshot: { generatedAt: new Date().toISOString() },
-        financialState: {},
-        riskAssessment: {},
-        decisionSupport: {},
-      };
-    }
-  }, [analysis, todayPortfolioV3, investorProfile, bobRate]);
+const aiReport = useMemo(() => {
+  try {
+    return buildPortfolioAIReport({
+      analysis,
+      investorProfile,
+      bobRate,
+      sources: ['binance', 'admirals', 'quantfury', 'manual'],
+    });
+  } catch (error) {
+    console.error(
+      '[usePortfolioData] Error construyendo buildPortfolioAIReport:',
+      error,
+    );
+
+    return {
+      schema: {
+        name: 'personal_portfolio_analysis',
+        version: '5.2',
+        language: 'es',
+        currency: 'USD',
+      },
+      snapshot: {
+        generatedAt: new Date().toISOString(),
+      },
+      financialState: {},
+      riskAssessment: {},
+      decisionSupport: {},
+      sectorAnalysis: {
+        sectors: [],
+        dominantSector: null,
+        totalSectorUSD: 0,
+      },
+      assets: [],
+      exportError: {
+        message: error instanceof Error
+          ? error.message
+          : String(error),
+      },
+    };
+  }
+}, [analysis, investorProfile, bobRate]);
 
   const analysisAssets = analysis?.assets || [];
   const filters = usePortfolioFilters(analysisAssets);
@@ -224,6 +255,8 @@ export function usePortfolioData({
     loading: loading || etfLoading,
     etfError, // <-- Error de carga de ETFs (si hay)
     etfLastUpdated, // <-- Cuándo se actualizaron los datos de ETFs
+    etfExposure,
+  etfLastUpdated,
     analysis,
     aiReport,
     profile: investorProfile,
