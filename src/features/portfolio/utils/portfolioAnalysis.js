@@ -626,11 +626,11 @@ export const THRESHOLDS = {
 
 export const PORTFOLIO_TARGETS = {
   core: 35,
-  growth: 20,
+  growth: 22,
   defensive: 20,
   liquidity: 2,
   yield: 15,
-  speculative: 3,
+  speculative: 1,
   trading: 5,
 };
 
