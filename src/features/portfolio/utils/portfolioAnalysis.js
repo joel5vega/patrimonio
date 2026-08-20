@@ -792,10 +792,10 @@ export const PORTFOLIO_TARGETS = {
   core: 35,
   growth: 20,
   defensive: 17,
-  liquidity: 5,
+  liquidity: 4,
   yield: 15,
   speculative: 3,
-  trading: 5,
+  trading: 6,
 };
 
 export const PORTFOLIOTARGETS = PORTFOLIO_TARGETS;
