@@ -2,12 +2,13 @@
 
 import { useMemo } from 'react';
 import {
-  INVESTOR_PROFILES,
-  PORTFOLIO_TARGETS,
   buildPortfolioV3,
   buildSectorAnalysis,
   buildTargetAnalysis,
 } from '../utils/portfolioAnalysis';
+
+import {INVESTOR_PROFILES,
+  PORTFOLIO_TARGETS,} from '../constants/portfolioRules.js'
 import {
   buildPortfolioAIReport,
   buildAllocationAnalysis,

@@ -1,4 +1,4 @@
-import { INVESTOR_PROFILES } from '../utils/portfolioAnalysis';
+import { INVESTOR_PROFILES } from '../constants/portfolioRules.js';
 
 const ORDER = ['defensivo', 'moderado', 'crecimiento', 'agresivo', 'personalizado'];
 

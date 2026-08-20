@@ -11,10 +11,10 @@ import {
 
 import {
   buildTargetAnalysis,
-  INVESTOR_PROFILES,
-  PORTFOLIO_TARGETS,
+ 
 } from '../utils/portfolioAnalysis';
-
+import { INVESTOR_PROFILES,
+  PORTFOLIO_TARGETS,} from '../constants/portfolioRules.js'
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────
 
