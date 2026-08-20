@@ -1,11 +1,18 @@
 // ─────────────────────────────────────────────────────────────
-// portfolioAnalysis.js — versión refactorizada
-// Perfil: inversor boliviano, mediano/largo plazo
-// Plataformas: Binance, Quantfury, AirTM DeFi
+// portfolioAnalysis.js
+// Motor principal de análisis del portfolio
+//
+// Estrategia:
+// - Rebalanceo mediante nuevas aportaciones.
+// - Máximo 2 oportunidades mensuales.
+// - Comisión estimada: USD 1 por operación.
+// - Evitar operaciones pequeñas.
+// - Priorizar las mayores desviaciones relevantes.
+// - No vender automáticamente para rebalancear.
 // ─────────────────────────────────────────────────────────────
 
+
 // ─── CLASIFICACIÓN DE ACTIVOS ─────────────────────────────────
-// sector: clasificación por industria/sector económico
 
 const ASSET_RULES = {
   VOO: {
@@ -16,6 +23,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'diversificado_eeuu',
   },
+
   SPY: {
     role: 'core',
     assetClass: 'renta_variable',
@@ -24,54 +32,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'diversificado_eeuu',
   },
-  QQQM: {
-    role: 'growth',
-    assetClass: 'renta_variable',
-    subClass: 'fondos_eeuu',
-    horizon: 'long',
-    riskLevel: 3,
-    sector: 'tecnologia',
-  },
-  QQQ: {
-    role: 'growth',
-    assetClass: 'renta_variable',
-    subClass: 'fondos_eeuu',
-    horizon: 'long',
-    riskLevel: 3,
-    sector: 'tecnologia',
-  },
-  VXUS: {
-    role: 'growth',
-    assetClass: 'renta_variable',
-    subClass: 'fondos_internacionales',
-    horizon: 'long',
-    riskLevel: 3,
-    sector: 'diversificado_global',
-  },
-  VWO: {
-    role: 'growth',
-    assetClass: 'renta_variable',
-    subClass: 'fondos_internacionales',
-    horizon: 'long',
-    riskLevel: 3,
-    sector: 'emergentes',
-  },
-  EMXC: {
-    role: 'growth',
-    assetClass: 'renta_variable',
-    subClass: 'fondos_internacionales',
-    horizon: 'long',
-    riskLevel: 3,
-    sector: 'emergentes',
-  },
-  SCHD: {
-    role: 'defensive',
-    assetClass: 'renta_variable',
-    subClass: 'fondos_eeuu',
-    horizon: 'long',
-    riskLevel: 2,
-    sector: 'dividendos_value',
-  },
+
   VTI: {
     role: 'core',
     assetClass: 'renta_variable',
@@ -80,6 +41,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'diversificado_eeuu',
   },
+
   IVV: {
     role: 'core',
     assetClass: 'renta_variable',
@@ -88,6 +50,61 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'diversificado_eeuu',
   },
+
+  QQQM: {
+    role: 'growth',
+    assetClass: 'renta_variable',
+    subClass: 'fondos_eeuu',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'tecnologia',
+  },
+
+  QQQ: {
+    role: 'growth',
+    assetClass: 'renta_variable',
+    subClass: 'fondos_eeuu',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'tecnologia',
+  },
+
+  VXUS: {
+    role: 'growth',
+    assetClass: 'renta_variable',
+    subClass: 'fondos_internacionales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'diversificado_global',
+  },
+
+  VWO: {
+    role: 'growth',
+    assetClass: 'renta_variable',
+    subClass: 'fondos_internacionales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'emergentes',
+  },
+
+  EMXC: {
+    role: 'growth',
+    assetClass: 'renta_variable',
+    subClass: 'fondos_internacionales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'emergentes',
+  },
+
+  SCHD: {
+    role: 'defensive',
+    assetClass: 'renta_variable',
+    subClass: 'fondos_eeuu',
+    horizon: 'long',
+    riskLevel: 2,
+    sector: 'dividendos_value',
+  },
+
   BND: {
     role: 'defensive',
     assetClass: 'renta_fija',
@@ -96,6 +113,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'bonos_gobierno',
   },
+
   TIP: {
     role: 'defensive',
     assetClass: 'renta_fija',
@@ -104,6 +122,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'bonos_inflacion',
   },
+
   AGG: {
     role: 'defensive',
     assetClass: 'renta_fija',
@@ -112,6 +131,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'bonos_gobierno',
   },
+
   VNQ: {
     role: 'defensive',
     assetClass: 'inmobiliario',
@@ -120,6 +140,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'inmobiliario_cotizado',
   },
+
   IAU: {
     role: 'defensive',
     assetClass: 'alternativos',
@@ -128,6 +149,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'metales_preciosos',
   },
+
   GLD: {
     role: 'defensive',
     assetClass: 'alternativos',
@@ -136,6 +158,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'metales_preciosos',
   },
+
   SLV: {
     role: 'defensive',
     assetClass: 'alternativos',
@@ -144,6 +167,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'metales_preciosos',
   },
+
   GDX: {
     role: 'growth',
     assetClass: 'alternativos',
@@ -152,6 +176,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'mineria',
   },
+
   BTC: {
     role: 'growth',
     assetClass: 'alternativos',
@@ -160,6 +185,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'crypto_l1',
   },
+
   ETH: {
     role: 'growth',
     assetClass: 'alternativos',
@@ -168,6 +194,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'crypto_l1',
   },
+
   BNB: {
     role: 'growth',
     assetClass: 'alternativos',
@@ -176,6 +203,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'crypto_l1',
   },
+
   SOL: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -184,6 +212,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'crypto_l1',
   },
+
   AVAX: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -192,6 +221,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'crypto_l1',
   },
+
   ADA: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -200,6 +230,7 @@ const ASSET_RULES = {
     riskLevel: 5,
     sector: 'crypto_l1',
   },
+
   XRP: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -208,6 +239,7 @@ const ASSET_RULES = {
     riskLevel: 5,
     sector: 'crypto_pagos',
   },
+
   DOT: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -216,6 +248,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'crypto_l1',
   },
+
   MATIC: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -224,6 +257,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'crypto_l2',
   },
+
   LINK: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -232,6 +266,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'crypto_defi',
   },
+
   UNI: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -240,6 +275,7 @@ const ASSET_RULES = {
     riskLevel: 5,
     sector: 'crypto_defi',
   },
+
   AAVE: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -248,6 +284,7 @@ const ASSET_RULES = {
     riskLevel: 5,
     sector: 'crypto_defi',
   },
+
   DOGE: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -256,6 +293,7 @@ const ASSET_RULES = {
     riskLevel: 5,
     sector: 'crypto_meme',
   },
+
   SHIB: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -264,6 +302,7 @@ const ASSET_RULES = {
     riskLevel: 5,
     sector: 'crypto_meme',
   },
+
   PEPE: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -272,6 +311,7 @@ const ASSET_RULES = {
     riskLevel: 5,
     sector: 'crypto_meme',
   },
+
   HBAR: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -280,6 +320,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'crypto_l1',
   },
+
   POL: {
     role: 'speculative',
     assetClass: 'alternativos',
@@ -288,6 +329,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'crypto_l2',
   },
+
   SGOV: {
     role: 'liquidity',
     assetClass: 'efectivo',
@@ -296,6 +338,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'efectivo_global',
   },
+
   USDT: {
     role: 'liquidity',
     assetClass: 'efectivo',
@@ -304,6 +347,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'crypto_stablecoin',
   },
+
   USDC: {
     role: 'liquidity',
     assetClass: 'efectivo',
@@ -312,6 +356,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'crypto_stablecoin',
   },
+
   BUSD: {
     role: 'liquidity',
     assetClass: 'efectivo',
@@ -320,6 +365,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'crypto_stablecoin',
   },
+
   DAI: {
     role: 'liquidity',
     assetClass: 'efectivo',
@@ -328,6 +374,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'crypto_stablecoin',
   },
+
   FDUSD: {
     role: 'liquidity',
     assetClass: 'efectivo',
@@ -336,6 +383,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'crypto_stablecoin',
   },
+
   CEG: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -344,6 +392,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'energia',
   },
+
   MSFT: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -352,6 +401,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   AAPL: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -360,6 +410,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   GOOGL: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -368,6 +419,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   GOOG: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -376,6 +428,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   META: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -384,6 +437,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   AMZN: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -392,6 +446,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   NVDA: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -400,6 +455,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'tecnologia',
   },
+
   TSLA: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -408,6 +464,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'tecnologia',
   },
+
   AMD: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -416,6 +473,7 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'tecnologia',
   },
+
   INTC: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -424,6 +482,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   CRM: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -432,6 +491,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   ORCL: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -440,6 +500,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'tecnologia',
   },
+
   JNJ: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -448,6 +509,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'salud',
   },
+
   PFE: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -456,6 +518,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'salud',
   },
+
   JPM: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -464,6 +527,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'finanzas',
   },
+
   BAC: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -472,6 +536,7 @@ const ASSET_RULES = {
     riskLevel: 3,
     sector: 'finanzas',
   },
+
   XOM: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -480,6 +545,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'energia',
   },
+
   CVX: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -488,6 +554,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'energia',
   },
+
   KO: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -496,6 +563,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'consumo_basico',
   },
+
   PG: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -504,6 +572,7 @@ const ASSET_RULES = {
     riskLevel: 1,
     sector: 'consumo_basico',
   },
+
   VZ: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -512,6 +581,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'telecomunicaciones',
   },
+
   T: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -520,6 +590,7 @@ const ASSET_RULES = {
     riskLevel: 2,
     sector: 'telecomunicaciones',
   },
+
   MELI: {
     role: 'trading',
     assetClass: 'renta_variable',
@@ -528,7 +599,65 @@ const ASSET_RULES = {
     riskLevel: 4,
     sector: 'consumo_discrecional',
   },
+
+  FXI: {
+    role: 'trading',
+    assetClass: 'renta_variable',
+    subClass: 'fondos_internacionales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'emergentes',
+  },
+
+  MCHI: {
+    role: 'trading',
+    assetClass: 'renta_variable',
+    subClass: 'fondos_internacionales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'emergentes',
+  },
+
+  ECL: {
+    role: 'trading',
+    assetClass: 'renta_variable',
+    subClass: 'acciones_individuales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'industria',
+  },
+
+  HSY: {
+    role: 'trading',
+    assetClass: 'renta_variable',
+    subClass: 'acciones_individuales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'consumo_basico',
+  },
+
+  SCHW: {
+    role: 'trading',
+    assetClass: 'renta_variable',
+    subClass: 'acciones_individuales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'finanzas',
+  },
+
+  ZTS: {
+    role: 'trading',
+    assetClass: 'renta_variable',
+    subClass: 'acciones_individuales',
+    horizon: 'long',
+    riskLevel: 3,
+    sector: 'salud',
+  },
+
 };
+
+
+// ─── REGLAS MANUALES ───────────────────────────────────────────
 
 export const MANUAL_RULES = {
   airtm: {
@@ -541,8 +670,9 @@ export const MANUAL_RULES = {
     isLocked: false,
     isInvestable: true,
     isDeFi: true,
-    aprPct: 8,
+    aprPct: 6,
   },
+
   safi: {
     role: 'reserve',
     assetClass: 'efectivo',
@@ -553,6 +683,7 @@ export const MANUAL_RULES = {
     isInvestable: false,
     isLocalPrivateEquity: true,
   },
+
   'ahorro $': {
     role: 'reserve',
     assetClass: 'efectivo',
@@ -562,6 +693,7 @@ export const MANUAL_RULES = {
     isLocked: true,
     isInvestable: false,
   },
+
   'ahorro en bs': {
     role: 'reserve',
     assetClass: 'efectivo',
@@ -571,6 +703,7 @@ export const MANUAL_RULES = {
     isLocked: true,
     isInvestable: false,
   },
+
   'ahorro bs': {
     role: 'reserve',
     assetClass: 'efectivo',
@@ -580,6 +713,7 @@ export const MANUAL_RULES = {
     isLocked: true,
     isInvestable: false,
   },
+
   't ach': {
     role: 'patrimony',
     assetClass: 'inmobiliario',
@@ -588,6 +722,7 @@ export const MANUAL_RULES = {
     riskLevel: 2,
     isInvestable: false,
   },
+
   't sas': {
     role: 'patrimony',
     assetClass: 'inmobiliario',
@@ -596,6 +731,7 @@ export const MANUAL_RULES = {
     riskLevel: 2,
     isInvestable: false,
   },
+
   't achacachi': {
     role: 'patrimony',
     assetClass: 'inmobiliario',
@@ -606,6 +742,9 @@ export const MANUAL_RULES = {
   },
 };
 
+
+// ─── SUPUESTOS DE RETORNO ──────────────────────────────────────
+
 export const RETURN_ASSUMPTIONS = {
   renta_variable: 0.08,
   alternativos: 0.10,
@@ -615,27 +754,54 @@ export const RETURN_ASSUMPTIONS = {
   efectivo: 0.03,
 };
 
+
+// ─── POLÍTICA DE TRANSACCIONES ────────────────────────────────
+//
+// La comisión de USD 1 hace ineficiente dividir una aportación
+// mensual pequeña entre demasiadas operaciones.
+//
+
+export const TRANSACTION_POLICY = {
+  commissionUSD: 1,
+  maxMonthlyOpportunities: 2,
+  minOpportunityUSD: 50,
+};
+
+
+// ─── UMBRALES ─────────────────────────────────────────────────
+
 export const THRESHOLDS = {
-  minCashPct: 5,
+  minCashPct: 3,
   cashRetentionPct: 7,
   maxCashPct: 25,
+
   maxSpeculativePct: 3,
   coreMinPct: 30,
   maxTradingPct: 7,
+
+  criticalUnderweightPct: 3,
 };
+
+
+// ─── OBJETIVOS DEL PORTFOLIO ──────────────────────────────────
+//
+// Estos son los objetivos usados en el snapshot actual.
+//
 
 export const PORTFOLIO_TARGETS = {
   core: 35,
-  growth: 22,
-  defensive: 20,
-  liquidity: 2,
+  growth: 20,
+  defensive: 17,
+  liquidity: 5,
   yield: 15,
-  speculative: 1,
+  speculative: 3,
   trading: 5,
 };
 
-// Alias de compatibilidad con la nueva arquitectura.
 export const PORTFOLIOTARGETS = PORTFOLIO_TARGETS;
+
+
+// ─── PERFILES ─────────────────────────────────────────────────
 
 export const INVESTOR_PROFILES = {
   defensivo: {
@@ -651,43 +817,50 @@ export const INVESTOR_PROFILES = {
       trading: 1,
     },
   },
+
   moderado: {
     label: 'Moderado',
     description: 'Balance entre crecimiento y protección.',
     targets: PORTFOLIO_TARGETS,
   },
+
   crecimiento: {
     label: 'Crecimiento',
     description: 'Maximizar rendimiento.',
     targets: {
-      core: 25,
-      growth: 35,
-      defensive: 8,
+      core: 30,
+      growth: 30,
+      defensive: 10,
       liquidity: 5,
       yield: 12,
-      speculative: 8,
+      speculative: 6,
       trading: 7,
     },
   },
+
   agresivo: {
     label: 'Agresivo',
-    description: 'Alta exposición a crypto y growth.',
+    description: 'Alta exposición a crecimiento y activos de riesgo.',
     targets: {
-      core: 15,
+      core: 20,
       growth: 35,
       defensive: 5,
       liquidity: 5,
       yield: 10,
-      speculative: 20,
+      speculative: 15,
       trading: 10,
     },
   },
+
   personalizado: {
     label: 'Personalizado',
     description: 'Ajuste manual.',
     targets: null,
   },
 };
+
+
+// ─── HELPERS ───────────────────────────────────────────────────
 
 function normalizeText(value) {
   return String(value || '')
@@ -696,6 +869,7 @@ function normalizeText(value) {
     .toLowerCase()
     .trim();
 }
+
 
 function normalizeAssetKey(symbol, name) {
   const raw = String(symbol || name || '')
@@ -709,31 +883,54 @@ function normalizeAssetKey(symbol, name) {
     .trim();
 }
 
+
 function normalizeType(type) {
   return normalizeText(type);
 }
+
 
 function normalizeGroupKey(groupKey) {
   return normalizeText(groupKey);
 }
 
+
 function toFiniteNumber(value, fallback = 0) {
   const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
+  return Number.isFinite(number)
+    ? number
+    : fallback;
 }
+
 
 function round(value, decimals = 2) {
   const factor = 10 ** decimals;
-  return Math.round((value + Number.EPSILON) * factor) / factor;
+
+  return Math.round(
+    (value + Number.EPSILON) * factor,
+  ) / factor;
 }
 
-function classifyAsset(name, type, groupKey, symbol) {
+
+function getAssetValue(asset) {
+  return Math.max(
+    0,
+    toFiniteNumber(asset?.valueUSD),
+  );
+}
+
+
+// ─── CLASIFICACIÓN ─────────────────────────────────────────────
+
+function classifyAsset(
+  name,
+  type,
+  groupKey,
+  symbol,
+) {
   const normalizedName = normalizeText(name);
   const normalizedType = normalizeType(type);
   const normalizedGroup = normalizeGroupKey(groupKey);
 
-  // Las reglas manuales tienen prioridad sobre las reglas por símbolo.
-  // Esto evita que patrimonio físico o reservas caigan en un fallback invertible.
   const manual = MANUAL_RULES[normalizedName];
 
   if (manual) {
@@ -756,7 +953,10 @@ function classifyAsset(name, type, groupKey, symbol) {
     };
   }
 
-  if (normalizedType === 'stock' && normalizedGroup === 'quantfury') {
+  if (
+    normalizedType === 'stock' &&
+    normalizedGroup === 'quantfury'
+  ) {
     return {
       role: 'trading',
       assetClass: 'renta_variable',
@@ -806,6 +1006,9 @@ function classifyAsset(name, type, groupKey, symbol) {
     classificationSource: 'fallback',
   };
 }
+
+
+// ─── ESTRATEGIA POR ACTIVO ────────────────────────────────────
 
 function buildStrategy(role, context) {
   const strategies = {
@@ -884,20 +1087,26 @@ function buildStrategy(role, context) {
 
   if (role === 'speculative') {
     strategy.reduce =
-      context.speculativePct > context.activeTargets.speculative;
+      context.speculativePct >
+      context.activeTargets.speculative;
   }
 
   if (role === 'trading') {
     strategy.reduce =
-      context.tradingPct > context.activeTargets.trading;
+      context.tradingPct >
+      context.activeTargets.trading;
   }
 
   return strategy;
 }
 
+
+// ─── TARGETS ──────────────────────────────────────────────────
+
 function normalizeTargets(targets) {
   const source =
-    targets && typeof targets === 'object'
+    targets &&
+    typeof targets === 'object'
       ? targets
       : PORTFOLIO_TARGETS;
 
@@ -908,41 +1117,42 @@ function normalizeTargets(targets) {
           role &&
           Number.isFinite(Number(target)),
       )
-      .map(([role, target]) => [
-        role,
-        Math.max(0, Number(target)),
-      ]),
+      .map(
+        ([role, target]) => [
+          role,
+          Math.max(0, Number(target)),
+        ],
+      ),
   );
 }
 
-function getAssetValue(asset) {
-  return Math.max(
-    0,
-    toFiniteNumber(asset?.valueUSD),
-  );
-}
+
+// ─── GROUPING ─────────────────────────────────────────────────
 
 function groupByValue(assets, key) {
-  return assets.reduce((result, asset) => {
-    const group =
-      asset.classification?.[key] ||
-      'unclassified';
+  return assets.reduce(
+    (result, asset) => {
+      const group =
+        asset.classification?.[key] ||
+        'unclassified';
 
-    result[group] =
-      (result[group] || 0) +
-      getAssetValue(asset);
+      result[group] =
+        (result[group] || 0) +
+        getAssetValue(asset);
 
-    return result;
-  }, {});
+      return result;
+    },
+    {},
+  );
 }
+
 
 function percentageMap(values, denominator) {
   if (denominator <= 0) {
     return Object.fromEntries(
-      Object.keys(values).map((key) => [
-        key,
-        0,
-      ]),
+      Object.keys(values).map(
+        (key) => [key, 0],
+      ),
     );
   }
 
@@ -959,6 +1169,27 @@ function percentageMap(values, denominator) {
   );
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// REBALANCE ENGINE
+// ─────────────────────────────────────────────────────────────
+//
+// CAMBIO PRINCIPAL:
+//
+// Antes:
+//   podía generar una operación por cada rol infraponderado.
+//
+// Ahora:
+//   1. identifica todas las desviaciones;
+//   2. asigna prioridad;
+//   3. selecciona máximo 2 oportunidades;
+//   4. reparte la aportación únicamente entre ellas;
+//   5. descarta operaciones inferiores a USD 50;
+//   6. calcula comisión y capital neto.
+//
+// Esto evita gastar USD 1 repetidamente en operaciones pequeñas.
+// ─────────────────────────────────────────────────────────────
+
 function buildRebalancePlan({
   portfolioAssets,
   byRolePct,
@@ -967,6 +1198,30 @@ function buildRebalancePlan({
   investableCashUSD,
   activeTargets,
 }) {
+  const monthlyAmount = Math.max(
+    0,
+    toFiniteNumber(monthlyUSD),
+  );
+
+  const minimumCash =
+    Math.max(
+      0,
+      investableUSD *
+      (THRESHOLDS.cashRetentionPct / 100),
+    );
+
+  const deployableCash =
+    Math.max(
+      0,
+      investableCashUSD -
+      minimumCash,
+    );
+
+
+  // ───────────────────────────────────────────────────────────
+  // 1. Calcular desviaciones
+  // ───────────────────────────────────────────────────────────
+
   const deficits = Object.entries(activeTargets)
     .map(([role, target]) => {
       const current =
@@ -974,49 +1229,77 @@ function buildRebalancePlan({
           byRolePct[role],
         );
 
+      const goal =
+        Number(target);
+
       return {
         role,
-        target: Number(target),
+        target: goal,
         current,
-        diff:
-          Number(target) - current,
+        diff: goal - current,
       };
     })
     .filter(
       ({ diff }) => diff > 0,
-    )
-    .sort(
-      (a, b) => b.diff - a.diff,
     );
 
-  const totalDeficit = deficits.reduce(
-    (sum, item) =>
-      sum + item.diff,
-    0,
-  );
 
-  if (totalDeficit <= 0) {
-    return {
-      remainingCash: round(
-        Math.max(
-          0,
-          investableUSD *
-            (THRESHOLDS.cashRetentionPct /
-              100),
-        ),
-      ),
-      deployableCash: 0,
-      monthlyUSD: round(
-        Math.max(
-          0,
-          monthlyUSD,
-        ),
-      ),
-      monthly: [],
-      lumpSum: [],
-      actions: [],
-    };
-  }
+  // ───────────────────────────────────────────────────────────
+  // 2. Asignar prioridad económica
+  // ───────────────────────────────────────────────────────────
+  //
+  // No basta con mirar el porcentaje.
+  //
+  // Prioridad:
+  //   A. Liquidez crítica
+  //   B. Core crítico
+  //   C. Otras desviaciones
+  //
+  // Esto evita que el sistema compre un activo especulativo
+  // simplemente porque tiene una desviación porcentual mayor.
+  // ───────────────────────────────────────────────────────────
+
+  const rolePriority = {
+    liquidity: 80,
+    core: 90,
+    yield: 70,
+    growth: 60,
+    defensive: 50,
+    trading: 30,
+    speculative: 20,
+  };
+
+
+  const scoredDeficits = deficits
+    .map((item) => {
+      const critical =
+        item.diff >=
+        THRESHOLDS.criticalUnderweightPct;
+
+      const priority =
+        rolePriority[item.role] || 10;
+
+      return {
+        ...item,
+
+        critical,
+
+        priorityScore:
+          priority +
+          (critical ? 50 : 0) +
+          item.diff,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.priorityScore -
+        a.priorityScore,
+    );
+
+
+  // ───────────────────────────────────────────────────────────
+  // 3. Encontrar activo representativo de cada rol
+  // ───────────────────────────────────────────────────────────
 
   const assetsByRole =
     portfolioAssets.reduce(
@@ -1025,149 +1308,294 @@ function buildRebalancePlan({
           asset.classification?.role ||
           'unclassified';
 
-        (result[role] ||= []).push(
-          asset,
-        );
+        (result[role] ||= []).push(asset);
 
         return result;
       },
       {},
     );
 
+
   const candidateForRole = (role) => {
-    return (
-      assetsByRole[role] || []
-    )
-      .filter(
-        (asset) =>
-          asset.classification
-            ?.isInvestable !== false &&
-          getAssetValue(asset) > 0,
+    const candidates =
+      (
+        assetsByRole[role] ||
+        []
       )
-      .sort(
-        (a, b) =>
-          getAssetValue(a) -
-          getAssetValue(b),
-      )[0];
+        .filter(
+          (asset) =>
+            asset.classification
+              ?.isInvestable !== false &&
+            getAssetValue(asset) > 0,
+        )
+        .sort(
+          (a, b) =>
+            getAssetValue(b) -
+            getAssetValue(a),
+        );
+
+    if (!candidates.length) {
+      return null;
+    }
+
+    return (
+      candidates.find(
+        (asset) =>
+          asset.strategy?.accumulate === true,
+      ) ||
+      candidates[0]
+    );
   };
+
+
+  // ───────────────────────────────────────────────────────────
+  // 4. Máximo 2 oportunidades
+  // ───────────────────────────────────────────────────────────
+
+  const prioritized =
+    scoredDeficits
+      .map(
+        (item) => ({
+          ...item,
+          candidate:
+            candidateForRole(
+              item.role,
+            ),
+        }),
+      )
+      .filter(
+        (item) =>
+          item.candidate,
+      )
+      .slice(
+        0,
+        TRANSACTION_POLICY
+          .maxMonthlyOpportunities,
+      );
+
+
+  const selectedDeficit =
+    prioritized.reduce(
+      (sum, item) =>
+        sum + item.diff,
+      0,
+    );
+
+
+  // ───────────────────────────────────────────────────────────
+  // 5. Si no hay oportunidades
+  // ───────────────────────────────────────────────────────────
+
+  if (
+    !prioritized.length ||
+    selectedDeficit <= 0 ||
+    monthlyAmount <= 0
+  ) {
+    return {
+      remainingCash:
+        round(minimumCash),
+
+      deployableCash:
+        round(
+          deployableCash,
+        ),
+
+      monthlyUSD:
+        round(monthlyAmount),
+
+      monthly: [],
+
+      lumpSum: [],
+
+      actions: [],
+
+      opportunityCount: 0,
+
+      transactionPolicy:
+        TRANSACTION_POLICY,
+    };
+  }
+
+
+  // ───────────────────────────────────────────────────────────
+  // 6. Crear operaciones
+  // ───────────────────────────────────────────────────────────
 
   const createActions = (
     budget,
-    minimumAmount,
     fundingSource,
   ) => {
-    const safeBudget = Math.max(
-      0,
-      toFiniteNumber(budget),
-    );
-
-    const actions = [];
-    let allocated = 0;
-
-    if (safeBudget <= 0) {
-      return actions;
-    }
-
-    for (const deficit of deficits) {
-      const candidate =
-        candidateForRole(
-          deficit.role,
-        );
-
-      if (!candidate) {
-        continue;
-      }
-
-      const proportionalAmount =
-        (deficit.diff /
-          totalDeficit) *
-        safeBudget;
-
-      const amount = Math.min(
-        proportionalAmount,
-        safeBudget - allocated,
+    const safeBudget =
+      Math.max(
+        0,
+        toFiniteNumber(budget),
       );
 
-      if (
-        amount < minimumAmount
-      ) {
-        continue;
-      }
-
-      actions.push({
-        action: 'BUY',
-        asset:
-          candidate.symbol ||
-          candidate.name,
-        role: deficit.role,
-        amountUSD: round(amount),
-        reason: `${deficit.role} underweight`,
-        currentPct: round(
-          deficit.current,
-          4,
-        ),
-        targetPct: round(
-          deficit.target,
-          4,
-        ),
-        differencePct: round(
-          deficit.diff,
-          4,
-        ),
-        fundingSource,
-      });
-
-      allocated += amount;
-
-      if (
-        allocated >=
-        safeBudget
-      ) {
-        break;
-      }
+    if (
+      safeBudget <= 0 ||
+      selectedDeficit <= 0
+    ) {
+      return [];
     }
+
+    const actions = [];
+
+    let allocated = 0;
+
+    prioritized.forEach(
+      (item, index) => {
+        const proportionalAmount =
+          index ===
+          prioritized.length - 1
+            ? safeBudget - allocated
+            : (
+                item.diff /
+                selectedDeficit
+              ) * safeBudget;
+
+        const amount =
+          round(
+            Math.max(
+              0,
+              proportionalAmount,
+            ),
+            2,
+          );
+
+
+        // No crear una operación económicamente absurda.
+        if (
+          amount <
+          TRANSACTION_POLICY
+            .minOpportunityUSD
+        ) {
+          return;
+        }
+
+
+        const commission =
+          TRANSACTION_POLICY
+            .commissionUSD;
+
+
+        actions.push({
+          action: 'BUY',
+
+          asset:
+            item.candidate.symbol ||
+            item.candidate.name,
+
+          role:
+            item.role,
+
+          amountUSD:
+            amount,
+
+          reason:
+            item.role === 'liquidity'
+              ? 'Prioridad de liquidez'
+              : item.role === 'core'
+                ? 'Déficit de exposición core'
+                : `Rebalanceo de ${item.role}`,
+
+          currentPct:
+            round(
+              item.current,
+              4,
+            ),
+
+          targetPct:
+            round(
+              item.target,
+              4,
+            ),
+
+          differencePct:
+            round(
+              item.diff,
+              4,
+            ),
+
+          priorityScore:
+            round(
+              item.priorityScore,
+              4,
+            ),
+
+          critical:
+            Boolean(
+              item.critical,
+            ),
+
+          fundingSource,
+
+          estimatedCommissionUSD:
+            commission,
+
+          netAmountAfterCommissionUSD:
+            round(
+              Math.max(
+                0,
+                amount -
+                commission,
+              ),
+              2,
+            ),
+
+          commissionPctOfOrder:
+            amount > 0
+              ? round(
+                  (
+                    commission /
+                    amount
+                  ) * 100,
+                  2,
+                )
+              : 0,
+        });
+
+        allocated += amount;
+      },
+    );
+
 
     return actions;
   };
 
-  const monthlyAmount =
-    Math.max(
-      0,
-      toFiniteNumber(
-        monthlyUSD,
-      ),
-    );
+
+  // ───────────────────────────────────────────────────────────
+  // 7. Aportación mensual
+  // ───────────────────────────────────────────────────────────
 
   const monthly =
     createActions(
       monthlyAmount,
-      15,
       'monthly_contribution',
     );
 
-  const minimumCash =
-    Math.max(
-      0,
-      investableUSD *
-        (THRESHOLDS.cashRetentionPct /
-          100),
-    );
 
-  const deployableCash =
-    Math.max(
-      0,
-      investableCashUSD -
-        minimumCash,
-    );
+  // ───────────────────────────────────────────────────────────
+  // 8. Capital disponible adicional
+  // ───────────────────────────────────────────────────────────
 
   const lumpSum =
-    deployableCash >= 100
+    deployableCash >=
+    TRANSACTION_POLICY
+      .minOpportunityUSD
       ? createActions(
           deployableCash,
-          50,
           'available_cash',
         )
       : [];
+
+
+  // La estrategia normal es usar la aportación mensual.
+  // El cash disponible no se fuerza automáticamente.
+  const activeActions =
+    monthly.length
+      ? monthly
+      : lumpSum;
+
 
   return {
     remainingCash:
@@ -1184,11 +1612,18 @@ function buildRebalancePlan({
     lumpSum,
 
     actions:
-      lumpSum.length
-        ? lumpSum
-        : monthly,
+      activeActions,
+
+    opportunityCount:
+      activeActions.length,
+
+    transactionPolicy:
+      TRANSACTION_POLICY,
   };
 }
+
+
+// ─── SECTOR ANALYSIS ──────────────────────────────────────────
 
 function buildSectorAnalysisInternal(
   investableAssets,
@@ -1197,7 +1632,9 @@ function buildSectorAnalysisInternal(
   const sectorValues = {};
   const sectorAssets = {};
 
-  for (const asset of investableAssets) {
+  for (
+    const asset of investableAssets
+  ) {
     const valueUSD =
       getAssetValue(asset);
 
@@ -1206,80 +1643,89 @@ function buildSectorAnalysisInternal(
     }
 
     const sector =
-      asset.classification
-        ?.sector ||
+      asset.classification?.sector ||
       'otros';
 
     sectorValues[sector] =
-      (sectorValues[sector] ||
-        0) + valueUSD;
+      (
+        sectorValues[sector] ||
+        0
+      ) + valueUSD;
 
     (
       sectorAssets[sector] ||= []
     ).push(asset);
   }
 
-  const sectors = Object.entries(
-    sectorValues,
-  )
-    .map(
-      ([sector, valueUSD]) => ({
-        sector,
 
-        valueUSD:
-          round(valueUSD),
-
-        pct:
-          investableUSD > 0
-            ? round(
-                (valueUSD /
-                  investableUSD) *
-                  100,
-                4,
-              )
-            : 0,
-
-        assets:
-          sectorAssets[sector]
-            .slice()
-            .sort(
-              (a, b) =>
-                getAssetValue(b) -
-                getAssetValue(a),
-            )
-            .map((asset) => ({
-              symbol:
-                asset.symbol ||
-                asset.name,
-
-              name: asset.name,
-
-              valueUSD:
-                round(
-                  getAssetValue(
-                    asset,
-                  ),
-                ),
-
-              pct:
-                valueUSD > 0
-                  ? round(
-                      (getAssetValue(
-                        asset,
-                      ) /
-                        valueUSD) *
-                        100,
-                      4,
-                    )
-                  : 0,
-            })),
-      }),
+  const sectors =
+    Object.entries(
+      sectorValues,
     )
-    .sort(
-      (a, b) =>
-        b.valueUSD -
-        a.valueUSD,
-    );
+      .map(
+        ([sector, valueUSD]) => ({
+          sector,
+
+          valueUSD:
+            round(valueUSD),
+
+          pct:
+            investableUSD > 0
+              ? round(
+                  (
+                    valueUSD /
+                    investableUSD
+                  ) * 100,
+                  4,
+                )
+              : 0,
+
+          assets:
+            sectorAssets[sector]
+              .slice()
+              .sort(
+                (a, b) =>
+                  getAssetValue(b) -
+                  getAssetValue(a),
+              )
+              .map(
+                (asset) => ({
+                  symbol:
+                    asset.symbol ||
+                    asset.name,
+
+                  name:
+                    asset.name,
+
+                  valueUSD:
+                    round(
+                      getAssetValue(
+                        asset,
+                      ),
+                    ),
+
+                  pct:
+                    valueUSD > 0
+                      ? round(
+                          (
+                            getAssetValue(
+                              asset,
+                            ) /
+                            valueUSD
+                          ) * 100,
+                          4,
+                        )
+                      : 0,
+                }),
+              ),
+        }),
+      )
+      .sort(
+        (a, b) =>
+          b.valueUSD -
+          a.valueUSD,
+      );
+
 
   return {
     sectors,
@@ -1298,7 +1744,15 @@ function buildSectorAnalysisInternal(
       ),
   };
 }
-import { buildPortfolioSectorExposure } from './portfolioSectorAnalysis.js'
+
+
+// ─── PORTFOLIO V3 ─────────────────────────────────────────────
+
+import {
+  buildPortfolioSectorExposure,
+} from './portfolioSectorAnalysis.js';
+
+
 export function buildPortfolioV3({
   allAssets = [],
   totalUSD = 0,
@@ -1307,13 +1761,13 @@ export function buildPortfolioV3({
   grossExposure = 0,
   monthlyUSD = 190,
   customTargets = null,
-  etfExposure = {}, 
+  etfExposure = {},
 } = {}) {
-
   const sourceAssets =
     Array.isArray(allAssets)
       ? allAssets
       : [];
+
 
   const calculatedTotalUSD =
     sourceAssets.reduce(
@@ -1323,20 +1777,22 @@ export function buildPortfolioV3({
       0,
     );
 
+
   const suppliedTotalUSD =
-    toFiniteNumber(
-      totalUSD,
-    );
+    toFiniteNumber(totalUSD);
+
 
   const effectiveTotalUSD =
     suppliedTotalUSD > 0
       ? suppliedTotalUSD
       : calculatedTotalUSD;
 
+
   const activeTargets =
     normalizeTargets(
       customTargets,
     );
+
 
   const enriched =
     sourceAssets.map(
@@ -1349,10 +1805,12 @@ export function buildPortfolioV3({
             asset?.symbol,
           );
 
+
         const valueUSD =
           round(
             getAssetValue(asset),
           );
+
 
         return {
           ...asset,
@@ -1362,9 +1820,10 @@ export function buildPortfolioV3({
           weightPct:
             effectiveTotalUSD > 0
               ? round(
-                  (valueUSD /
-                    effectiveTotalUSD) *
-                    100,
+                  (
+                    valueUSD /
+                    effectiveTotalUSD
+                  ) * 100,
                 )
               : 0,
 
@@ -1373,21 +1832,22 @@ export function buildPortfolioV3({
       },
     );
 
+
   const patrimonyAssets =
     enriched.filter(
       (asset) =>
         asset.classification
-          .role ===
-        'patrimony',
+          .role === 'patrimony',
     );
+
 
   const reserveAssets =
     enriched.filter(
       (asset) =>
         asset.classification
-          .role ===
-        'reserve',
+          .role === 'reserve',
     );
+
 
   const portfolioAssets =
     enriched.filter(
@@ -1401,6 +1861,7 @@ export function buildPortfolioV3({
         ),
     );
 
+
   const patrimonyUSD =
     patrimonyAssets.reduce(
       (sum, asset) =>
@@ -1408,6 +1869,7 @@ export function buildPortfolioV3({
         getAssetValue(asset),
       0,
     );
+
 
   const reserveUSD =
     reserveAssets.reduce(
@@ -1417,8 +1879,7 @@ export function buildPortfolioV3({
       0,
     );
 
-  // El universo de inversión se define por rol,
-  // no por una resta dependiente del total suministrado.
+
   const investableUSD =
     portfolioAssets.reduce(
       (sum, asset) =>
@@ -1426,18 +1887,21 @@ export function buildPortfolioV3({
         getAssetValue(asset),
       0,
     );
-  
+
+
   const byRoleUSD =
     groupByValue(
       portfolioAssets,
       'role',
     );
 
+
   const byAssetClassUSD =
     groupByValue(
       portfolioAssets,
       'assetClass',
     );
+
 
   const bySubClassUSD =
     portfolioAssets.reduce(
@@ -1456,7 +1920,10 @@ export function buildPortfolioV3({
           `${assetClass}__${subClass}`;
 
         result[key] =
-          (result[key] || 0) +
+          (
+            result[key] ||
+            0
+          ) +
           getAssetValue(asset);
 
         return result;
@@ -1464,9 +1931,13 @@ export function buildPortfolioV3({
       {},
     );
 
+
   // Liquidez operativa:
-  // USDT/USDC/SGOV cuentan como liquidez.
-  // AirTM queda como yield, no como cash operativo.
+  // USDT / USDC / SGOV.
+  //
+  // AirTM NO se considera liquidez operativa.
+  // Se mantiene como yield.
+
   const investableCashUSD =
     portfolioAssets
       .filter(
@@ -1474,12 +1945,15 @@ export function buildPortfolioV3({
           asset.classification
             ?.assetClass ===
             'efectivo' &&
+
           asset.classification
             ?.role ===
             'liquidity' &&
+
           asset.classification
             ?.isInvestable !==
             false &&
+
           !asset.classification
             ?.isDeFi,
       )
@@ -1490,11 +1964,13 @@ export function buildPortfolioV3({
         0,
       );
 
+
   const byRole =
     percentageMap(
       byRoleUSD,
       investableUSD,
     );
+
 
   const byAssetClass =
     percentageMap(
@@ -1502,27 +1978,34 @@ export function buildPortfolioV3({
       investableUSD,
     );
 
+
   const bySubClass =
     percentageMap(
       bySubClassUSD,
       investableUSD,
     );
 
+
   const cashPct =
     investableUSD > 0
-      ? (investableCashUSD /
-          investableUSD) *
-        100
+      ? (
+          investableCashUSD /
+          investableUSD
+        ) * 100
       : 0;
+
 
   const speculativePct =
     byRole.speculative || 0;
 
+
   const tradingPct =
     byRole.trading || 0;
 
+
   const corePct =
     byRole.core || 0;
+
 
   const assets =
     enriched.map(
@@ -1543,54 +2026,52 @@ export function buildPortfolioV3({
       }),
     );
 
+
+  // ─── RIESGO ─────────────────────────────────────────────────
+
   const portfolioRisk =
     portfolioAssets.reduce(
       (sum, asset) => {
         const weight =
           investableUSD > 0
-            ? getAssetValue(
-                asset,
-              ) /
+            ? getAssetValue(asset) /
               investableUSD
             : 0;
 
         return (
           sum +
           weight *
-            toFiniteNumber(
-              asset
-                .classification
-                ?.riskLevel,
-            )
+          toFiniteNumber(
+            asset.classification
+              ?.riskLevel,
+          )
         );
       },
       0,
     );
+
 
   const expectedReturn =
     portfolioAssets.reduce(
       (sum, asset) => {
         const weight =
           investableUSD > 0
-            ? getAssetValue(
-                asset,
-              ) /
+            ? getAssetValue(asset) /
               investableUSD
             : 0;
+
 
         const returnRate =
           asset.classification
             ?.isDeFi &&
           Number.isFinite(
             Number(
-              asset
-                .classification
+              asset.classification
                 ?.aprPct,
             ),
           )
             ? Number(
-                asset
-                  .classification
+                asset.classification
                   .aprPct,
               ) / 100
             : RETURN_ASSUMPTIONS[
@@ -1598,33 +2079,37 @@ export function buildPortfolioV3({
                   ?.assetClass
               ] ?? 0.05;
 
+
         return (
           sum +
           weight *
-            returnRate
+          returnRate
         );
       },
       0,
     );
+
 
   const hhi =
     portfolioAssets.reduce(
       (sum, asset) => {
         const weight =
           investableUSD > 0
-            ? getAssetValue(
-                asset,
-              ) /
+            ? getAssetValue(asset) /
               investableUSD
             : 0;
 
         return (
           sum +
-          weight * weight
+          weight *
+          weight
         );
       },
       0,
     );
+
+
+  // ─── ALERTAS ────────────────────────────────────────────────
 
   const hasLocalPE =
     enriched.some(
@@ -1632,6 +2117,7 @@ export function buildPortfolioV3({
         asset.classification
           ?.isLocalPrivateEquity,
     );
+
 
   const alerts = {
     lowCash:
@@ -1644,22 +2130,27 @@ export function buildPortfolioV3({
 
     underCore:
       corePct <
-      (activeTargets.core ??
-        THRESHOLDS.coreMinPct),
+      (
+        activeTargets.core ??
+        THRESHOLDS.coreMinPct
+      ),
 
     overSpeculative:
       speculativePct >
-      (activeTargets.speculative ??
-        THRESHOLDS.maxSpeculativePct),
+      (
+        activeTargets.speculative ??
+        THRESHOLDS.maxSpeculativePct
+      ),
 
     excessTrading:
       tradingPct >
-      (activeTargets.trading ??
-        THRESHOLDS.maxTradingPct),
+      (
+        activeTargets.trading ??
+        THRESHOLDS.maxTradingPct
+      ),
 
     highRisk:
-      portfolioRisk >
-      3.5,
+      portfolioRisk > 3.5,
 
     lowDiversification:
       hhi > 0.25,
@@ -1668,18 +2159,22 @@ export function buildPortfolioV3({
       !hasLocalPE &&
       !(
         byAssetClass
-          .private_equity >
-        0
+          .private_equity > 0
       ),
   };
 
+
+  // ─── REGLAS ─────────────────────────────────────────────────
+
   const ruleEvaluation = [];
+
 
   if (alerts.underCore) {
     ruleEvaluation.push(
-      'UNDER CORE → comprar un activo core este mes',
+      'UNDER CORE → priorizar una compra core',
     );
   }
+
 
   if (alerts.lowCash) {
     ruleEvaluation.push(
@@ -1687,11 +2182,13 @@ export function buildPortfolioV3({
     );
   }
 
+
   if (alerts.overCash) {
     ruleEvaluation.push(
       'EXCESS CASH → desplegar efectivo progresivamente',
     );
   }
+
 
   if (alerts.overSpeculative) {
     ruleEvaluation.push(
@@ -1699,11 +2196,13 @@ export function buildPortfolioV3({
     );
   }
 
+
   if (alerts.excessTrading) {
     ruleEvaluation.push(
       `REDUCE TRADING → mantener bajo el ${activeTargets.trading}%`,
     );
   }
+
 
   if (alerts.highRisk) {
     ruleEvaluation.push(
@@ -1711,11 +2210,13 @@ export function buildPortfolioV3({
     );
   }
 
+
   if (alerts.noPrivateEquity) {
     ruleEvaluation.push(
-      'SIN PRIVATE EQUITY → considerar alternativas compatibles',
+      'SIN PRIVATE EQUITY → no es prioridad incorporar uno',
     );
   }
+
 
   if (!ruleEvaluation.length) {
     ruleEvaluation.push(
@@ -1723,33 +2224,42 @@ export function buildPortfolioV3({
     );
   }
 
+
+  // ─── PLAN DE REBALANCEO ────────────────────────────────────
+
   const rebalancePlan =
     buildRebalancePlan({
       portfolioAssets,
-      byRolePct: byRole,
+
+      byRolePct:
+        byRole,
+
       investableUSD,
+
       monthlyUSD,
+
       investableCashUSD,
+
       activeTargets,
     });
 
-  // Ahora forma parte directamente del análisis principal.
-  const sectorAnalysis = buildPortfolioSectorExposure(
-    portfolioAssets,
-    etfExposure,
-    investableUSD
-  );
-  // const sectorAnalysis =
-  //   buildSectorAnalysisInternal(
-  //     portfolioAssets,
-  //     investableUSD,
-  //   );
+
+  // ─── SECTORES ───────────────────────────────────────────────
+
+  const sectorAnalysis =
+    buildPortfolioSectorExposure(
+      portfolioAssets,
+      etfExposure,
+      investableUSD,
+    );
+
 
   const totalsByRoleUSD = {
     ...byRoleUSD,
     reserve: reserveUSD,
     patrimony: patrimonyUSD,
   };
+
 
   return {
     generatedAt:
@@ -1779,9 +2289,10 @@ export function buildPortfolioV3({
       nonInvestableUSD:
         round(
           reserveUSD +
-            patrimonyUSD,
+          patrimonyUSD,
         ),
     },
+
 
     portfolio: {
       byRole,
@@ -1797,6 +2308,7 @@ export function buildPortfolioV3({
 
       totalsByRoleUSD,
     },
+
 
     patrimony: {
       totalUSD:
@@ -1814,6 +2326,7 @@ export function buildPortfolioV3({
         patrimonyAssets,
     },
 
+
     reserves: {
       totalUSD:
         round(
@@ -1826,6 +2339,7 @@ export function buildPortfolioV3({
       note:
         'Activos no invertibles y bloqueados.',
     },
+
 
     risk: {
       portfolioRisk:
@@ -1843,11 +2357,11 @@ export function buildPortfolioV3({
       cashDrag:
         round(
           (cashPct / 100) *
-            Math.max(
-              0,
-              expectedReturn -
-                0.02,
-            ),
+          Math.max(
+            0,
+            expectedReturn -
+            0.02,
+          ),
           4,
         ),
 
@@ -1869,6 +2383,7 @@ export function buildPortfolioV3({
         'El retorno esperado es una estimación.',
       ],
     },
+
 
     trading: {
       reservedBUY:
@@ -1893,6 +2408,7 @@ export function buildPortfolioV3({
         ),
     },
 
+
     alerts,
 
     ruleEvaluation,
@@ -1904,11 +2420,11 @@ export function buildPortfolioV3({
     assets,
 
     activeTargets,
-    sectorAnalysis,
   };
 }
 
-// ─── TARGET ANALYSIS ───────────────────────────────────────────
+
+// ─── TARGET ANALYSIS ──────────────────────────────────────────
 
 export function buildTargetAnalysis(
   byRole = {},
@@ -1933,7 +2449,9 @@ export function buildTargetAnalysis(
         role === 'speculative' ||
         role === 'trading';
 
+
       let status = 'ok';
+
 
       if (upperBound) {
         if (
@@ -1957,6 +2475,7 @@ export function buildTargetAnalysis(
         status = 'warning';
       }
 
+
       const action =
         status === 'ok'
           ? 'Mantener'
@@ -1965,8 +2484,10 @@ export function buildTargetAnalysis(
                 difference,
               ).toFixed(1)}%`
             : `Aumentar ${(
-                goal - current
+                goal -
+                current
               ).toFixed(1)}%`;
+
 
       return {
         role,
@@ -1990,7 +2511,8 @@ export function buildTargetAnalysis(
   );
 }
 
-// ─── INVESTABLE ASSETS ─────────────────────────────────────────
+
+// ─── INVESTABLE ASSETS ────────────────────────────────────────
 
 export function getInvestableAssets(
   assets = [],
@@ -1998,8 +2520,7 @@ export function getInvestableAssets(
   return assets.filter(
     (asset) => {
       const role =
-        asset
-          .classification
+        asset.classification
           ?.role;
 
       return (
@@ -2010,7 +2531,8 @@ export function getInvestableAssets(
   );
 }
 
-// ─── SECTOR ANALYSIS ───────────────────────────────────────────
+
+// ─── SECTOR ANALYSIS ──────────────────────────────────────────
 
 export function buildSectorAnalysis(
   allAssets = [],
@@ -2018,9 +2540,7 @@ export function buildSectorAnalysis(
 ) {
   const investableAssets =
     getInvestableAssets(
-      Array.isArray(
-        allAssets,
-      )
+      Array.isArray(allAssets)
         ? allAssets
         : [],
     );
