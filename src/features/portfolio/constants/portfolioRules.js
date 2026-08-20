@@ -853,3 +853,39 @@ export  const rolePriority = {
     trading: 30,
     speculative: 20,
   };
+
+//AI REport
+// ─── CONFIGURACIÓN ────────────────────────────────────────────
+
+export const DEFAULT_INVESTOR_PROFILE =
+  'moderado';
+
+export const INCLUDED_ROLES = [
+  'core',
+  'growth',
+  'defensive',
+  'liquidity',
+  'yield',
+  'speculative',
+  'trading',
+];
+
+export const EXCLUDED_ROLES = [
+  'reserve',
+  'patrimony',
+];
+
+export const REBALANCING_METHOD =
+  'contributions_first';
+
+export const INVESTOR_HORIZON =
+  'medium_long';
+
+export const INVESTOR_OBJECTIVE =
+  'wealth_accumulation';
+
+export const RECONCILIATION_TOLERANCE_USD =
+  0.01;
+
+export const MAX_RECOMMENDATIONS = 2;
+

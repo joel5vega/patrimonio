@@ -1,3 +1,4 @@
+import {round} from './portfolioFormatters.js';
 export function normalizeText(value) {
   return String(value || '')
     .normalize('NFD')
@@ -37,14 +38,6 @@ export function toFiniteNumber(value, fallback = 0) {
 }
 
 
-export function round(value, decimals = 2) {
-  const factor = 10 ** decimals;
-
-  return Math.round(
-    (value + Number.EPSILON) * factor,
-  ) / factor;
-}
-
 
 export function getAssetValue(asset) {
   return Math.max(
@@ -74,3 +67,107 @@ export function percentageMap(values, denominator) {
     ),
   );
 }
+
+// ─── HELPERS ──────────────────────────────────────────────────
+
+export function safeObject(value) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value)
+  )
+    ? value
+    : {};
+}
+
+
+export function safeArray(value) {
+  return Array.isArray(value)
+    ? value
+    : [];
+}
+
+
+
+
+
+export function normalizeSymbol(value) {
+  const symbol =
+    String(value || '')
+      .trim();
+
+  return symbol || '';
+}
+
+
+//AI Report
+// ─── VALIDACIÓN NUMÉRICA ──────────────────────────────────────
+
+export function containsInvalidNumber(
+  value,
+) {
+  if (
+    typeof value ===
+    'number'
+  ) {
+    return !Number.isFinite(
+      value,
+    );
+  }
+
+
+  if (
+    Array.isArray(value)
+  ) {
+    return value.some(
+      containsInvalidNumber,
+    );
+  }
+
+
+  if (
+    value &&
+    typeof value ===
+      'object'
+  ) {
+    return Object.values(
+      value,
+    ).some(
+      containsInvalidNumber,
+    );
+  }
+
+
+  return false;
+}
+
+
+// ─── NORMALIZACIÓN DE ACTIVOS ─────────────────────────────────
+
+export function normalizeAssets(
+  analysis,
+) {
+  return safeArray(
+    analysis?.assets,
+  ).map(
+    (asset) => ({
+      ...asset,
+
+      source:
+        resolveAssetSource(
+          asset,
+        ),
+
+      classification: {
+        ...(asset?.classification ||
+          {}),
+
+        sector:
+          asset?.classification
+            ?.sector ||
+          'otros',
+      },
+    }),
+  );
+}
+

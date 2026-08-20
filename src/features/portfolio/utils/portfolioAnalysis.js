@@ -15,8 +15,8 @@ import {ASSET_RULES,MANUAL_RULES,RETURN_ASSUMPTIONS,TRANSACTION_POLICY,
   THRESHOLDS,PORTFOLIO_TARGETS,PORTFOLIOTARGETS,INVESTOR_PROFILES,rolePriority} from '../constants/portfolioRules.js'
 
 // ─── HELPERS ───────────────────────────────────────────────────
-import {normalizeText,normalizeAssetKey,normalizeType,normalizeGroupKey,toFiniteNumber,round,getAssetValue,percentageMap} from './portfolioHelpers.js';
-
+import {normalizeText,normalizeAssetKey,normalizeType,normalizeGroupKey,toFiniteNumber,getAssetValue,percentageMap} from './portfolioHelpers.js';
+import {round} from './portfolioFormatters.js';
 
 
 // ─── CLASIFICACIÓN ─────────────────────────────────────────────

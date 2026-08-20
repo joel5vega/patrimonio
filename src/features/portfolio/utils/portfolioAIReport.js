@@ -13,86 +13,12 @@ import {
   buildTargetAnalysis,
  
 } from '../utils/portfolioAnalysis';
-import { INVESTOR_PROFILES,
-  PORTFOLIO_TARGETS,} from '../constants/portfolioRules.js'
+import { INVESTOR_PROFILES, PORTFOLIO_TARGETS,
+  DEFAULT_INVESTOR_PROFILE,INCLUDED_ROLES,EXCLUDED_ROLES,REBALANCING_METHOD,INVESTOR_HORIZON,INVESTOR_OBJECTIVE,RECONCILIATION_TOLERANCE_USD
+,MAX_RECOMMENDATIONS,TRANSACTION_POLICY,rolePriority } from '../constants/portfolioRules.js'
 
-// ─── CONFIGURACIÓN ────────────────────────────────────────────
+import {safeObject,safeArray,normalizeText,normalizeSymbol,toFiniteNumber,containsInvalidNumber} from './portfolioHelpers.js'
 
-const DEFAULT_INVESTOR_PROFILE =
-  'moderado';
-
-const INCLUDED_ROLES = [
-  'core',
-  'growth',
-  'defensive',
-  'liquidity',
-  'yield',
-  'speculative',
-  'trading',
-];
-
-const EXCLUDED_ROLES = [
-  'reserve',
-  'patrimony',
-];
-
-const REBALANCING_METHOD =
-  'contributions_first';
-
-const INVESTOR_HORIZON =
-  'medium_long';
-
-const INVESTOR_OBJECTIVE =
-  'wealth_accumulation';
-
-const RECONCILIATION_TOLERANCE_USD =
-  0.01;
-
-const MAX_RECOMMENDATIONS = 2;
-
-const TRANSACTION_POLICY = {
-  commissionUSD: 1,
-  maxMonthlyOpportunities: 2,
-  minOpportunityUSD: 50,
-};
-
-
-// ─── HELPERS ──────────────────────────────────────────────────
-
-function safeObject(value) {
-  return (
-    value &&
-    typeof value === 'object' &&
-    !Array.isArray(value)
-  )
-    ? value
-    : {};
-}
-
-
-function safeArray(value) {
-  return Array.isArray(value)
-    ? value
-    : [];
-}
-
-
-function normalizeText(value) {
-  return String(
-    value || '',
-  )
-    .toLowerCase()
-    .trim();
-}
-
-
-function normalizeSymbol(value) {
-  const symbol =
-    String(value || '')
-      .trim();
-
-  return symbol || '';
-}
 
 
 // ─── TARGETS ──────────────────────────────────────────────────
@@ -464,14 +390,6 @@ function buildAlerts(
 // ─────────────────────────────────────────────────────────────
 // RECOMENDACIONES
 // ─────────────────────────────────────────────────────────────
-//
-// IMPORTANTE:
-//
-// portfolioAnalysis.js YA seleccionó máximo 2 oportunidades.
-//
-// Este archivo NO debe volver a construir una lista diferente.
-//
-// Solo:
 // - valida;
 // - ordena;
 // - limita a 2;
@@ -499,12 +417,6 @@ function buildRecommendations(
       plan.lumpSum,
     );
 
-
-  // Las recomendaciones principales
-  // son las de la aportación mensual.
-  //
-  // No se mezclan con lump sum porque son
-  // estrategias de financiación diferentes.
 
   const rankedMonthly =
     monthly
@@ -751,78 +663,6 @@ function buildRiskAssessment(
           ],
   };
 }
-
-
-// ─── VALIDACIÓN NUMÉRICA ──────────────────────────────────────
-
-function containsInvalidNumber(
-  value,
-) {
-  if (
-    typeof value ===
-    'number'
-  ) {
-    return !Number.isFinite(
-      value,
-    );
-  }
-
-
-  if (
-    Array.isArray(value)
-  ) {
-    return value.some(
-      containsInvalidNumber,
-    );
-  }
-
-
-  if (
-    value &&
-    typeof value ===
-      'object'
-  ) {
-    return Object.values(
-      value,
-    ).some(
-      containsInvalidNumber,
-    );
-  }
-
-
-  return false;
-}
-
-
-// ─── NORMALIZACIÓN DE ACTIVOS ─────────────────────────────────
-
-function normalizeAssets(
-  analysis,
-) {
-  return safeArray(
-    analysis?.assets,
-  ).map(
-    (asset) => ({
-      ...asset,
-
-      source:
-        resolveAssetSource(
-          asset,
-        ),
-
-      classification: {
-        ...(asset?.classification ||
-          {}),
-
-        sector:
-          asset?.classification
-            ?.sector ||
-          'otros',
-      },
-    }),
-  );
-}
-
 
 // ─── NORMALIZACIÓN DE SECTORES ────────────────────────────────
 
