@@ -12,7 +12,7 @@
 // ─────────────────────────────────────────────────────────────
 // Reglas importadas de portfolioRules.js
 import {ASSET_RULES,MANUAL_RULES,RETURN_ASSUMPTIONS,TRANSACTION_POLICY,
-  THRESHOLDS,PORTFOLIO_TARGETS,PORTFOLIOTARGETS,INVESTOR_PROFILES,rolePriority} from '../constants/portfolioRules.js'
+  THRESHOLDS,PORTFOLIO_TARGETS,INVESTOR_PROFILES,rolePriority} from '../constants/portfolioRules.js'
 
 // ─── HELPERS ───────────────────────────────────────────────────
 import {normalizeText,normalizeAssetKey,normalizeType,normalizeGroupKey,toFiniteNumber,getAssetValue,percentageMap} from './portfolioHelpers.js';

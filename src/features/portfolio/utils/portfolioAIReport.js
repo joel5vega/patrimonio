@@ -17,7 +17,8 @@ import { INVESTOR_PROFILES, PORTFOLIO_TARGETS,
   DEFAULT_INVESTOR_PROFILE,INCLUDED_ROLES,EXCLUDED_ROLES,REBALANCING_METHOD,INVESTOR_HORIZON,INVESTOR_OBJECTIVE,RECONCILIATION_TOLERANCE_USD
 ,MAX_RECOMMENDATIONS,TRANSACTION_POLICY,rolePriority } from '../constants/portfolioRules.js'
 
-import {safeObject,safeArray,normalizeText,normalizeSymbol,toFiniteNumber,containsInvalidNumber} from './portfolioHelpers.js'
+import {safeObject,safeArray,normalizeText,normalizeSymbol,toFiniteNumber,containsInvalidNumber,
+  normalizeAssets,resolveAssetSource,calculateSourceExposure} from './portfolioHelpers.js'
 
 
 
@@ -47,147 +48,6 @@ function resolveTargets(
       investorProfile
     ]?.targets ||
     PORTFOLIO_TARGETS
-  );
-}
-
-
-// ─── SOURCE RESOLUTION ────────────────────────────────────────
-
-function resolveAssetSource(asset) {
-  const explicitSource =
-    normalizeText(
-      asset?.groupKey ||
-      asset?.source ||
-      asset?.broker ||
-      asset?.platform,
-    );
-
-
-  // manual no debe impedir
-  // inferencias posteriores.
-  if (
-    explicitSource &&
-    explicitSource !== 'manual'
-  ) {
-    return explicitSource;
-  }
-
-
-  const note =
-    normalizeText(
-      asset?.note,
-    );
-
-  const symbol =
-    normalizeSymbol(
-      asset?.symbol,
-    ).toUpperCase();
-
-  const type =
-    normalizeText(
-      asset?.type,
-    );
-
-
-  if (
-    note.includes(
-      'quantfury',
-    )
-  ) {
-    return 'quantfury';
-  }
-
-
-  if (
-    note.includes(
-      'binance',
-    )
-  ) {
-    return 'binance';
-  }
-
-
-  if (
-    note.includes(
-      'admirals',
-    )
-  ) {
-    return 'admirals';
-  }
-
-
-  if (
-    type === 'crypto' &&
-    [
-      'BTC',
-      'ETH',
-      'SOL',
-      'ADA',
-      'HBAR',
-      'USDT',
-      'XRP',
-    ].includes(symbol)
-  ) {
-    return 'binance';
-  }
-
-
-  if (
-    type === 'etf' &&
-    [
-      'BND',
-      'EMXC',
-      'IAU',
-      'VOO',
-      'VXUS',
-    ].includes(symbol)
-  ) {
-    return 'admirals';
-  }
-
-
-  if (
-    type === 'stock' &&
-    [
-      'CEG',
-      'MELI',
-      'SLV',
-    ].includes(symbol)
-  ) {
-    return 'quantfury';
-  }
-
-
-  return 'manual';
-}
-
-
-// ─── SOURCE EXPOSURE ──────────────────────────────────────────
-
-function calculateSourceExposure(
-  assets,
-) {
-  return assets.reduce(
-    (acc, asset) => {
-      const source =
-        resolveAssetSource(
-          asset,
-        );
-
-      acc[source] =
-        round(
-          (
-            acc[source] || 0
-          ) +
-          toNumber(
-            asset?.valueUSD,
-          ),
-          2,
-        );
-
-      return acc;
-    },
-    {},
   );
 }
 

@@ -1,4 +1,5 @@
-import {round} from './portfolioFormatters.js';
+import {round,toNumber} from './portfolioFormatters.js';
+
 export function normalizeText(value) {
   return String(value || '')
     .normalize('NFD')
@@ -168,6 +169,147 @@ export function normalizeAssets(
           'otros',
       },
     }),
+  );
+}
+
+
+// ─── SOURCE RESOLUTION ────────────────────────────────────────
+
+export function resolveAssetSource(asset) {
+  const explicitSource =
+    normalizeText(
+      asset?.groupKey ||
+      asset?.source ||
+      asset?.broker ||
+      asset?.platform,
+    );
+
+
+  // manual no debe impedir
+  // inferencias posteriores.
+  if (
+    explicitSource &&
+    explicitSource !== 'manual'
+  ) {
+    return explicitSource;
+  }
+
+
+  const note =
+    normalizeText(
+      asset?.note,
+    );
+
+  const symbol =
+    normalizeSymbol(
+      asset?.symbol,
+    ).toUpperCase();
+
+  const type =
+    normalizeText(
+      asset?.type,
+    );
+
+
+  if (
+    note.includes(
+      'quantfury',
+    )
+  ) {
+    return 'quantfury';
+  }
+
+
+  if (
+    note.includes(
+      'binance',
+    )
+  ) {
+    return 'binance';
+  }
+
+
+  if (
+    note.includes(
+      'admirals',
+    )
+  ) {
+    return 'admirals';
+  }
+
+
+  if (
+    type === 'crypto' &&
+    [
+      'BTC',
+      'ETH',
+      'SOL',
+      'ADA',
+      'HBAR',
+      'USDT',
+      'XRP',
+    ].includes(symbol)
+  ) {
+    return 'binance';
+  }
+
+
+  if (
+    type === 'etf' &&
+    [
+      'BND',
+      'EMXC',
+      'IAU',
+      'VOO',
+      'VXUS',
+    ].includes(symbol)
+  ) {
+    return 'admirals';
+  }
+
+
+  if (
+    type === 'stock' &&
+    [
+      'CEG',
+      'MELI',
+      'SLV',
+    ].includes(symbol)
+  ) {
+    return 'quantfury';
+  }
+
+
+  return 'manual';
+}
+
+
+// ─── SOURCE EXPOSURE ──────────────────────────────────────────
+
+export function calculateSourceExposure(
+  assets,
+) {
+  return assets.reduce(
+    (acc, asset) => {
+      const source =
+        resolveAssetSource(
+          asset,
+        );
+
+      acc[source] =
+        round(
+          (
+            acc[source] || 0
+          ) +
+          toNumber(
+            asset?.valueUSD,
+          ),
+          2,
+        );
+
+      return acc;
+    },
+    {},
   );
 }
 

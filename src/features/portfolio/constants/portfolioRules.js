@@ -782,7 +782,7 @@ export const PORTFOLIO_TARGETS = {
   trading: 6,
 };
 
-export const PORTFOLIOTARGETS = PORTFOLIO_TARGETS;
+// export const PORTFOLIOTARGETS = PORTFOLIO_TARGETS;
 
 
 // ─── PERFILES ─────────────────────────────────────────────────
