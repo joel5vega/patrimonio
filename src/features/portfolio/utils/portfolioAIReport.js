@@ -1,3 +1,5 @@
+// /src/features/portfolio/utils/portfolioAIReport.js
+// usado para generar un json para que sea usado por una IA
 import {
   buildRoleTotals,
   selectPatrimonyAssets,

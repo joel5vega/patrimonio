@@ -155,9 +155,15 @@ const [todayPortfolioAI, setTodayPortfolioAI] = useState(null);
   }, [binanceSnap]);
 
   const totalCryptoUSD = useMemo(() => {
-    const bs = binanceSnap?.snapshot || {};
-    return bs.totalPortfolioUSD ?? bs.balancesUSD ?? 0;
-  }, [binanceSnap]);
+  const snapshot = binanceSnap?.snapshot || {};
+
+  return Number(
+    snapshot.totals?.spotAndEarnValueUSD ??
+    snapshot.totalPortfolioUSD ??
+    snapshot.balancesUSD ??
+    0,
+  );
+}, [binanceSnap]);
 
   const inversionSnap = latestInversionSnap;
   const tradeSnap = latestTradeSnap;
@@ -217,29 +223,59 @@ const [todayPortfolioAI, setTodayPortfolioAI] = useState(null);
     [inversionPositions]
   );
 
-  const totalValue = useMemo(
-    () => (totalCryptoUSD + totalInversionUSD + totalManualUSD) * bobRate,
-    [totalCryptoUSD, totalInversionUSD, totalManualUSD, bobRate]
-  );
+  const totalValueUSD = useMemo(
+  () =>
+    totalCryptoUSD +
+    totalInversionUSD +
+    totalManualUSD,
+  [
+    totalCryptoUSD,
+    totalInversionUSD,
+    totalManualUSD,
+  ],
+);
+
+const totalValueBOB = useMemo(
+  () =>
+    bobRate > 0
+      ? totalValueUSD * bobRate
+      : null,
+  [totalValueUSD, bobRate],
+);
 
   const totalPnl = totalInversionPnl;
 
-  const riskData = useMemo(() => {
-    const bs = binanceSnap?.snapshot || {};
-    return {
-      totalSpotUSD: totalCryptoUSD,
-      reservedCapital: bs.reservedCapitalUSD ?? 0,
-      hhi: bs.riskMetrics?.herfindahlIndex ?? 0,
-      top3Concentration: bs.riskMetrics?.top3ConcentrationPct ?? 0,
-      riskScore: bs.riskMetrics?.riskScore ?? 0,
-      openOrdersCount: bs.openOrdersCount ?? 0,
-      overExposed: (bs.portfolioHealth?.overExposedAssets || []).map((asset) => {
-        const found = (bs.assets || []).find((a) => a.asset === asset);
-        return { asset, weight: found?.weightPct ?? 0 };
-      }),
-    };
-  }, [binanceSnap, totalCryptoUSD]);
+const riskData = useMemo(() => {
+  const snapshot = binanceSnap?.snapshot || {};
 
+  return {
+    totalSpotUSD: totalCryptoUSD,
+
+    reservedCapital:
+      snapshot.orders?.spot
+        ?.reservedCapitalUSD ?? 0,
+
+    hhi:
+      snapshot.portfolioHealth?.hhi ?? 0,
+
+    top3Concentration:
+      snapshot.portfolioHealth
+        ?.top3ConcentrationPct ?? 0,
+
+    effectiveAssetCount:
+      snapshot.portfolioHealth
+        ?.effectiveAssetCount ?? 0,
+
+    futuresGrossNotionalUSD:
+      snapshot.totals
+        ?.futuresGrossNotionalUSD ?? 0,
+
+    openOrdersCount:
+      snapshot.orders?.spot?.count ?? 0,
+
+    overExposed: [],
+  };
+}, [binanceSnap, totalCryptoUSD]);
   const pieData = useMemo(
     () =>
       [
@@ -882,7 +918,9 @@ const processQuantfuryPdf = useCallback(
     totalManualUSD,
     totalVolatileUSD,
     totalETFUSD,
-    totalValue,
+    totalValue: totalValueBOB,
+    totalValueUSD,
+totalValueBOB,
     totalPnl,
     riskData,
     pieData,

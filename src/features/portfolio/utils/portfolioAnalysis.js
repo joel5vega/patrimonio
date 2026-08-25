@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 // portfolioAnalysis.js
 // Motor principal de análisis del portfolio
-//
+// /src/features/portfolio/utils/portfolioAnalysis.js
 // Estrategia:
 // - Rebalanceo mediante nuevas aportaciones.
 // - Máximo 2 oportunidades mensuales.

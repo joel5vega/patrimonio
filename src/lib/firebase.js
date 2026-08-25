@@ -49,22 +49,75 @@ export const getLatestBinanceSnapshot = async () => {
 
 
 // ─── getSnapshotHistory ─────────────────────────────────────
-export const getSnapshotHistory = async (n = 30) => {
+export const getSnapshotHistory = async (
+  n = 30,
+) => {
   const q = query(
-    collection(db, 'dailyAccountSnapshots'),
-    where('accountId', '==', 'binance_portfolio'),
-    orderBy('statementDate', 'desc'),
-    limit(n)
+    collection(
+      db,
+      "dailyAccountSnapshots",
+    ),
+
+    where(
+      "accountId",
+      "==",
+      "binanceportfolio",
+    ),
+
+    orderBy(
+      "statementDate",
+      "desc",
+    ),
+
+    limit(n),
   );
+
   const snap = await getDocs(q);
+
   return snap.docs
-    .map((d) => ({
-      date: d.data().statementDate,
-      totalPortfolioUSD: d.data().snapshot?.balancesUSD ?? 0,
-    }))
+    .map((document) => {
+      const data = document.data();
+      const snapshot = data.snapshot || {};
+
+      const spotAndEarnUSD = Number(
+        snapshot.totals
+          ?.spotAndEarnValueUSD ??
+        snapshot.totalPortfolioUSD ??
+        snapshot.balancesUSD ??
+        0,
+      );
+
+      return {
+        id: document.id,
+
+        date:
+          data.statementDate ||
+          snapshot.statementDate ||
+          document.id.slice(0, 10),
+
+        cryptoUSD: spotAndEarnUSD,
+        totalCryptoUSD: spotAndEarnUSD,
+
+        accountValueUSD: Number(
+          snapshot.totals
+            ?.accountValueUSD ?? 0,
+        ),
+
+        spotAndEarnValueUSD: spotAndEarnUSD,
+
+        futuresMarginBalanceUSD: Number(
+          snapshot.totals
+            ?.futuresMarginBalanceUSD ?? 0,
+        ),
+
+        futuresGrossNotionalUSD: Number(
+          snapshot.totals
+            ?.futuresGrossNotionalUSD ?? 0,
+        ),
+      };
+    })
     .reverse();
 };
-
 
 // ─── getAdmiralsSnapshots ──────────────────────────────────
 export const getAdmiralsSnapshots = async () => {

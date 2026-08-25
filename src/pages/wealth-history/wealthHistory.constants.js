@@ -18,8 +18,12 @@ export const FIXED_TYPES = [
   { key: 'etfs', label: 'ETFs', field: 'inversionUSD', color: '#3b82f6', icon: 'chart' },
 ];
 
-export const SPECIAL_TODO = { key: 'todo_full', label: 'Total + ahorro Bs', color: '#22c55e', icon: 'layers' };
-
+export const SPECIAL_TODO = {
+  key: "todo_full",
+  label: "Patrimonio total",
+  color: "#22c55e",
+  icon: "layers",
+};
 export const ROLE_TYPES = [
   { key: 'role_trading', label: 'Trading', color: '#ec4899', icon: 'activity' },
   { key: 'role_yield', label: 'Yield', color: '#a855f7', icon: 'percent' },
