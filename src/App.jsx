@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Budget from './pages/Budget';
 import QuantDashboard from './pages/QuantDashboard'
 import TradingHistory from './pages/TradingHistory';
+import BackendPortfolioSummary from './pages/BackendPortfolioSummary';
 function AppRoutes() {
   const { user, loading } = useAuth();
 
@@ -24,6 +25,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Dashboard />} />
+        {/* <Route index element={<BackendPortfolioSummary />} /> */}
+
         <Route path="portfolio" element={<Portfolio />} />
         <Route path="transactions" element={<Transactions />} />
         <Route path="analytics" element={<Analytics />} />

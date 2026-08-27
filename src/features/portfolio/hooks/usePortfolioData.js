@@ -1,26 +1,5 @@
-// hooks/usePortfolioData.js
-
-import { useMemo } from 'react';
-import {
-  buildPortfolioV3,
-  buildSectorAnalysis,
-  buildTargetAnalysis,
-} from '../utils/portfolioAnalysis';
-
-import {INVESTOR_PROFILES,
-  PORTFOLIO_TARGETS,} from '../constants/portfolioRules.js'
-import {
-  buildPortfolioAIReport,
-  buildAllocationAnalysis,
-} from '../utils/portfolioAIReport';
-import {
-  buildGroupDefinitions,
-  buildSourceExposure,
-  selectPatrimonyAssets,
-  selectReserveAssets,
-} from '../utils/portfolioSelectors';
-import { usePortfolioFilters } from './usePortfolioFilters';
-import { useETFExposure } from './useETFExposure';
+import { useMemo } from "react";
+import { usePortfolioFilters } from "./usePortfolioFilters";
 
 const EMPTY_PLAN = {
   monthly: [],
@@ -29,254 +8,342 @@ const EMPTY_PLAN = {
   monthlyUSD: 0,
   deployableCash: 0,
   remainingCash: 0,
+  opportunityCount: 0,
 };
 
-function safeObject(value) {
-  return value && typeof value === 'object' ? value : {};
+function safeNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
 }
 
-function buildAllocationCompatibility(analysis, targets) {
-  const portfolio = analysis?.portfolio || {};
-  const byRole = portfolio.byRole || {};
-  const byAssetClass = portfolio.byAssetClass || {};
-  const bySubClass = portfolio.bySubClass || {};
-  const assets = analysis?.assets || [];
+function getAssetRole(asset) {
+  return (
+    asset?.classification?.role ??
+    asset?.role ??
+    "unclassified"
+  );
+}
 
-  const targetAnalysis = buildTargetAnalysis(byRole, targets);
-
-  const rows = targetAnalysis.map((targetData) => ({
-    ...targetData,
-    key: targetData.role,
-    label: targetData.role,
-    current: Number(byRole[targetData.role] || 0),
-    currentPct: Number(byRole[targetData.role] || 0),
-    target: Number(targets?.[targetData.role] || 0),
-    difference: targetData.differencePct,
-    assets: assets.filter((asset) => asset.classification?.role === targetData.role),
-  }));
-
+function normalizeAsset(asset = {}, index = 0) {
   return {
-    rows,
-    roles: rows,
-    roleRows: rows,
-    data: rows,
-    byRole,
-    byAssetClass,
-    bySubClass,
-    sectors: analysis?.sectorAnalysis?.sectors || [],
+    ...asset,
+    id:
+      asset.id ??
+      `${asset.source ?? asset.groupKey ?? "asset"}-${
+        asset.symbol ?? asset.name ?? index
+      }`,
+    name: asset.name ?? asset.symbol ?? "Activo",
+    symbol: asset.symbol ?? asset.name ?? "—",
+    valueUSD: safeNumber(asset.valueUSD),
+    weightPct: safeNumber(
+      asset.weightPct ?? asset.weight,
+    ),
+    role: getAssetRole(asset),
+    source:
+      asset.source ?? asset.groupKey ?? "unknown",
   };
 }
 
-function buildDecisionSupportCompatibility(analysis, aiReport) {
-  const ai = safeObject(aiReport?.decisionSupport);
-  const alertsObj = analysis?.alerts || {};
-  const plan = analysis?.rebalancePlan || EMPTY_PLAN;
+function normalizeActions(actions, maxActions) {
+  if (!Array.isArray(actions)) return [];
 
-  const ALERT_TITLES = {
-    lowCash: 'Liquidez Baja',
-    overCash: 'Exceso de Liquidez',
-    underCore: 'Baja Exposición Core',
-    overSpeculative: 'Exceso Especulativo',
-    excessTrading: 'Exceso en Trading',
-    highRisk: 'Riesgo Elevado',
-    lowDiversification: 'Baja Diversificación',
-    noPrivateEquity: 'Sin Private Equity',
-  };
+  return actions
+    .filter(Boolean)
+    .slice(0, maxActions);
+}
 
-  const alertItems = Object.entries(alertsObj)
-    .filter(([, active]) => Boolean(active))
-    .map(([key]) => {
-      const isCritical = ['lowCash', 'underCore', 'overSpeculative', 'highRisk'].includes(key);
-      return {
-        key,
-        title: ALERT_TITLES[key] || key,
-        category: 'Alerta de Portafolio',
-        severity: isCritical ? 'critical' : 'warning',
-      };
-    });
+function normalizeDecisionSupport(analysis, portfolioV3) {
+  const decisionSupport =
+    analysis?.aiReport?.decisionSupport ?? {};
+
+  const backendPlan =
+    decisionSupport.recommendations ??
+    portfolioV3?.rebalancePlan ??
+    analysis?.rebalancePlan ??
+    EMPTY_PLAN;
+
+  const policy =
+    backendPlan.transactionPolicy ??
+    decisionSupport.transactionPolicy ??
+    {};
+
+  const maxActions = Math.max(
+    1,
+    safeNumber(
+      policy.maxMonthlyOpportunities,
+      2,
+    ),
+  );
+
+  const monthly = normalizeActions(
+    backendPlan.monthly,
+    maxActions,
+  );
+
+  const lumpSum = normalizeActions(
+    backendPlan.lumpSum,
+    maxActions,
+  );
+
+  const backendActions = normalizeActions(
+    backendPlan.actions,
+    maxActions,
+  );
+
+  const actions = backendActions.length
+    ? backendActions
+    : monthly.length
+      ? monthly
+      : lumpSum;
 
   return {
-    ...ai,
-    alerts: {
-      items: alertItems,
-    },
+    ...decisionSupport,
     recommendations: {
-      monthly: plan.monthly || [],
-      lumpSum: plan.lumpSum || [],
+      ...backendPlan,
+      monthly,
+      lumpSum,
+      actions,
+      opportunityCount: actions.length,
+      transactionPolicy: {
+        ...policy,
+        maxMonthlyOpportunities: maxActions,
+      },
     },
-    rebalancePlan: plan,
+    rebalancePlan: {
+      ...backendPlan,
+      monthly,
+      lumpSum,
+      actions,
+      opportunityCount: actions.length,
+      transactionPolicy: {
+        ...policy,
+        maxMonthlyOpportunities: maxActions,
+      },
+    },
   };
 }
 
 export function usePortfolioData({
-  cryptoAssets = [],
-  inversionPositions = [],
-  manualAssets = [],
-  bobRate = null,
   loading = false,
+  todayPortfolioAnalysis = null,
   todayPortfolioV3 = null,
-  investorProfile = 'moderado',
-  customTargets = null,
 } = {}) {
-  const allAssets = useMemo(
-    () => [...cryptoAssets, ...inversionPositions, ...manualAssets],
-    [cryptoAssets, inversionPositions, manualAssets]
-  );
+  const analysis = todayPortfolioAnalysis ?? null;
 
-  // Obtener exposición de ETFs (con fallback a datos hardcodeados)
-  const { 
-    data: etfExposure, 
-    loading: etfLoading, 
-    error: etfError,
-    lastUpdated: etfLastUpdated,
-  } = useETFExposure(allAssets);
+  const portfolioV3 =
+    analysis?.portfolioV3 ??
+    todayPortfolioV3 ??
+    null;
 
-  const totalUSD = useMemo(
-    () => allAssets.reduce((sum, asset) => sum + Number(asset.valueUSD || 0), 0),
-    [allAssets]
-  );
+  const assets = useMemo(() => {
+    const source = Array.isArray(
+      portfolioV3?.assets,
+    )
+      ? portfolioV3.assets
+      : [];
 
-  const activeTargets = useMemo(() => {
-    if (investorProfile === 'personalizado') {
-      return customTargets || PORTFOLIO_TARGETS;
-    }
-    return INVESTOR_PROFILES[investorProfile]?.targets || PORTFOLIO_TARGETS;
-  }, [investorProfile, customTargets]);
+    return source.map(normalizeAsset);
+  }, [portfolioV3]);
 
- const analysis = useMemo(
-  () =>
-    buildPortfolioV3({
-      allAssets,
-      totalUSD,
-      monthlyUSD: bobRate ? Math.round(2000 / bobRate) : 173,
-      customTargets: activeTargets,
-      etfExposure,
-    }),
-  [
-    allAssets,
-    totalUSD,
-    bobRate,
-    activeTargets,
-    etfExposure,
-  ],
-);
+  const filters = usePortfolioFilters(assets);
+  const totals = portfolioV3?.totals ?? {};
 
-  const legacyAllocation = useMemo(() => {
-    try {
-      return buildAllocationAnalysis(analysis) || {};
-    } catch {
-      return {};
-    }
-  }, [analysis]);
-
-  const allocation = useMemo(
-    () => ({
-      ...legacyAllocation,
-      ...buildAllocationCompatibility(analysis, activeTargets),
-    }),
-    [analysis, activeTargets, legacyAllocation]
-  );
-
-  // Análisis de sectores con look-through de ETFs
-  const sectorAnalysis = useMemo(
-    () => analysis?.sectorAnalysis || buildSectorAnalysis(analysis?.assets || [], analysis?.totals?.investableUSD || 0),
-    [analysis]
-  );
-
-const aiReport = useMemo(() => {
-  try {
-    return buildPortfolioAIReport({
-      analysis,
-      investorProfile,
-      bobRate,
-      sources: ['binance', 'admirals', 'quantfury', 'manual'],
-    });
-  } catch (error) {
-    console.error(
-      '[usePortfolioData] Error construyendo buildPortfolioAIReport:',
-      error,
-    );
-
-    return {
-      schema: {
-        name: 'personal_portfolio_analysis',
-        version: '5.2',
-        language: 'es',
-        currency: 'USD',
-      },
-      snapshot: {
-        generatedAt: new Date().toISOString(),
-      },
-      financialState: {},
-      riskAssessment: {},
-      decisionSupport: {},
-      sectorAnalysis: {
-        sectors: [],
-        dominantSector: null,
-        totalSectorUSD: 0,
-      },
-      assets: [],
-      exportError: {
-        message: error instanceof Error
-          ? error.message
-          : String(error),
-      },
-    };
-  }
-}, [analysis, investorProfile, bobRate]);
-
-  const analysisAssets = analysis?.assets || [];
-  const filters = usePortfolioFilters(analysisAssets);
-
-  const excludedAssets = useMemo(
-    () => ({
-      reserves: selectReserveAssets(analysisAssets),
-      patrimony: selectPatrimonyAssets(analysisAssets),
-    }),
-    [analysisAssets]
-  );
-
-  const decisionSupport = useMemo(
-    () => buildDecisionSupportCompatibility(analysis, aiReport),
-    [analysis, aiReport]
-  );
-
-  const generatedAt = aiReport?.snapshot?.generatedAt || analysis?.generatedAt || new Date().toISOString();
-  const summary = aiReport?.financialState || {
-    totalUSD: analysis?.totals?.totalUSD || 0,
-    investableUSD: analysis?.totals?.investableUSD || 0,
-    reserveUSD: analysis?.totals?.reserveUSD || 0,
-    patrimonyUSD: analysis?.totals?.patrimonyUSD || 0,
+  const summary = {
+    totalUSD: safeNumber(totals.totalUSD),
+    investableUSD: safeNumber(
+      totals.investableUSD,
+    ),
+    reserveUSD: safeNumber(totals.reserveUSD),
+    patrimonyUSD: safeNumber(
+      totals.patrimonyUSD,
+    ),
   };
-  const risk = aiReport?.riskAssessment || analysis?.risk || {};
-  const heatmapAssets = filters?.investableAssets || [];
-  const filteredAssets = filters?.filteredAssets || heatmapAssets;
+
+  const allocationAnalysis =
+    analysis?.aiReport?.allocationAnalysis ??
+    portfolioV3?.allocationAnalysis ??
+    {};
+
+  const byRole =
+    allocationAnalysis.byRole ??
+    portfolioV3?.portfolio?.byRole ??
+    {};
+
+  const byRoleUSD =
+    analysis?.aiReport?.totalsByRoleUSD ??
+    portfolioV3?.portfolio?.byRoleUSD ??
+    portfolioV3?.portfolio?.totalsByRoleUSD ??
+    {};
+
+  const byAssetClass =
+    allocationAnalysis.byAssetClass ??
+    portfolioV3?.portfolio?.byAssetClass ??
+    {};
+
+  const bySubClass =
+    allocationAnalysis.bySubClass ??
+    portfolioV3?.portfolio?.bySubClass ??
+    {};
+
+  const targets =
+    allocationAnalysis.targets ??
+    analysis?.aiReport?.targets ??
+    portfolioV3?.activeTargets ??
+    portfolioV3?.targets ??
+    {};
+
+  const sourceRows =
+    Array.isArray(allocationAnalysis.roleRows)
+      ? allocationAnalysis.roleRows
+      : Array.isArray(allocationAnalysis.rows)
+        ? allocationAnalysis.rows
+        : [];
+
+  const allocationRows = sourceRows.length
+    ? sourceRows.map((row) => {
+        const role = row.role ?? row.key;
+
+        return {
+          ...row,
+          key: role,
+          role,
+          label: row.label ?? role,
+          current: safeNumber(
+            row.current ?? row.currentPct,
+          ),
+          currentPct: safeNumber(
+            row.currentPct ?? row.current,
+          ),
+          currentUSD: safeNumber(
+            byRoleUSD[role],
+          ),
+          target: safeNumber(
+            row.target ?? row.targetPct ?? targets[role],
+            null,
+          ),
+          targetPct: safeNumber(
+            row.targetPct ?? row.target ?? targets[role],
+            null,
+          ),
+          difference: safeNumber(
+            row.difference ?? row.differencePct,
+            null,
+          ),
+          differencePct: safeNumber(
+            row.differencePct ?? row.difference,
+            null,
+          ),
+          assets: assets.filter(
+            (asset) => asset.role === role,
+          ),
+        };
+      })
+    : Object.entries(byRole).map(
+        ([role, value]) => ({
+          key: role,
+          role,
+          label: role,
+          current: safeNumber(value),
+          currentPct: safeNumber(value),
+          currentUSD: safeNumber(
+            byRoleUSD[role],
+          ),
+          target: safeNumber(
+            targets[role],
+            null,
+          ),
+          targetPct: safeNumber(
+            targets[role],
+            null,
+          ),
+          difference: null,
+          differencePct: null,
+          status: "unknown",
+          action: null,
+          assets: assets.filter(
+            (asset) => asset.role === role,
+          ),
+        }),
+      );
+
+  const sectorAnalysis =
+    analysis?.aiReport?.sectorAnalysis ??
+    portfolioV3?.sectorAnalysis ??
+    analysis?.sectorAnalysis ??
+    { sectors: [] };
+
+  const decisionSupport = normalizeDecisionSupport(
+    analysis,
+    portfolioV3,
+  );
+
+  const fx = analysis?.provenance?.fx ?? {};
+  const bobRate = safeNumber(
+    fx.rateBOBPerUSD ??
+      analysis?.aiReport?.snapshot?.bobRate,
+    null,
+  );
 
   return {
-    loading: loading || etfLoading,
-    etfError, // <-- Error de carga de ETFs (si hay)
-    etfLastUpdated, // <-- Cuándo se actualizaron los datos de ETFs
-    etfExposure,
-  etfLastUpdated,
+    loading,
     analysis,
-    aiReport,
-    profile: investorProfile,
-    generatedAt,
+    portfolioV3,
+    aiReport: analysis?.aiReport ?? null,
+    historicalAnalysis:
+      analysis?.historicalAnalysis ?? null,
+    dataQuality:
+      analysis?.dataQuality ?? null,
+    provenance:
+      analysis?.provenance ?? null,
+    operationalRisk:
+      analysis?.operationalRisk ?? null,
+    generatedAt:
+      analysis?.asOfDate ??
+      analysis?.date ??
+      analysis?.aiReport?.snapshot?.asOfDate ??
+      null,
     bobRate,
+    fx: {
+      rateBOBPerUSD: bobRate,
+      rateUSDPerBOB:
+        bobRate > 0 ? 1 / bobRate : null,
+      source: fx.source ?? null,
+      status: fx.status ?? "unknown",
+      providerUpdatedAt:
+        fx.providerUpdatedAt ?? null,
+    },
     summary,
-    risk,
-    allocation,
-    targets: activeTargets,
+    risk:
+      analysis?.aiReport?.riskAssessment ??
+      portfolioV3?.risk ??
+      {},
+    allocation: {
+      rows: allocationRows,
+      roles: allocationRows,
+      roleRows: allocationRows,
+      data: allocationRows,
+      byRole,
+      byRoleUSD,
+      byAssetClass,
+      bySubClass,
+      targets,
+      sectors: sectorAnalysis.sectors ?? [],
+    },
+    targets,
     decisionSupport,
-    rebalance: analysis?.rebalancePlan || EMPTY_PLAN,
+    rebalance: decisionSupport.rebalancePlan,
     sectorAnalysis,
-    groups: buildGroupDefinitions(heatmapAssets),
-    heatmapAssets,
-    filteredAssets,
-    excludedAssets,
-    reserves: excludedAssets.reserves,
-    patrimony: excludedAssets.patrimony,
-    exposureBySource: buildSourceExposure(analysisAssets),
+    heatmapAssets:
+      filters?.investableAssets ?? assets,
+    filteredAssets:
+      filters?.filteredAssets ?? assets,
+    assets,
     filters,
+    reserves: assets.filter(
+      (asset) => asset.role === "reserve",
+    ),
+    patrimony: assets.filter(
+      (asset) => asset.role === "patrimony",
+    ),
   };
 }

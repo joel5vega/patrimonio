@@ -120,8 +120,11 @@ export const AppProvider = ({ children }) => {
   const [tradingHistory, setTradingHistory] = useState([]);
   const [quantfuryAnalysis, setQuantfuryAnalysis] = useState(null);
   const [quantfuryLoading, setQuantfuryLoading] = useState(false);
-const [todayPortfolioAI, setTodayPortfolioAI] = useState(null);
-
+  const [todayPortfolioAI, setTodayPortfolioAI] = useState(null);
+  const [
+  todayPortfolioAnalysis,
+  setTodayPortfolioAnalysis,
+] = useState(null);
   const totalsRef = useRef({ cryptoUSD: 0, inversionUSD: 0 });
   const migratedRef = useRef(false);
   const savedTodayRef = useRef(false);
@@ -552,33 +555,51 @@ const riskData = useMemo(() => {
     );
   }, [user]);
 
-  const refreshPortfolioAnalysis = useCallback(async () => {
-    
+  const refreshPortfolioAnalysis = useCallback(
+  async () => {
     if (!user?.uid) {
+      setTodayPortfolioAnalysis(null);
       setTodayPortfolioV3(null);
       setTodayPortfolioMeta(null);
       return;
     }
 
     try {
-      const latestAnalysis = await getLatestPortfolioAnalysis(user.uid);
-      setTodayPortfolioV3(latestAnalysis?.portfolioV3 ?? null);
-      setTodayPortfolioMeta(
-        latestAnalysis
-          ? {
-              id: latestAnalysis.id,
-              date: latestAnalysis.date ?? latestAnalysis.id,
-              status: latestAnalysis.status ?? null,
-              source: 'cloud-function',
-            }
-          : null
+      const analysis =
+        await getLatestPortfolioAnalysis(user.uid);
+
+      setTodayPortfolioAnalysis(analysis);
+
+      setTodayPortfolioV3(
+        analysis?.portfolioV3 ?? null,
       );
-    } catch (e) {
-      console.warn('getLatestPortfolioAnalysis no disponible o falló:', e?.message || e);
+
+      setTodayPortfolioMeta(
+        analysis
+          ? {
+              id: analysis.id,
+              date:
+                analysis.asOfDate ??
+                analysis.date ??
+                analysis.id,
+              status: analysis.status ?? null,
+              source: "cloud-function",
+            }
+          : null,
+      );
+    } catch (error) {
+      console.warn(
+        "No se pudo cargar el análisis backend:",
+        error,
+      );
+
+      setTodayPortfolioAnalysis(null);
       setTodayPortfolioV3(null);
       setTodayPortfolioMeta(null);
     }
-  }, [user]);
+  },
+  [user?.uid],
+);
 
   // ─── Quantfury: procesar PDF ───────────────────────────────────────────────
 const processQuantfuryPdf = useCallback(
@@ -928,6 +949,9 @@ totalValueBOB,
     transactions,
     todayPortfolioV3,
     todayPortfolioMeta,
+    todayPortfolioAnalysis,
+todayPortfolioV3,
+todayPortfolioMeta,
     addAsset,
     removeAsset,
     updateAsset,

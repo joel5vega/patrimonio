@@ -4,7 +4,6 @@ import { usePortfolioData } from '../features/portfolio/hooks/usePortfolioData';
 import { usePortfolioExport } from '../features/portfolio/hooks/usePortfolioExport';
 import PortfolioHeader from '../features/portfolio/components/PortfolioHeader';
 import PortfolioProfileSelector from '../features/portfolio/components/PortfolioProfileSelector';
-import PortfolioSummary from '../features/portfolio/components/PortfolioSummary';
 import PortfolioHeatmap from '../features/portfolio/components/PortfolioHeatmap';
 import PortfolioAllocation from '../features/portfolio/components/PortfolioAllocation';
 import PortfolioDecisionSupport from '../features/portfolio/components/PortfolioDecisionSupport';
@@ -15,8 +14,20 @@ import '../features/portfolio/styles/portfolio.css';
 
 export default function Portfolio() {
   const app = useApp();
+
   const [investorProfile, setInvestorProfile] = useState('moderado');
-  const portfolio = usePortfolioData({ ...app, investorProfile });
+  // const portfolio = usePortfolioData({ ...app, investorProfile });
+  const {
+  loading,
+  todayPortfolioAnalysis,
+  todayPortfolioV3,
+} = useApp();
+
+const portfolio = usePortfolioData({
+  loading,
+  todayPortfolioAnalysis,
+  todayPortfolioV3,
+});
   const exporter = usePortfolioExport(portfolio.aiReport);
 
   if (portfolio.loading) {
@@ -57,10 +68,7 @@ export default function Portfolio() {
         sectorAnalysis={portfolio.sectorAnalysis}
       />
 
-      <PortfolioSummary
-        summary={portfolio.summary}
-        risk={portfolio.risk}
-      />
+      
 
       <PortfolioDecisionSupport
         decisionSupport={portfolio.decisionSupport}
