@@ -569,7 +569,7 @@ const riskData = useMemo(() => {
         await getLatestPortfolioAnalysis(user.uid);
 
       setTodayPortfolioAnalysis(analysis);
-
+      
       setTodayPortfolioV3(
         analysis?.portfolioV3 ?? null,
       );

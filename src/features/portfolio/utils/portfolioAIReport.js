@@ -4,17 +4,17 @@ import {
   buildRoleTotals,
   selectPatrimonyAssets,
   selectReserveAssets,
-} from './portfolioSelectors';
+} from './portfolioSelectors.js';
 
 import {
   round,
   toNumber,
-} from './portfolioFormatters';
+} from './portfolioFormatters.js';
 
 import {
   buildTargetAnalysis,
  
-} from '../utils/portfolioAnalysis';
+} from './portfolioAnalysis.js';
 import { INVESTOR_PROFILES, PORTFOLIO_TARGETS,
   DEFAULT_INVESTOR_PROFILE,INCLUDED_ROLES,EXCLUDED_ROLES,REBALANCING_METHOD,INVESTOR_HORIZON,INVESTOR_OBJECTIVE,RECONCILIATION_TOLERANCE_USD
 ,MAX_RECOMMENDATIONS,TRANSACTION_POLICY,rolePriority } from '../constants/portfolioRules.js'
