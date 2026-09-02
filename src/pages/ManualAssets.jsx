@@ -1,738 +1,1219 @@
-import { useRef, useState, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import {useMemo, useRef, useState} from 'react';
 import {
-  Plus, Trash2, Pencil, Check, X,
-  Wallet, Upload, FileSpreadsheet,
-  TrendingUp, Bitcoin, BarChart2,
-  ChevronDown, ChevronRight, FileText
+  BarChart2,
+  Bitcoin,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  FileSpreadsheet,
+  FileText,
+  Pencil,
+  Plus,
+  Trash2,
+  TrendingUp,
+  Wallet,
+  X,
 } from 'lucide-react';
 import Papa from 'papaparse';
+import {useApp} from '../context/AppContext';
+import {useQuantfury} from '../hooks/useQuantfury';
+import './ManualAssets.css';
 
-const today = new Date().toISOString().split('T')[0];
-const EMPTY = { name: '', type: 'manual', currency: 'USD', amount: '', note: '', since: today };
+const getTodayLocal = () => {
+  const date = new Date();
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+};
+
+const TYPE_CONFIG = {
+  stock: {
+    label: 'Acciones / ETFs',
+    short: 'STOCK',
+    color: '#7dd3fc',
+    icon: TrendingUp,
+  },
+  crypto: {
+    label: 'Criptomonedas',
+    short: 'CRYPTO',
+    color: '#fcd34d',
+    icon: Bitcoin,
+  },
+  future: {
+    label: 'Futuros',
+    short: 'FUTURO',
+    color: '#c4b5fd',
+    icon: BarChart2,
+  },
+  manual: {
+    label: 'Manual',
+    short: 'MANUAL',
+    color: '#cbd5e1',
+    icon: Wallet,
+  },
+};
+
+const TRADING_TYPES = ['stock', 'crypto', 'future'];
+const TYPE_ORDER = ['stock', 'crypto', 'future'];
+const CURRENCIES = ['USD', 'BOB'];
+
+const EMPTY_ASSET = () => ({
+  name: '',
+  type: 'manual',
+  currency: 'USD',
+  amount: '',
+  note: '',
+  since: getTodayLocal(),
+});
 
 const normalizeCurrency = (value) => {
-  const v = String(value || '').trim().toUpperCase();
-  if (v === 'USD' || v === '$') return 'USD';
-  if (['BOB', 'BS', 'BOLIVIANOS', 'BOLIVIANO'].includes(v)) return 'BOB';
+  const normalized = String(value ?? '')
+    .trim()
+    .toUpperCase();
+
+  if (normalized === 'USD' || normalized === '$') {
+    return 'USD';
+  }
+
+  if (
+    ['BOB', 'BS', 'BOLIVIANO', 'BOLIVIANOS']
+      .includes(normalized)
+  ) {
+    return 'BOB';
+  }
+
   return null;
 };
 
 const parseAmount = (value) => {
-  if (value == null) return NaN;
-  return parseFloat(String(value).replace(/,/g, '').trim());
+  if (value === null || value === undefined || value === '') {
+    return Number.NaN;
+  }
+
+  return Number.parseFloat(
+    String(value)
+      .replace(/,/g, '')
+      .trim(),
+  );
 };
 
-const toUSD = (a, bobRate) =>
-  a.currency === 'BOB' ? a.amount / bobRate : a.amount;
+const parseCsvDate = (value) => {
+  const text = String(value ?? '').trim();
 
-// ─── Configuración de tipos ──────────────────────────────────────────────────
+  if (!text) {
+    return getTodayLocal();
+  }
 
-const TYPE_CONFIG = {
-  stock:  { label: 'Acciones / ETFs', short: 'STOCK',  color: 'text-sky-300',    bar: 'bg-sky-400',    dot: 'bg-sky-400',    border: 'border-sky-400/20',  bg: 'bg-sky-500/10',    icon: TrendingUp },
-  crypto: { label: 'Criptomonedas',   short: 'CRYPTO', color: 'text-amber-300',  bar: 'bg-amber-400',  dot: 'bg-amber-400',  border: 'border-amber-400/20',bg: 'bg-amber-500/10',  icon: Bitcoin    },
-  future: { label: 'Futuros',         short: 'FUTURO', color: 'text-violet-300', bar: 'bg-violet-400', dot: 'bg-violet-400', border: 'border-violet-400/20',bg: 'bg-violet-500/10', icon: BarChart2  },
-  manual: { label: 'Manual',          short: 'MANUAL', color: 'text-white/50',   bar: 'bg-white/30',   dot: 'bg-white/30',   border: 'border-white/10',    bg: 'bg-white/5',       icon: Wallet     },
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    return text;
+  }
+
+  const match = text.match(
+    /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/,
+  );
+
+  if (match) {
+    const [, day, month, year] = match;
+
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  return getTodayLocal();
 };
 
-// ─── Badge de tipo ──────────────────────────────────────────────────────────
+const isQuantfuryAsset = (asset) => {
+  const note = String(asset?.note || '').toLowerCase();
 
-const TypeBadge = ({ type }) => {
-  const cfg = TYPE_CONFIG[String(type || 'manual').toLowerCase()] ?? TYPE_CONFIG.manual;
   return (
-    <span className={`inline-flex items-center text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
-      {cfg.short}
+    asset?.source === 'quantfury' ||
+    note.includes('quantfury')
+  );
+};
+
+const toUSD = (asset, bobRate) => {
+  const amount = Number(asset.amount ?? 0);
+
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+
+  if (asset.currency === 'BOB') {
+    return bobRate > 0
+      ? amount / bobRate
+      : 0;
+  }
+
+  return amount;
+};
+
+const formatMoney = (amount, currency = 'USD') => {
+  const value = Number(amount ?? 0);
+
+  return `${currency === 'BOB' ? 'Bs' : '$'} ${value.toLocaleString(
+    'es-BO',
+    {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    },
+  )}`;
+};
+
+function TypeBadge({type}) {
+  const config = TYPE_CONFIG[type] ?? TYPE_CONFIG.manual;
+
+  return (
+    <span
+      className="manual-type-badge"
+      style={{
+        color: config.color,
+      }}
+    >
+      {config.short}
     </span>
   );
-};
+}
 
-// ─── Barra de progreso ──────────────────────────────────────────────────────
-
-const ProgressBar = ({ pct, colorClass }) => (
-  <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+function TypeSelector({value, onChange}) {
+  return (
     <div
-      className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
-      style={{ width: `${Math.min(pct, 100)}%` }}
-    />
-  </div>
-);
+      className="manual-type-tabs"
+      role="tablist"
+      aria-label="Tipo de activo"
+    >
+      {Object.keys(TYPE_CONFIG).map((type) => (
+        <button
+          key={type}
+          type="button"
+          role="tab"
+          aria-selected={value === type}
+          className={value === type ? 'is-active' : ''}
+          onClick={() => onChange(type)}
+        >
+          {TYPE_CONFIG[type].short}
+        </button>
+      ))}
+    </div>
+  );
+}
 
-// ─── Selector de tipo ───────────────────────────────────────────────────────
-
-const TypeSelector = ({ value, onChange }) => (
-  <div className="flex rounded-xl overflow-hidden border border-white/10">
-    {['manual', 'stock', 'crypto', 'future'].map((t) => (
-      <button
-        key={t}
-        type="button"
-        onClick={() => onChange(t)}
-        className={`flex-1 py-2 text-[10px] font-bold uppercase transition-all ${
-          value === t ? 'bg-brand-teal text-black' : 'text-white/40 hover:text-white'
-        }`}
-      >
-        {t}
-      </button>
-    ))}
-  </div>
-);
-
-// ─── Campo de fecha ─────────────────────────────────────────────────────────
-
-const DateField = ({ value, onChange }) => (
-  <div className="space-y-1">
-    <label className="text-[10px] text-white/30 uppercase tracking-wider pl-1">
-      Fecha de adquisición
-    </label>
-    <input
-      type="date"
-      value={value}
-      max={today}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-teal text-white"
-    />
-  </div>
-);
-
-// ─── Fila de activo individual ───────────────────────────────────────────────
-
-const AssetRow = ({ a, pct, bobRate, onEdit, onRemove }) => {
-  const cfg = TYPE_CONFIG[String(a.type || 'manual').toLowerCase()] ?? TYPE_CONFIG.manual;
+function CurrencyToggle({value, onChange}) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-xl hover:bg-white/3 transition-colors group">
-      {/* Dot + nombre */}
-      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="font-semibold text-sm truncate">{a.name}</p>
-            <TypeBadge type={a.type} />
-          </div>
-          {(a.since || a.note) && (
-            <p className="text-[10px] text-white/25 truncate">
-              {a.since ? `desde ${a.since}` : ''}
-              {a.note ? ` · ${a.note}` : ''}
-            </p>
+    <div
+      className="manual-currency-toggle"
+      role="group"
+      aria-label="Moneda"
+    >
+      {CURRENCIES.map((currency) => (
+        <button
+          key={currency}
+          type="button"
+          className={
+            value === currency
+              ? 'is-active'
+              : ''
+          }
+          onClick={() => onChange(currency)}
+        >
+          {currency}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function AssetForm({
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  submitLabel,
+  bobRate,
+}) {
+  const update = (field, nextValue) => {
+    onChange((previous) => ({
+      ...previous,
+      [field]: nextValue,
+    }));
+  };
+
+  const amount = parseAmount(value.amount);
+
+  const preview = Number.isFinite(amount) && amount >= 0
+    ? value.currency === 'BOB'
+      ? `≈ $ ${(amount / bobRate).toFixed(2)} USD`
+      : `≈ Bs ${(amount * bobRate).toFixed(2)}`
+    : '';
+
+  return (
+    <form
+      className="manual-form"
+      onSubmit={onSubmit}
+    >
+      <label className="manual-field">
+        <span>Nombre del activo</span>
+
+        <input
+          type="text"
+          value={value.name}
+          onChange={(event) => {
+            update('name', event.target.value);
+          }}
+          placeholder="Ej. Caja de ahorros"
+          required
+        />
+      </label>
+
+      <div className="manual-field">
+        <span>Tipo de activo</span>
+
+        <TypeSelector
+          value={value.type}
+          onChange={(type) => {
+            update('type', type);
+          }}
+        />
+      </div>
+
+      <div className="manual-amount-row">
+        <label className="manual-field manual-amount-field">
+          <span>Saldo</span>
+
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={value.amount}
+            onChange={(event) => {
+              update('amount', event.target.value);
+            }}
+            placeholder="0.00"
+            required
+          />
+        </label>
+
+        <div className="manual-field manual-currency-field">
+          <span>Moneda</span>
+
+          <CurrencyToggle
+            value={value.currency}
+            onChange={(currency) => {
+              update('currency', currency);
+            }}
+          />
+        </div>
+      </div>
+
+      {preview && (
+        <p className="manual-preview">
+          {preview}
+        </p>
+      )}
+
+      <label className="manual-field">
+        <span>
+          Nota <small>(opcional)</small>
+        </span>
+
+        <input
+          type="text"
+          value={value.note}
+          onChange={(event) => {
+            update('note', event.target.value);
+          }}
+          placeholder="Descripción o referencia"
+        />
+      </label>
+
+      <label className="manual-field">
+        <span>Fecha de adquisición</span>
+
+        <input
+          type="date"
+          value={value.since || ''}
+          onChange={(event) => {
+            update('since', event.target.value);
+          }}
+          max={getTodayLocal()}
+        />
+      </label>
+
+      <div className="manual-form-actions">
+        {onCancel && (
+          <button
+            type="button"
+            className="manual-button manual-button--secondary"
+            onClick={onCancel}
+          >
+            <X size={16} />
+            Cancelar
+          </button>
+        )}
+
+        <button
+          type="submit"
+          className="manual-button manual-button--primary"
+        >
+          <Check size={16} />
+          {submitLabel}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function AssetRow({
+  asset,
+  bobRate,
+  onEdit,
+  onRemove,
+  readOnly = false,
+}) {
+  const config = TYPE_CONFIG[asset.type] ?? TYPE_CONFIG.manual;
+  const valueUSD = toUSD(asset, bobRate);
+
+  return (
+    <div className="manual-asset-row">
+      <span
+        className="manual-asset-dot"
+        style={{
+          background: config.color,
+        }}
+      />
+
+      <div className="manual-asset-info">
+        <div className="manual-asset-name-line">
+          <strong>{asset.name}</strong>
+
+          <TypeBadge type={asset.type} />
+        </div>
+
+        <small>
+          {asset.since ? `desde ${asset.since}` : ''}
+
+          {asset.note ? ` · ${asset.note}` : ''}
+        </small>
+      </div>
+
+      <div className="manual-asset-values">
+        <strong>
+          {formatMoney(
+            asset.amount,
+            asset.currency,
           )}
-        </div>
+        </strong>
+
+        <small>{formatMoney(valueUSD, 'USD')}</small>
       </div>
 
-      {/* Monto + pct + acciones */}
-      <div className="flex items-center gap-3 shrink-0">
-        <div className="text-right">
-          <p className="font-bold text-sm">
-            {a.currency === 'BOB' ? `Bs ${a.amount.toFixed(2)}` : `$${a.amount.toFixed(2)}`}
-          </p>
-          <p className="text-[10px] text-white/30">
-            {a.currency === 'BOB'
-              ? `≈ $${(a.amount / bobRate).toFixed(2)}`
-              : `≈ Bs ${(a.amount * bobRate).toFixed(2)}`}
-          </p>
-          <p className={`text-[10px] font-bold ${cfg.color}`}>{pct.toFixed(1)}%</p>
-        </div>
-        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={onEdit} className="text-white/30 hover:text-brand-teal transition-colors">
-            <Pencil size={13} />
+      {!readOnly && (
+        <div className="manual-asset-actions">
+          <button
+            type="button"
+            onClick={() => onEdit(asset)}
+            aria-label={`Editar ${asset.name}`}
+          >
+            <Pencil size={15} />
           </button>
-          <button onClick={onRemove} className="text-white/30 hover:text-rose-400 transition-colors">
-            <Trash2 size={13} />
+
+          <button
+            type="button"
+            onClick={() => onRemove(asset)}
+            aria-label={`Eliminar ${asset.name}`}
+          >
+            <Trash2 size={15} />
           </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── Grupo colapsable por tipo ───────────────────────────────────────────────
-
-const TypeGroup = ({ type, assets, groupTotal, portfolioTotal, bobRate, onEdit, onRemove }) => {
-  const [open, setOpen] = useState(true);
-  const cfg = TYPE_CONFIG[type] ?? TYPE_CONFIG.manual;
-  const Icon = cfg.icon;
-  const pct = portfolioTotal > 0 ? (groupTotal / portfolioTotal) * 100 : 0;
-
-  return (
-    <div className="rounded-2xl border border-white/5 overflow-hidden">
-      {/* Cabecera del grupo */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-white/3 hover:bg-white/5 transition-colors"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${cfg.bg} ${cfg.color}`}>
-            <Icon size={13} />
-          </div>
-          <div className="text-left">
-            <p className={`text-xs font-bold ${cfg.color}`}>{cfg.label}</p>
-            <p className="text-[10px] text-white/30">{assets.length} activo{assets.length !== 1 ? 's' : ''}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="font-black text-sm">${groupTotal.toFixed(2)}</p>
-            <p className={`text-[10px] font-bold ${cfg.color}`}>{pct.toFixed(1)}%</p>
-          </div>
-          {open
-            ? <ChevronDown size={14} className="text-white/30" />
-            : <ChevronRight size={14} className="text-white/30" />
-          }
-        </div>
-      </button>
-
-      {/* Barra de progreso */}
-      <div className="px-4 pb-1 bg-white/3">
-        <ProgressBar pct={pct} colorClass={cfg.bar} />
-      </div>
-
-      {/* Lista de activos */}
-      {open && (
-        <div className="divide-y divide-white/3 bg-brand-card px-1">
-          {assets.map((a) => {
-            const usd = toUSD(a, bobRate);
-            const assetPct = portfolioTotal > 0 ? (usd / portfolioTotal) * 100 : 0;
-            return (
-              <AssetRow
-                key={a.id}
-                a={a}
-                pct={assetPct}
-                bobRate={bobRate}
-                onEdit={() => onEdit(a)}
-                onRemove={() => onRemove(a.id)}
-              />
-            );
-          })}
         </div>
       )}
     </div>
   );
-};
+}
 
-// ─── Grupo Quantfury (contenedor maestro colapsable) ─────────────────────────
-
-const QuantfuryGroup = ({ assets, tradingTotal, portfolioTotal, bobRate, onEdit, onRemove }) => {
+function CollapsibleGroup({
+  title,
+  assets,
+  bobRate,
+  total,
+  onEdit,
+  onRemove,
+  accent = '#2dd4bf',
+  readOnly = false,
+}) {
   const [open, setOpen] = useState(true);
-  const pct = portfolioTotal > 0 ? (tradingTotal / portfolioTotal) * 100 : 0;
-
-  // Agrupar por tipo dentro de Quantfury
-  const byType = useMemo(() => {
-    const map = {};
-    for (const a of assets) {
-      const t = String(a.type || 'stock').toLowerCase();
-      if (!map[t]) map[t] = [];
-      map[t].push(a);
-    }
-    return map;
-  }, [assets]);
-
-  const typeOrder = ['stock', 'crypto', 'future'];
+  const config = TYPE_CONFIG[assets[0]?.type] ?? TYPE_CONFIG.manual;
+  const Icon = config.icon;
 
   return (
-    <div className="rounded-2xl border border-brand-teal/20 overflow-hidden">
-      {/* Cabecera Quantfury */}
+    <section className="manual-group">
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3.5 bg-brand-teal/5 hover:bg-brand-teal/8 transition-colors"
+        type="button"
+        className="manual-group__header"
+        onClick={() => {
+          setOpen((current) => !current);
+        }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-brand-teal/15 flex items-center justify-center text-brand-teal">
-            <BarChart2 size={15} />
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-black text-brand-teal">Quantfury</p>
-            <p className="text-[10px] text-white/30">
-              {assets.length} posicion{assets.length !== 1 ? 'es' : ''} · {Object.keys(byType).length} tipo{Object.keys(byType).length !== 1 ? 's' : ''}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="font-black text-sm text-white">${tradingTotal.toFixed(2)}</p>
-            <p className="text-[10px] font-bold text-brand-teal">{pct.toFixed(1)}% del total</p>
-          </div>
-          {open
-            ? <ChevronDown size={14} className="text-white/30" />
-            : <ChevronRight size={14} className="text-white/30" />
-          }
-        </div>
+        <span
+          className="manual-group__icon"
+          style={{
+            color: accent,
+          }}
+        >
+          <Icon size={16} />
+        </span>
+
+        <span className="manual-group__title">
+          <strong>{title}</strong>
+
+          <small>
+            {assets.length}{' '}
+            {assets.length === 1
+              ? 'activo'
+              : 'activos'}
+          </small>
+        </span>
+
+        <span className="manual-group__total">
+          $ {total.toFixed(2)}
+        </span>
+
+        {open
+          ? <ChevronDown size={16} />
+          : <ChevronRight size={16} />}
       </button>
 
-      {/* Barra teal */}
-      <div className="px-4 pb-1 bg-brand-teal/5">
-        <ProgressBar pct={pct} colorClass="bg-brand-teal" />
+      <div className="manual-progress">
+        <span
+          style={{
+            width: '100%',
+            background: accent,
+          }}
+        />
       </div>
 
-      {/* Subgrupos por tipo */}
       {open && (
-        <div className="p-3 space-y-2 bg-brand-card">
-          {typeOrder
-            .filter((t) => byType[t]?.length > 0)
-            .map((t) => {
-              const groupAssets = byType[t];
-              const groupTotal = groupAssets.reduce((s, a) => s + toUSD(a, bobRate), 0);
-              return (
-                <TypeGroup
-                  key={t}
-                  type={t}
-                  assets={groupAssets}
-                  groupTotal={groupTotal}
-                  portfolioTotal={portfolioTotal}
-                  bobRate={bobRate}
-                  onEdit={onEdit}
-                  onRemove={onRemove}
-                />
-              );
-            })}
+        <div className="manual-group__list">
+          {assets.map((asset) => (
+            <AssetRow
+              key={asset.id}
+              asset={asset}
+              bobRate={bobRate}
+              onEdit={onEdit}
+              onRemove={onRemove}
+              readOnly={readOnly}
+            />
+          ))}
         </div>
       )}
+    </section>
+  );
+}
+
+function QuantfuryGroup({assets, bobRate}) {
+  const [open, setOpen] = useState(true);
+
+  const groups = TYPE_ORDER
+    .map((type) => ({
+      type,
+      assets: assets.filter(
+        (asset) => asset.type === type,
+      ),
+    }))
+    .filter((group) => group.assets.length > 0);
+
+  const total = assets.reduce(
+    (sum, asset) => sum + toUSD(asset, bobRate),
+    0,
+  );
+
+  return (
+    <section className="manual-group manual-group--quantfury">
+      <button
+        type="button"
+        className="manual-group__header"
+        onClick={() => {
+          setOpen((current) => !current);
+        }}
+      >
+        <span className="manual-group__icon">
+          <BarChart2 size={16} />
+        </span>
+
+        <span className="manual-group__title">
+          <strong>Quantfury</strong>
+
+          <small>
+            {assets.length}{' '}
+            {assets.length === 1
+              ? 'posición'
+              : 'posiciones'}
+          </small>
+        </span>
+
+        <span className="manual-group__total">
+          $ {total.toFixed(2)}
+        </span>
+
+        {open
+          ? <ChevronDown size={16} />
+          : <ChevronRight size={16} />}
+      </button>
+
+      {open && (
+        <div className="manual-group__nested">
+          {groups.map((group) => (
+            <CollapsibleGroup
+              key={group.type}
+              title={TYPE_CONFIG[group.type].label}
+              assets={group.assets}
+              bobRate={bobRate}
+              total={group.assets.reduce(
+                (sum, asset) => sum + toUSD(asset, bobRate),
+                0,
+              )}
+              onEdit={() => {}}
+              onRemove={() => {}}
+              accent={TYPE_CONFIG[group.type].color}
+              readOnly
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Modal({title, children, onClose}) {
+  return (
+    <div
+      className="manual-modal-overlay"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section
+        className="manual-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        <header className="manual-modal__header">
+          <div>
+            <span className="manual-modal__eyebrow">
+              Activos manuales
+            </span>
+
+            <h2>{title}</h2>
+          </div>
+
+          <button
+            type="button"
+            className="manual-modal__close"
+            onClick={onClose}
+            aria-label="Cerrar"
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        {children}
+      </section>
     </div>
   );
-};
+}
 
-// ════════════════════════════════════════════════════════════════════════════
-//  COMPONENTE PRINCIPAL
-// ════════════════════════════════════════════════════════════════════════════
-
-const ManualAssets = () => {
+export default function ManualAssets() {
   const {
-    manualAssets,
-    totalManualUSD,
+    manualAssets = [],
+    totalManualUSD = 0,
+    bobRate = 0,
     addAsset,
     removeAsset,
     updateAsset,
-    bobRate,processQuantfuryPdf,replaceImportedAssetsBulk
+    replaceImportedAssetsBulk,
   } = useApp();
 
-  const [form, setForm] = useState(EMPTY);
+  const {
+    processing: quantfuryProcessing,
+    error: quantfuryError,
+    lastImportResult,
+    processPdf,
+  } = useQuantfury();
+
+  const [form, setForm] = useState(EMPTY_ASSET);
   const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [editData, setEditData] = useState({});
-  const [isImporting, setIsImporting] = useState(false);
-  const [importMsg, setImportMsg] = useState('');
-  
-  // Novedades para Quantfury API
+  const [editData, setEditData] = useState(null);
+
+  const [importMessage, setImportMessage] = useState('');
   const [showQuantfuryModal, setShowQuantfuryModal] = useState(false);
   const [quantfuryEquity, setQuantfuryEquity] = useState('');
-  const quantfuryFileRef = useRef(null);
-  
+
+  const [saving, setSaving] = useState(false);
+  const [isImportingCsv, setIsImportingCsv] = useState(false);
+
   const fileInputRef = useRef(null);
+  const pdfInputRef = useRef(null);
 
-  // ── Separar activos por origen ────────────────────────────────────────────
-  const { quantfuryAssets, manualOnlyAssets, tradingTotal, manualOnlyTotal } = useMemo(() => {
-    const trading = ['stock', 'crypto', 'future'];
-    const qAssets = manualAssets.filter((a) => trading.includes(String(a.type || '').toLowerCase()));
-    const mAssets = manualAssets.filter((a) => !trading.includes(String(a.type || '').toLowerCase()));
-    return {
-      quantfuryAssets:  qAssets,
-      manualOnlyAssets: mAssets,
-      tradingTotal:     qAssets.reduce((s, a) => s + toUSD(a, bobRate), 0),
-      manualOnlyTotal:  mAssets.reduce((s, a) => s + toUSD(a, bobRate), 0),
-    };
-  }, [manualAssets, bobRate]);
+  const quantfuryAssets = useMemo(
+    () => manualAssets.filter(isQuantfuryAsset),
+    [manualAssets],
+  );
 
-  // ── Edición ───────────────────────────────────────────────────────────────
-  const startEdit = (a) => {
-    setEditId(a.id);
-    setEditData({ name: a.name, type: a.type || 'manual', currency: a.currency, amount: a.amount, note: a.note || '', since: a.since || today });
+  const manualOnlyAssets = useMemo(
+    () => manualAssets.filter(
+      (asset) => !isQuantfuryAsset(asset),
+    ),
+    [manualAssets],
+  );
+
+  const manualOnlyTotal = useMemo(
+    () => manualOnlyAssets.reduce(
+      (sum, asset) => sum + toUSD(asset, bobRate),
+      0,
+    ),
+    [manualOnlyAssets, bobRate],
+  );
+
+  const saveEdit = async () => {
+    if (!editData?.id || !editData.name.trim()) {
+      return;
+    }
+
+    const amount = parseAmount(editData.amount);
+
+    if (!Number.isFinite(amount) || amount < 0) {
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await updateAsset(editData.id, {
+        name: editData.name.trim(),
+        type: editData.type || 'manual',
+        currency: normalizeCurrency(editData.currency) || 'USD',
+        amount,
+        note: editData.note?.trim() || '',
+        since: editData.since || getTodayLocal(),
+      });
+
+      setEditData(null);
+    } catch (error) {
+      console.error('Error actualizando activo:', error);
+
+      setImportMessage(
+        `Error al actualizar: ${error.message}`,
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleEdit = async (id) => {
-    if (!editData.name?.trim() || !editData.amount || isNaN(parseFloat(editData.amount))) return;
-    await updateAsset(id, { ...editData, amount: parseFloat(editData.amount), since: editData.since || today });
-    setEditId(null);
+  const saveNew = async (event) => {
+    event.preventDefault();
+
+    const amount = parseAmount(form.amount);
+
+    if (
+      !form.name.trim() ||
+      !Number.isFinite(amount) ||
+      amount < 0
+    ) {
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await addAsset({
+        name: form.name.trim(),
+        type: form.type || 'manual',
+        currency: normalizeCurrency(form.currency) || 'USD',
+        amount,
+        note: form.note.trim(),
+        since: form.since || getTodayLocal(),
+      });
+
+      setForm(EMPTY_ASSET());
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error agregando activo:', error);
+
+      setImportMessage(
+        `Error al agregar: ${error.message}`,
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // ── Agregar ───────────────────────────────────────────────────────────────
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim() || !form.amount || isNaN(parseFloat(form.amount))) return;
-    await addAsset({ ...form, type: form.type || 'manual', amount: parseFloat(form.amount), since: form.since || today });
-    setForm(EMPTY);
-    setShowForm(false);
+  const handleRemove = async (asset) => {
+    if (!window.confirm(`¿Eliminar el activo "${asset.name}"?`)) {
+      return;
+    }
+
+    try {
+      await removeAsset(asset.id);
+    } catch (error) {
+      console.error('Error eliminando activo:', error);
+
+      setImportMessage(
+        `Error al eliminar: ${error.message}`,
+      );
+    }
   };
 
-  const preview = (amount, currency) => {
-    const n = parseFloat(amount);
-    if (!n || isNaN(n)) return null;
-    return currency === 'BOB' ? `≈ $${(n / bobRate).toFixed(2)} USD` : `≈ Bs ${(n * bobRate).toFixed(2)}`;
+  const openEdit = (asset) => {
+    setEditData({
+      id: asset.id,
+      name: asset.name || '',
+      type: asset.type || 'manual',
+      currency: asset.currency || 'USD',
+      amount: asset.amount ?? '',
+      note: asset.note || '',
+      since: asset.since || getTodayLocal(),
+    });
   };
 
-  // ── Importar Quantfury API ──────────────────────────────────────────────────
-const handleQuantfuryImport = async () => {
-  const file = quantfuryFileRef.current?.files?.[0];
-  const equity = parseFloat(quantfuryEquity);
+  const handleCsv = (event) => {
+    const file = event.target.files?.[0];
 
-  if (!file) {
-    setImportMsg('Por favor selecciona un PDF');
-    return;
-  }
+    event.target.value = '';
 
-  if (!equity || Number.isNaN(equity) || equity <= 0) {
-    setImportMsg('Por favor ingresa un Equity válido');
-    return;
-  }
+    if (!file) {
+      return;
+    }
 
-  setIsImporting(true);
-  setImportMsg('Procesando PDF en la nube...');
-  setShowQuantfuryModal(false);
+    setIsImportingCsv(true);
+    setImportMessage('Procesando CSV…');
 
-  try {
-    const result = await processQuantfuryPdf({ file, equity });
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
 
-    const openPositions =
-      result?.open_positions_reported ??
-      result?.open_positions ??
-      [];
+      complete: async ({data, errors}) => {
+        try {
+          if (errors?.length) {
+            throw new Error('El CSV tiene errores de lectura.');
+          }
 
-    setImportMsg(
-      `Importación exitosa: ${openPositions.length} posiciones abiertas y ${
-        result?.trading_history?.length ?? result?.raw_legs?.length ?? 0
-      } operaciones históricas.`
-    );
-  } catch (err) {
-    setImportMsg(`Error al procesar: ${err.message}`);
-  } finally {
-    setIsImporting(false);
-    setQuantfuryEquity('');
-    if (quantfuryFileRef.current) quantfuryFileRef.current.value = '';
-  }
-};
+          if (!data?.length) {
+            throw new Error('El archivo está vacío.');
+          }
 
-  // ── Importar CSV ──────────────────────────────────────────────────────────
-const handleImportFile = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+          const rows = data
+            .map((row) => {
+              const name = String(row.name || '').trim();
+              const currency = normalizeCurrency(row.currency);
+              const amount = parseAmount(row.amount);
 
-  setIsImporting(true);
-  setImportMsg('');
+              const rawType = String(
+                row.assettype || row.type || 'manual',
+              )
+                .trim()
+                .toLowerCase();
 
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    complete: async ({ data, errors }) => {
-      try {
-        if (errors?.length) {
-          setImportMsg('El CSV tiene errores de lectura.');
-          return;
+              const type = Object.keys(TYPE_CONFIG)
+                .includes(rawType)
+                ? rawType
+                : 'manual';
+
+              if (
+                !name ||
+                !currency ||
+                !Number.isFinite(amount) ||
+                amount < 0
+              ) {
+                return null;
+              }
+
+              return {
+                name,
+                type,
+                currency,
+                amount,
+                note: String(row.note || '').trim(),
+                since: parseCsvDate(row.since),
+              };
+            })
+            .filter(Boolean);
+
+          if (!rows.length) {
+            throw new Error(
+              'No se encontraron filas válidas.',
+            );
+          }
+
+          await replaceImportedAssetsBulk(rows, 'csv');
+
+          setImportMessage(
+            `Importación completada: ${rows.length} activos.`,
+          );
+        } catch (error) {
+          console.error('Error importando CSV:', error);
+
+          setImportMessage(
+            `Error al importar: ${error.message}`,
+          );
+        } finally {
+          setIsImportingCsv(false);
         }
+      },
 
-        if (!data?.length) {
-          setImportMsg('El archivo está vacío.');
-          return;
-        }
+      error: (error) => {
+        console.error('Error leyendo CSV:', error);
 
-        const headers = Object.keys(data[0] || {});
-        const missing = ['name', 'currency', 'amount'].filter((c) => !headers.includes(c));
-
-        if (missing.length) {
-          setImportMsg(`Faltan columnas: ${missing.join(', ')}`);
-          return;
-        }
-
-        const rows = data
-          .map((row) => {
-            const name = String(row.name || '').trim();
-            const currency = normalizeCurrency(row.currency);
-            const amount = parseAmount(row.amount);
-            const note = String(row.note || '').trim();
-            const since = String(row.since || '').trim() || today;
-            const rawType = String(row.asset_type || row.type || 'manual')
-              .trim()
-              .toLowerCase();
-
-            const type = ['stock', 'crypto', 'future', 'manual'].includes(rawType)
-              ? rawType
-              : 'manual';
-
-            if (!name || !currency || Number.isNaN(amount) || amount <= 0) return null;
-
-            return {
-              name,
-              type,
-              currency,
-              amount,
-              note,
-              since,
-            };
-          })
-          .filter(Boolean);
-
-        if (!rows.length) {
-          setImportMsg('No se encontraron filas válidas para importar.');
-          return;
-        }
-
-        const skipped = data.length - rows.length;
-        const summary = rows.reduce((acc, r) => {
-          acc[r.type] = (acc[r.type] || 0) + 1;
-          return acc;
-        }, {});
-
-        await replaceImportedAssetsBulk(rows, 'csv');
-
-        setImportMsg(
-          `✅ ${Object.entries(summary)
-            .map(([t, n]) => `${n} ${t}`)
-            .join(', ')}. Omitidos: ${skipped}.`
+        setImportMessage(
+          `Error al leer CSV: ${error.message}`,
         );
-      } catch (err) {
-        setImportMsg(`No se pudo importar el archivo: ${err.message || 'error desconocido'}`);
-      } finally {
-        setIsImporting(false);
-        e.target.value = '';
+
+        setIsImportingCsv(false);
+      },
+    });
+  };
+
+  const handleQuantfury = async () => {
+    const file = pdfInputRef.current?.files?.[0];
+    const equity = parseAmount(quantfuryEquity);
+
+    if (!file) {
+      setImportMessage('Selecciona un PDF.');
+      return;
+    }
+
+    if (!Number.isFinite(equity) || equity <= 0) {
+      setImportMessage('Ingresa un Equity válido.');
+      return;
+    }
+
+    setImportMessage('Procesando PDF de Quantfury en backend…');
+
+    try {
+      const result = await processPdf({
+        file,
+        equity,
+      });
+
+      const historyCount = result.history_count ?? 0;
+      const positionCount = result.position_count ?? 0;
+
+      setImportMessage(
+        result.duplicate
+          ? 'Este PDF ya estaba importado. No se duplicaron operaciones.'
+          : `Importación completada: ${historyCount} operaciones históricas y ${positionCount} posiciones actuales.`,
+      );
+
+      setShowQuantfuryModal(false);
+    } catch (error) {
+      console.error('Error procesando Quantfury:', error);
+
+      setImportMessage(
+        `Error al procesar Quantfury: ${error.message}`,
+      );
+    } finally {
+      setQuantfuryEquity('');
+
+      if (pdfInputRef.current) {
+        pdfInputRef.current.value = '';
       }
-    },
-    error: () => {
-      setImportMsg('Error al procesar el archivo.');
-      setIsImporting(false);
-      e.target.value = '';
-    },
-  });
-};
+    }
+  };
 
-  // ════════════════════════════════════════════════════════════════════════
-  //  RENDER
-  // ════════════════════════════════════════════════════════════════════════
+  const isBusy = (
+    saving ||
+    isImportingCsv ||
+    quantfuryProcessing
+  );
+
   return (
-    <div className="space-y-5 relative">
-      <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportFile} className="hidden" />
+    <main className="manual-page">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        onChange={handleCsv}
+        hidden
+      />
 
-      {/* ── Header ── */}
-      <div className="flex justify-between items-center gap-3 flex-wrap">
-        <h1 className="text-2xl font-black">Activos Manuales</h1>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          
-          {/* Botón Quantfury */}
+      <header className="manual-page__header">
+        <div>
+          <p className="manual-page__eyebrow">
+            Patrimonio
+          </p>
+
+          <h1>Activos manuales</h1>
+        </div>
+
+        <div className="manual-page__actions">
           <button
-            onClick={() => setShowQuantfuryModal(true)}
-            disabled={isImporting}
-            className="flex items-center gap-2 bg-brand-teal/10 border border-brand-teal/30 text-brand-teal font-bold text-sm px-4 py-2 rounded-xl hover:bg-brand-teal/20 transition-all disabled:opacity-50"
+            type="button"
+            className="manual-button manual-button--secondary"
+            onClick={() => {
+              setShowQuantfuryModal(true);
+            }}
+            disabled={isBusy}
           >
-            {isImporting ? <FileText size={16} /> : <BarChart2 size={16} />}
-            Importar Quantfury
+            <FileText size={16} />
+            Quantfury
           </button>
 
-          {/* Botón CSV Antiguo */}
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isImporting}
-            className="flex items-center gap-2 bg-white/5 border border-white/10 text-white font-bold text-sm px-4 py-2 rounded-xl hover:bg-white/10 transition-colors disabled:opacity-50"
+            type="button"
+            className="manual-button manual-button--secondary"
+            onClick={() => {
+              fileInputRef.current?.click();
+            }}
+            disabled={isBusy}
           >
-            {isImporting ? <FileSpreadsheet size={16} /> : <Upload size={16} />}
+            <FileSpreadsheet size={16} />
             CSV
           </button>
-          
+
           <button
-            onClick={() => setShowForm((v) => !v)}
-            className="flex items-center gap-2 bg-brand-teal text-black font-bold text-sm px-4 py-2 rounded-xl active:scale-95 transition-transform"
+            type="button"
+            className="manual-button manual-button--primary"
+            onClick={() => {
+              setShowForm((current) => !current);
+            }}
+            disabled={isBusy}
           >
-            <Plus size={16} /> Agregar
+            <Plus size={16} />
+            Agregar
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* ── Mensaje importación ── */}
-      {importMsg && (
-        <div className={`rounded-2xl border px-4 py-3 ${importMsg.includes('Error') ? 'bg-rose-500/10 border-rose-500/30' : 'bg-brand-card border-white/5'}`}>
-          <p className={`text-sm ${importMsg.includes('Error') ? 'text-rose-400' : 'text-white/70'}`}>{importMsg}</p>
+      {importMessage && (
+        <div
+          className={`manual-message ${
+            importMessage.toLowerCase().includes('error')
+              ? 'is-error'
+              : ''
+          }`}
+          role="status"
+        >
+          {importMessage}
         </div>
       )}
 
-      {/* ── Total general + tipo de cambio ── */}
-      <div className="bg-brand-card rounded-2xl border border-white/5 p-4 flex justify-between items-center">
+      <section className="manual-total-card">
         <div>
-          <p className="text-xs text-white/40 uppercase font-bold mb-0.5">Tipo de cambio</p>
-          <p className="font-bold text-sm">1 USD = Bs {bobRate}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-white/40 uppercase font-bold">Total portafolio</p>
-          <p className="text-2xl font-black text-emerald-400">${totalManualUSD.toFixed(2)}</p>
-          <p className="text-xs text-white/40">Bs {(totalManualUSD * bobRate).toFixed(2)}</p>
-        </div>
-      </div>
+          <span>Tipo de cambio</span>
 
-      {/* ── Formulario nuevo activo ── */}
+          <strong>
+            1 USD = Bs {Number(bobRate || 0).toFixed(2)}
+          </strong>
+        </div>
+
+        <div className="manual-total-card__value">
+          <span>Total portafolio</span>
+
+          <strong>
+            $ {Number(totalManualUSD || 0).toFixed(2)}
+          </strong>
+
+          <small>
+            Bs {(
+              Number(totalManualUSD || 0) *
+              Number(bobRate || 0)
+            ).toFixed(2)}
+          </small>
+        </div>
+      </section>
+
       {showForm && (
-        <form onSubmit={handleAdd} className="bg-brand-card rounded-3xl border border-brand-teal/30 p-5 space-y-3">
-          <p className="font-bold text-brand-teal text-sm">Nuevo activo</p>
-          <input
-            type="text"
-            placeholder="Nombre (ej: AirTM, Caja de ahorros)"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-teal"
-          />
-          <TypeSelector value={form.type} onChange={(t) => setForm({ ...form, type: t })} />
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <span className="absolute left-3 top-2.5 text-white/40 text-sm">{form.currency === 'BOB' ? 'Bs' : '$'}</span>
-              <input
-                type="number" step="0.01" placeholder="0.00" value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none focus:border-brand-teal"
-              />
-            </div>
-            <div className="flex rounded-xl overflow-hidden border border-white/10 shrink-0">
-              {['USD', 'BOB'].map((cur) => (
-                <button key={cur} type="button" onClick={() => setForm({ ...form, currency: cur })}
-                  className={`px-4 text-xs font-bold transition-all ${form.currency === cur ? 'bg-brand-teal text-black' : 'text-white/50 hover:text-white'}`}>
-                  {cur}
-                </button>
-              ))}
-            </div>
+        <section className="manual-create-card">
+          <div className="manual-create-card__header">
+            <h2>Nuevo activo</h2>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowForm(false);
+              }}
+              aria-label="Cerrar"
+              disabled={saving}
+            >
+              <X size={18} />
+            </button>
           </div>
-          {preview(form.amount, form.currency) && <p className="text-xs text-white/40 pl-1">{preview(form.amount, form.currency)}</p>}
-          <input type="text" placeholder="Nota (opcional)" value={form.note}
-            onChange={(e) => setForm({ ...form, note: e.target.value })}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-teal"
+
+          <AssetForm
+            value={form}
+            onChange={setForm}
+            onSubmit={saveNew}
+            onCancel={() => {
+              setShowForm(false);
+            }}
+            submitLabel={
+              saving
+                ? 'Guardando…'
+                : 'Guardar'
+            }
+            bobRate={bobRate}
           />
-          <DateField value={form.since} onChange={(v) => setForm({ ...form, since: v })} />
-          <div className="flex gap-2 pt-1">
-            <button type="submit" className="flex-1 bg-brand-teal text-black font-bold py-2.5 rounded-xl text-sm">Guardar</button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 bg-white/5 rounded-xl text-sm text-white/60">Cancelar</button>
-          </div>
-        </form>
+        </section>
       )}
 
-      {/* ── Lista vacía ── */}
-      {manualAssets.length === 0 && (
-        <div className="text-center py-14 text-white/30">
-          <Wallet size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Sin activos manuales aún</p>
+      {manualAssets.length === 0 ? (
+        <div className="manual-empty">
+          <Wallet size={40} />
+
+          <p>No hay activos manuales aún.</p>
+        </div>
+      ) : (
+        <div className="manual-groups">
+          {quantfuryAssets.length > 0 && (
+            <QuantfuryGroup
+              assets={quantfuryAssets}
+              bobRate={bobRate}
+            />
+          )}
+
+          {manualOnlyAssets.length > 0 && (
+            <CollapsibleGroup
+              title="Activos manuales"
+              assets={manualOnlyAssets}
+              bobRate={bobRate}
+              total={manualOnlyTotal}
+              onEdit={openEdit}
+              onRemove={handleRemove}
+            />
+          )}
         </div>
       )}
 
-      {/* ── BLOQUE QUANTFURY (anidado) ── */}
-      {quantfuryAssets.length > 0 && (
-        <QuantfuryGroup
-          assets={quantfuryAssets}
-          tradingTotal={tradingTotal}
-          portfolioTotal={totalManualUSD}
-          bobRate={bobRate}
-          onEdit={startEdit}
-          onRemove={removeAsset}
-        />
-      )}
-
-      {/* ── ACTIVOS MANUALES SUELTOS ── */}
-      {manualOnlyAssets.length > 0 && (
-        <TypeGroup
-          type="manual"
-          assets={manualOnlyAssets}
-          groupTotal={manualOnlyTotal}
-          portfolioTotal={totalManualUSD}
-          bobRate={bobRate}
-          onEdit={startEdit}
-          onRemove={removeAsset}
-        />
-      )}
-
-      {/* ── Modal Quantfury PDF (overlay) ── */}
       {showQuantfuryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowQuantfuryModal(false); }}>
-          <div className="w-full max-w-sm bg-[#1a1a1a] rounded-3xl border border-brand-teal/30 p-6 space-y-4">
-            <div className="flex items-center gap-3 text-brand-teal">
-              <BarChart2 size={24} />
-              <h3 className="font-bold text-lg">Importar PDF Quantfury</h3>
-            </div>
-            
-            <p className="text-sm text-white/60">
-              Sube el "Informe de Historial de Trading" en formato PDF y asigna el Equity actual de tu cuenta.
+        <Modal
+          title="Importar PDF Quantfury"
+          onClose={() => {
+            if (!quantfuryProcessing) {
+              setShowQuantfuryModal(false);
+            }
+          }}
+        >
+          <div className="manual-modal__body">
+            <p className="manual-modal__description">
+              Sube el informe de historial de trading e indica
+              el equity real de la cuenta. El backend actualizará
+              el snapshot actual y guardará las operaciones
+              históricas para análisis posterior.
             </p>
 
-            <div className="space-y-1">
-              <label className="text-xs text-white/40 uppercase font-bold pl-1">Equity Real (USD)</label>
+            <label className="manual-field">
+              <span>Equity real USD</span>
+
               <input
-                type="number" step="0.01" placeholder="Ej: 323.50"
+                type="number"
+                min="0"
+                step="0.01"
                 value={quantfuryEquity}
-                onChange={(e) => setQuantfuryEquity(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-teal"
+                onChange={(event) => {
+                  setQuantfuryEquity(event.target.value);
+                }}
+                placeholder="Ej. 323.50"
+                disabled={quantfuryProcessing}
               />
-            </div>
+            </label>
 
-            <div className="space-y-1">
-              <label className="text-xs text-white/40 uppercase font-bold pl-1">Archivo PDF</label>
+            <label className="manual-field">
+              <span>Archivo PDF</span>
+
               <input
-                type="file" accept="application/pdf"
-                ref={quantfuryFileRef}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white/70 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-teal/10 file:text-brand-teal hover:file:bg-brand-teal/20 outline-none focus:border-brand-teal cursor-pointer"
+                ref={pdfInputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                disabled={quantfuryProcessing}
               />
-            </div>
+            </label>
 
-            <div className="flex gap-2 pt-2">
-              <button 
-                onClick={handleQuantfuryImport}
-                className="flex-1 bg-brand-teal text-black font-bold py-2.5 rounded-xl text-sm"
+            {quantfuryError && (
+              <p
+                className="manual-message is-error"
+                role="alert"
               >
-                Procesar PDF
-              </button>
-              <button 
-                onClick={() => setShowQuantfuryModal(false)}
-                className="px-4 bg-white/5 hover:bg-white/10 rounded-xl text-sm text-white/60 transition-colors"
+                {quantfuryError.message}
+              </p>
+            )}
+
+            {lastImportResult && (
+              <div className="manual-quantfury-result">
+                <span>
+                  Historial: {lastImportResult.history_count ?? 0}
+                </span>
+
+                <span>
+                  Posiciones: {lastImportResult.position_count ?? 0}
+                </span>
+
+                <span>
+                  P/L: {formatMoney(
+                    lastImportResult.summary?.realized_pnl ?? 0,
+                  )}
+                </span>
+              </div>
+            )}
+
+            <div className="manual-form-actions">
+              <button
+                type="button"
+                className="manual-button manual-button--secondary"
+                onClick={() => {
+                  setShowQuantfuryModal(false);
+                }}
+                disabled={quantfuryProcessing}
               >
                 Cancelar
               </button>
+
+              <button
+                type="button"
+                className="manual-button manual-button--primary"
+                onClick={handleQuantfury}
+                disabled={quantfuryProcessing}
+              >
+                {quantfuryProcessing
+                  ? 'Procesando…'
+                  : 'Procesar PDF'}
+              </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
-      {/* ── Modal de edición (overlay) ── */}
-      {editId && (() => {
-        const a = manualAssets.find((x) => x.id === editId);
-        if (!a) return null;
-        return (
-          <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/60 backdrop-blur-sm"
-            onClick={(e) => { if (e.target === e.currentTarget) setEditId(null); }}>
-            <div className="w-full max-w-md bg-[#1a1a1a] rounded-3xl border border-white/10 p-5 space-y-3">
-              <p className="font-bold text-brand-teal text-sm">Editar activo</p>
-              <input type="text" value={editData.name}
-                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-teal"
-              />
-              <TypeSelector value={editData.type || 'manual'} onChange={(t) => setEditData({ ...editData, type: t })} />
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <span className="absolute left-3 top-2.5 text-white/40 text-sm">{editData.currency === 'BOB' ? 'Bs' : '$'}</span>
-                  <input type="number" step="0.01" value={editData.amount}
-                    onChange={(e) => setEditData({ ...editData, amount: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-brand-teal"
-                  />
-                </div>
-                <div className="flex rounded-xl overflow-hidden border border-white/10 shrink-0">
-                  {['USD', 'BOB'].map((cur) => (
-                    <button key={cur} type="button" onClick={() => setEditData({ ...editData, currency: cur })}
-                      className={`px-3 text-xs font-bold ${editData.currency === cur ? 'bg-brand-teal text-black' : 'text-white/50'}`}>
-                      {cur}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {preview(editData.amount, editData.currency) && (
-                <p className="text-xs text-white/40 pl-1">{preview(editData.amount, editData.currency)}</p>
-              )}
-              <input type="text" placeholder="Nota (opcional)" value={editData.note || ''}
-                onChange={(e) => setEditData({ ...editData, note: e.target.value })}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-teal"
-              />
-              <DateField value={editData.since || today} onChange={(v) => setEditData({ ...editData, since: v })} />
-              <div className="flex gap-2">
-                <button onClick={() => handleEdit(editId)}
-                  className="flex-1 bg-brand-teal text-black font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-1">
-                  <Check size={14} /> Guardar
-                </button>
-                <button onClick={() => setEditId(null)} className="px-4 bg-white/5 rounded-xl text-sm text-white/60">
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
+      {editData && (
+        <Modal
+          title="Editar activo"
+          onClose={() => {
+            if (!saving) {
+              setEditData(null);
+            }
+          }}
+        >
+          <div className="manual-modal__body">
+            <AssetForm
+              value={editData}
+              onChange={setEditData}
+              onSubmit={(event) => {
+                event.preventDefault();
+                saveEdit();
+              }}
+              onCancel={() => {
+                setEditData(null);
+              }}
+              submitLabel={
+                saving
+                  ? 'Guardando…'
+                  : 'Guardar cambios'
+              }
+              bobRate={bobRate}
+            />
           </div>
-        );
-      })()}
-    </div>
+        </Modal>
+      )}
+    </main>
   );
-};
-
-export default ManualAssets;
+}

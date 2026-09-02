@@ -770,3 +770,687 @@
 
 .fsItemEmoji { font-size: 1.1rem; flex-shrink: 0; }
 .fsItemLabel { flex: 1; text-align: left; font-weight: 500; }
+
+
+.page,
+.header,
+.periodFilter,
+.summaryRow,
+.typeFilterRow,
+.searchWrap,
+.list,
+.card,
+.cardTop,
+.cardInfo,
+.cardRight,
+.fsSheet,
+.fsBody,
+.form,
+.formActions {
+  min-width: 0;
+}
+
+.page {
+  width: 100%;
+  max-width: 680px;
+  overflow-x: hidden;
+}
+
+.periodFilter {
+  width: 100%;
+  max-width: 100%;
+}
+
+.summaryRow,
+.typeFilterRow {
+  width: 100%;
+}
+
+.searchWrap,
+.searchInput,
+.inputModal,
+.dropdownTrigger,
+.btnSubmit {
+  max-width: 100%;
+}
+
+.cardInfo,
+.concept,
+.note,
+.app-navlink__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardRight {
+  max-width: 48%;
+}
+
+.amount {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fsOverlay {
+  overflow: hidden;
+  padding: 0;
+}
+
+.fsSheet {
+  width: min(100%, 520px);
+}
+
+.fsBody {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.formActions .btnSubmit {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.inputModal[type='date'] {
+  color-scheme: dark;
+}
+
+@media (max-width: 380px) {
+  .page {
+    padding-inline: 0.65rem;
+  }
+
+  .summaryLabel {
+    font-size: 0.52rem;
+  }
+
+  .summaryExpense,
+  .summaryIncome,
+  .summaryCount {
+    font-size: 0.72rem;
+  }
+
+  .typeFilterBtn {
+    font-size: 0.56rem;
+  }
+
+  .cardRight {
+    max-width: 44%;
+  }
+}
+
+
+/* Evita que el documento de fondo se desplace detrás del modal */
+:global(html:has(.fsOverlay)),
+:global(body:has(.fsOverlay)) {
+  overflow: hidden;
+}
+
+.fsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100vh;
+  padding: 1rem;
+  overflow: hidden;
+  background: rgba(2, 6, 23, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overscroll-behavior: none;
+}
+
+.fsSheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 560px);
+  max-width: 560px;
+  height: min(760px, calc(100dvh - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  overflow: hidden;
+  background: #070e1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+}
+
+.fsHeader {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  min-height: 4.25rem;
+  padding: 1.15rem 1.25rem 0.9rem;
+  background: #070e1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fsTitle {
+  padding-top: 0.2rem;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.fsBody {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  padding: 1rem 1.25rem 1.25rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fsBody::-webkit-scrollbar,
+.dropdownMenu::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.fsBody .form {
+  width: 100%;
+  min-width: 0;
+}
+
+.typeTabs {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin-bottom: 1.1rem;
+  background: #070e1a;
+}
+
+.labelModal {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.35rem;
+}
+
+.inputModal,
+.dropdownTrigger {
+  width: 100%;
+  min-height: 3rem;
+  margin-bottom: 0.9rem;
+}
+
+.dropdown {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.dropdownTrigger {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 0.9rem;
+}
+
+.dropdownTrigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% - 0.65rem);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  max-height: min(18rem, 42dvh);
+  padding: 0.35rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.85rem;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.75);
+}
+
+.dropdownGroup,
+.dropdownItem {
+  min-width: 0;
+}
+
+.dropdownItem {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+}
+
+.formActions .btnSubmit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.inputModal[type='date'] {
+  color-scheme: dark;
+}
+
+@media (max-width: 600px) {
+  .fsOverlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .fsSheet {
+    width: 100%;
+    height: min(92dvh, 760px);
+    max-height: 92dvh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+
+  .fsBody {
+    padding-inline: 1rem;
+  }
+}
+
+@media (max-height: 650px) and (min-width: 601px) {
+  .fsSheet {
+    height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 1rem);
+  }
+}
+
+/* Reemplaza las reglas del modal/dropdown pegando este bloque al FINAL
+   de src/pages/Transactions.module.css. */
+
+/* Modal: una sola zona desplazable */
+:global(body.modal-open) {
+  overflow: hidden;
+}
+
+.fsOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  height: 100dvh;
+  padding: 1rem;
+  overflow: hidden;
+  background: rgba(2, 6, 23, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.fsSheet {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 560px);
+  height: min(720px, calc(100dvh - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+  background: #070e1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.72);
+}
+
+.fsHeader {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  min-height: 4.25rem;
+  padding: 1.1rem 1.25rem 0.85rem;
+  background: #070e1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fsBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 1rem 1.25rem 1.25rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fsBody::-webkit-scrollbar,
+.dropdownMenu::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  gap: 0.1rem;
+}
+
+.typeTabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 0.35rem;
+  margin: -0.15rem 0 1rem;
+  padding: 0.25rem;
+  background: #070e1a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.85rem;
+}
+
+.typeTab {
+  flex: 1;
+  min-width: 0;
+  padding: 0.65rem 0.35rem;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.42);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 0.65rem;
+}
+
+.typeTabActive {
+  color: #042f2e;
+  background: var(--tx-teal, #14b8a6);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.7rem;
+}
+
+.field {
+  display: block;
+  min-width: 0;
+}
+
+.labelModal {
+  display: block;
+  margin: 0 0 0.35rem;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.labelOptional {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.inputModal,
+.dropdownTrigger {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  margin: 0 0 0.9rem;
+  padding: 0.72rem 0.9rem;
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.8rem;
+  outline: none;
+}
+
+.inputModal:focus,
+.dropdownTrigger:focus-visible {
+  background: rgba(20, 184, 166, 0.06);
+  border-color: rgba(20, 184, 166, 0.58);
+}
+
+.inputModal[type='date'] {
+  color-scheme: dark;
+}
+
+.textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.dropdown {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  min-width: 0;
+}
+
+.dropdownTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdownTrigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdownArrow {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.42);
+  transition: transform 160ms ease;
+}
+
+.dropdownArrowOpen {
+  transform: rotate(180deg);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% - 0.65rem);
+  right: 0;
+  left: 0;
+  z-index: 50;
+  max-height: min(19rem, 45dvh);
+  padding: 0.35rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #0b1220;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.85rem;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.8);
+}
+
+.dropdownGroup {
+  padding: 0.55rem 0.65rem 0.25rem;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 0.59rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dropdownGroupBlock:first-child .dropdownGroup {
+  padding-top: 0.25rem;
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0.58rem 0.65rem;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.76);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 0.6rem;
+}
+
+.dropdownItem:hover,
+.dropdownItemActive {
+  color: #2dd4bf;
+  background: rgba(20, 184, 166, 0.14);
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.2rem;
+  padding-top: 0.35rem;
+}
+
+.cancelButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+  min-height: 3rem;
+  padding: 0.65rem 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.8rem;
+}
+
+.cancelButton:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.formActions .btnSubmit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  min-height: 3rem;
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+}
+
+@media (max-width: 600px) {
+  .fsOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .fsSheet {
+    width: 100%;
+    height: min(94dvh, 760px);
+    max-height: 94dvh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+
+  .fsBody {
+    padding: 0.85rem 1rem 1.1rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .typeTab {
+    font-size: 0.65rem;
+  }
+
+  .formActions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelButton,
+  .formActions .btnSubmit {
+    width: 100%;
+  }
+}

@@ -14,6 +14,7 @@ const navItems = [
   { to: '/transactions', icon: <Repeat size={20} />,   label: 'Movimientos' },
   { to: '/analytics',    icon: <BarChart2 size={20} />, label: 'Analytics'  },
   { to: '/budget',       icon: <Wallet size={20} />,   label: 'Presupuesto' },
+  // { to: '/trading-history', icon: <TrendingUp size={20} />, label: 'Trading History' },
 ];
 
 const Layout = () => {

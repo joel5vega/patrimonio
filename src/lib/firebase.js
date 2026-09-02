@@ -229,35 +229,163 @@ export const removeManualAsset = (uid, id) =>
 export const updateManualAsset = (uid, id, updates) =>
   updateDoc(doc(db, 'users', uid, 'manualAssets', id), updates);
 
+//Quantfury
+const normalizedText = (value) =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+
+const makeTradingHistoryId = (row) => {
+  const source = normalizedText(row.source || 'quantfury');
+  const symbol = normalizedText(row.symbol || 'unknown');
+  const date = normalizedText(row.date || '');
+  const time = normalizedText(row.time || '');
+  const side = normalizedText(row.side || row.direction || '');
+  const quantity = Number(row.quantity ?? row.size ?? 0);
+  const price = Number(
+    row.price ??
+    row.entry_price ??
+    row.entryPrice ??
+    row.exit_price ??
+    row.exitPrice ??
+    0
+  );
+  const isClosing = row.is_closing_leg ? 'close' : 'open';
+
+  /*
+    Es un id estable: importar dos veces el mismo PDF
+    actualizará el mismo documento, no duplicará la operación.
+  */
+  return [
+    source,
+    symbol,
+    date,
+    time,
+    side,
+    quantity,
+    price,
+    isClosing,
+  ]
+    .join('|')
+    .replace(/[^a-z0-9|.-]/gi, '_')
+    .slice(0, 140);
+};
+
+const normalizeTradingRow = (row, meta, importId) => {
+  const realizedPnlUSD = Number(
+    row.realized_pnl ??
+    row.realizedPnlUSD ??
+    row.pnl ??
+    0
+  );
+
+  const notionalUSD = Number(
+    row.notional_usd ??
+    row.notionalUSD ??
+    row.value_usd ??
+    row.valueUSD ??
+    0
+  );
+
+  const leverage = Number(
+    row.leverage ??
+    row.leverage_used ??
+    row.multiplier ??
+    1
+  );
+
+  return {
+    ...row,
+
+    source: 'quantfury',
+    importId,
+    importBatchId: importId,
+
+    symbol: String(row.symbol ?? row.name ?? 'UNKNOWN').toUpperCase(),
+    assetType: String(
+      row.asset_type ??
+      row.assetType ??
+      row.type ??
+      'other'
+    ).toLowerCase(),
+
+    date: String(row.date ?? ''),
+    time: String(row.time ?? ''),
+
+    realized_pnl: realizedPnlUSD,
+    realizedPnlUSD,
+
+    notional_usd: notionalUSD,
+    notionalUSD,
+
+    leverage: Number.isFinite(leverage) && leverage > 0
+      ? leverage
+      : 1,
+
+    is_closing_leg: Boolean(
+      row.is_closing_leg ??
+      row.isClosingLeg ??
+      false
+    ),
+
+    file_name: meta.file_name ?? null,
+    equity_real: Number(meta.equity_real ?? 0) || null,
+    import_summary: meta.summary ?? {},
+    updatedAt: serverTimestamp(),
+  };
+};
 
 // =============================================================================
 // TRANSACTIONS
 // =============================================================================
-
-export const subscribeTransactions = (uid, callback, n = 100) => {
+export const subscribeTransactions = (uid, callback) => {
   const col = collection(db, 'users', uid, 'transactions');
-  const q = query(col, orderBy('date', 'desc'), limit(n));
+  const q = query(col, orderBy('date', 'desc'));
 
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const transactions = snap.docs.map((document) => ({
+        id: document.id,
+        ...document.data(),
+      }));
+
+      callback(transactions);
+    },
+    (error) => {
+      console.error('Error leyendo transacciones:', error);
+      callback([]);
+    }
+  );
 };
 
 export const addTransaction = (uid, tx) =>
   addDoc(collection(db, 'users', uid, 'transactions'), {
-    title: tx.title,
+    title: tx.title || tx.concept || '',
     concept: tx.concept || '',
-    amount: parseFloat(tx.amount),
+    amount: Number(tx.amount),
     currency: tx.currency || 'USD',
-    type: tx.type,
-    category: tx.category,
+    type: tx.type || 'expense',
+    category: tx.category || 'other',
     date: tx.date,
     note: tx.note || '',
     createdAt: serverTimestamp(),
   });
 
 export const updateTransaction = (uid, id, updates) =>
-  updateDoc(doc(db, 'users', uid, 'transactions', id), updates);
+  updateDoc(doc(db, 'users', uid, 'transactions', id), {
+    ...(updates.title !== undefined && { title: updates.title }),
+    ...(updates.concept !== undefined && { concept: updates.concept }),
+    ...(updates.amount !== undefined && { amount: Number(updates.amount) }),
+    ...(updates.currency !== undefined && { currency: updates.currency }),
+    ...(updates.type !== undefined && { type: updates.type }),
+    ...(updates.category !== undefined && { category: updates.category }),
+    ...(updates.date !== undefined && { date: updates.date }),
+    ...(updates.note !== undefined && { note: updates.note }),
+    updatedAt: serverTimestamp(),
+  });
+
 
 export const removeTransaction = (uid, id) =>
   deleteDoc(doc(db, 'users', uid, 'transactions', id));
@@ -310,6 +438,7 @@ export async function savePortfolioSnapshot(uid, data) {
 export async function getPortfolioHistory(uid) {
   try {
     const q = query(
+      // collection(db, 'users', uid, 'portfolioHistoryV2'),
       collection(db, 'users', uid, 'portfolioHistory'),
       orderBy('date', 'asc')
     );
@@ -384,7 +513,7 @@ export const subscribeStandouts = (callback) => {
 };
 
 export async function getPortfolioSnapshotByDate(userId, date) {
-  const ref = doc(db, 'users', userId, 'portfolioHistory', date);
+  const ref = doc(db, 'users', userId, 'portfolioHistoryV2', date);
   const snap = await getDoc(ref);
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
@@ -436,114 +565,176 @@ async function commitInsertBatches(colRef, rows, meta, batchId) {
   }
 }
 
-export async function replaceTradingHistoryBulk(uid, rows, meta = {}) {
-  if (!uid) throw new Error('uid requerido');
 
-  const normalizedRows = Array.isArray(rows) ? rows.filter(Boolean) : [];
-  const colRef = collection(db, 'users', uid, 'tradingHistory');
 
-  const existingSnap = await getDocs(colRef);
-  await commitDeleteBatches(existingSnap.docs);
 
-  if (normalizedRows.length === 0) {
-    return { batchId: null, count: 0 };
-  }
-
-  const batchId = `qf_${Date.now()}`;
-  await commitInsertBatches(colRef, normalizedRows, meta, batchId);
-
-  return { batchId, count: normalizedRows.length };
-}
-
-export const getTradingHistory = async (uid, n = 500) => {
-  try {
-    const q = query(
-      collection(db, 'users', uid, 'tradingHistory'),
-      orderBy('date', 'desc'),
-      orderBy('time', 'desc'),
-      limit(n)
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  } catch (e) {
-    console.error('❌ getTradingHistory error:', e);
-    return [];
-  }
-};
 // =============================================================================
 // QUANTFURY PDF PROCESSOR
 // =============================================================================
 
-export async function procesarQuantfuryPdf({ file, equity }) {
-  if (!file) throw new Error('Archivo PDF requerido');
-  if (equity == null || equity === '') throw new Error('Equity requerido');
+export async function procesarQuantfuryPdf({file, equity}) {
+  if (!file) {
+    throw new Error('Archivo PDF requerido');
+  }
 
+  if (!auth.currentUser) {
+    throw new Error('Usuario no autenticado');
+  }
+
+  const numericEquity = Number(equity);
+
+  if (!Number.isFinite(numericEquity) || numericEquity <= 0) {
+    throw new Error('Equity válido requerido');
+  }
+
+  const endpoint = import.meta.env.VITE_QUANTFURY_PARSER_URL;
+
+  if (!endpoint) {
+    throw new Error('Falta VITE_QUANTFURY_PARSER_URL');
+  }
+
+  const token = await auth.currentUser.getIdToken(true);
   const formData = new FormData();
-  formData.append('pdf', file);
-  formData.append('equity', String(equity));
 
-  const endpoint =
-    import.meta.env.VITE_QUANTFURY_PARSER_URL ||
-    'https://procesar-quantfury-rzopmhvocq-uc.a.run.app';
+  formData.append('pdf', file, file.name);
+  formData.append('equity', String(numericEquity));
 
-  const res = await fetch(endpoint, {
+  const response = await fetch(endpoint, {
     method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
     body: formData,
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || 'Error procesando PDF de Quantfury');
+  const raw = await response.text();
+  let payload;
+
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    payload = {error: raw};
   }
 
-  return await res.json();
-}
-
-export async function removeQuantfuryManualAssets(uid) {
-  if (!uid) throw new Error('uid requerido');
-
-  const colRef = collection(db, 'users', uid, 'manualAssets');
-  const snap = await getDocs(colRef);
-
-  const quantfuryDocs = snap.docs.filter((d) => {
-    const data = d.data() || {};
-    const note = String(data.note || '').toLowerCase();
-    return note.includes('quantfury');
-  });
-
-  for (let i = 0; i < quantfuryDocs.length; i += 400) {
-    const batch = writeBatch(db);
-    quantfuryDocs.slice(i, i + 400).forEach((docSnap) => {
-      batch.delete(docSnap.ref);
-    });
-    await batch.commit();
+  if (!response.ok || !payload?.ok) {
+    throw new Error(
+      payload?.error || 'Error procesando el PDF Quantfury',
+    );
   }
 
-  return { count: quantfuryDocs.length };
+  return payload;
 }
 
-export async function addManualAssetsBulk(uid, assets = []) {
-  if (!uid) throw new Error('uid requerido');
-  const colRef = collection(db, 'users', uid, 'manualAssets');
+export function subscribeQuantfurySnapshot(uid, callback, onError) {
+  if (!uid) return () => {};
 
-  for (let i = 0; i < assets.length; i += 400) {
-    const batch = writeBatch(db);
+  const reference = query(
+    collection(db, 'users', uid, 'manualAssets'),
+    orderBy('createdAt', 'desc'),
+  );
 
-    assets.slice(i, i + 400).forEach((asset) => {
-      const ref = doc(colRef);
-      batch.set(ref, {
-        name: asset.name,
-        currency: asset.currency ?? 'USD',
-        type: asset.type ?? 'stock',
-        amount: Number(asset.amount ?? 0),
-        note: asset.note ?? '',
-        since: asset.since ?? null,
-        createdAt: serverTimestamp(),
-      });
-    });
+  return onSnapshot(
+    reference,
+    (snapshot) => {
+      const assets = snapshot.docs
+        .map((item) => ({
+          id: item.id,
+          ...item.data(),
+        }))
+        .filter((asset) => {
+          const note = String(asset.note || '').toLowerCase();
+          return asset.source === 'quantfury' || note.includes('quantfury');
+        });
 
-    await batch.commit();
-  }
-
-  return { count: assets.length };
+      callback(assets);
+    },
+    onError,
+  );
 }
+
+export function subscribeQuantfuryHistory(uid, callback, onError) {
+  if (!uid) return () => {};
+
+  const reference = query(
+    collection(db, 'users', uid, 'tradingHistory'),
+    orderBy('date', 'desc'),
+    orderBy('time', 'desc'),
+    limit(500),
+  );
+
+  return onSnapshot(
+    reference,
+    (snapshot) => {
+      callback(snapshot.docs.map((item) => ({
+        id: item.id,
+        ...item.data(),
+      })));
+    },
+    onError,
+  );
+}
+
+export function subscribeQuantfuryAnalytics(uid, callback, onError) {
+  if (!uid) return () => {};
+
+  const reference = doc(
+    db,
+    'users',
+    uid,
+    'tradingAnalytics',
+    'latest',
+  );
+
+  return onSnapshot(
+    reference,
+    (snapshot) => {
+      callback(snapshot.exists()
+        ? {id: snapshot.id, ...snapshot.data()}
+        : null);
+    },
+    onError,
+  );
+}
+
+export async function getQuantfuryImports(uid, count = 20) {
+  if (!uid) return [];
+
+  const reference = query(
+    collection(db, 'users', uid, 'tradingImports'),
+    orderBy('imported_at', 'desc'),
+    limit(count),
+  );
+
+  const snapshot = await getDocs(reference);
+
+  return snapshot.docs.map((item) => ({
+    id: item.id,
+    ...item.data(),
+  }));
+}
+
+
+export function subscribeQuantfuryPositions(uid, callback, onError) {
+  if (!uid) return () => {};
+
+  const reference = query(
+    collection(db, 'users', uid, 'manualAssets'),
+    orderBy('createdAt', 'desc'),
+  );
+
+  return onSnapshot(
+    reference,
+    (snapshot) => {
+      const assets = snapshot.docs
+        .map((item) => ({id: item.id, ...item.data()}))
+        .filter((asset) => {
+          const note = String(asset.note || '').toLowerCase();
+          return asset.source === 'quantfury' || note.includes('quantfury');
+        });
+
+      callback(assets);
+    },
+    onError,
+  );
+}
+

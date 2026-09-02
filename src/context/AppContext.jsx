@@ -18,15 +18,11 @@ import {
   getPortfolioHistory,
   replacePortfolioSnapshot,
   getLatestPortfolioAnalysis,
-  replaceTradingHistoryBulk as replaceTradingHistoryBulkDb,
-  getTradingHistory,
-  procesarQuantfuryPdf,  removeQuantfuryManualAssets,
-  addManualAssetsBulk,
+  // procesarQuantfuryPdf,  
 } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { useManualAssets } from '../hooks/useManualAssets';
 import { buildPortfolioV3 } from '../features/portfolio/utils/portfolioAnalysis';
-import { buildPortfolioAIReport } from '../features/portfolio/utils/portfolioAIReport';
 
 const AppContext = createContext(null);
 
@@ -117,10 +113,6 @@ export const AppProvider = ({ children }) => {
   const [bobRate, setBobRate] = useState(null);
   const [todayPortfolioV3, setTodayPortfolioV3] = useState(null);
   const [todayPortfolioMeta, setTodayPortfolioMeta] = useState(null);
-  const [tradingHistory, setTradingHistory] = useState([]);
-  const [quantfuryAnalysis, setQuantfuryAnalysis] = useState(null);
-  const [quantfuryLoading, setQuantfuryLoading] = useState(false);
-  const [todayPortfolioAI, setTodayPortfolioAI] = useState(null);
   const [
   todayPortfolioAnalysis,
   setTodayPortfolioAnalysis,
@@ -601,84 +593,7 @@ const riskData = useMemo(() => {
   [user?.uid],
 );
 
-  // ─── Quantfury: procesar PDF ───────────────────────────────────────────────
-const processQuantfuryPdf = useCallback(
-  async ({ file, equity }) => {
-    if (!user?.uid) throw new Error('Usuario no autenticado');
-
-    setQuantfuryLoading(true);
-
-    try {
-      const result = await procesarQuantfuryPdf({ file, equity });
-
-      if (!result?.ok) {
-        throw new Error('No se pudo procesar el PDF');
-      }
-
-      const importBatchId = `qf_${Date.now()}`;
-      const fileName = file?.name || 'Informe Quantfury.pdf';
-      const equityReal = Number(result.summary?.equity_real ?? equity ?? 0);
-
-      const rowsToSave = (result.raw_legs || []).map((row) => ({
-        ...row,
-        source: 'quantfury',
-        equity_real: equityReal,
-        file_name: fileName,
-        import_batch_id: importBatchId,
-        import_summary: result.summary ?? {},
-      }));
-
-      await replaceTradingHistoryBulkDb(user.uid, rowsToSave, {
-        source: 'quantfury',
-        import_batch_id: importBatchId,
-        file_name: fileName,
-        equity_real: equityReal,
-        summary: result.summary ?? {},
-      });
-
-      const dedupedOpenPositions = Array.from(
-        new Map(
-          (result.open_positions || [])
-            .filter((pos) => pos?.name && Number(pos?.amount || 0) > 0)
-            .map((pos) => [
-              String(pos.name).trim().toUpperCase(),
-              {
-                name: String(pos.name).trim().toUpperCase(),
-                type: pos.type || 'stock',
-                currency: pos.currency || 'USD',
-                amount: Number(pos.amount || 0),
-                note: `${pos.note || 'Importado Quantfury'} [quantfury]`,
-                since: pos.since || null,
-              },
-            ])
-        ).values()
-      );
-
-      await removeQuantfuryManualAssets(user.uid);
-      await addManualAssetsBulk(user.uid, dedupedOpenPositions);
-
-      setTradingHistory(rowsToSave);
-      setQuantfuryAnalysis({
-        summary: result.summary ?? {},
-        analytics: {
-          ...(result.analytics ?? {}),
-          by_asset_type:
-            result.analytics?.by_asset_type ??
-            buildQuantfuryAnalysisFromHistory(rowsToSave)?.analytics?.by_asset_type ??
-            [],
-        },
-        round_trips: result.round_trips ?? [],
-        raw_legs: rowsToSave,
-      });
-
-      return result;
-    } finally {
-      setQuantfuryLoading(false);
-    }
-  },
-  [user?.uid, buildQuantfuryAnalysisFromHistory]
-);
-
+  
   // ─── fetchAll ──────────────────────────────────────────────────────────────
   const fetchAll = useCallback(
     async () => {
@@ -703,7 +618,6 @@ const processQuantfuryPdf = useCallback(
           getSnapshotHistory(90),
           fetchBobRate(),
           user ? getPortfolioHistory(user.uid) : Promise.resolve([]),
-          user ? getTradingHistory(user.uid, 500) : Promise.resolve([]),
         ]);
 
         const latestInversion = getLatestSnapshotByType(admirals, 'inversion');
@@ -715,8 +629,6 @@ const processQuantfuryPdf = useCallback(
         setReports(rpts);
         setHistory(hist);
         setChartHistory(portHistory);
-        setTradingHistory(tHistory);
-        setQuantfuryAnalysis(buildQuantfuryAnalysisFromHistory(tHistory));
 
         if (savedRate) setBobRate(savedRate);
 
@@ -746,9 +658,6 @@ const processQuantfuryPdf = useCallback(
       setChartHistory([]);
       setTodayPortfolioV3(null);
       setTodayPortfolioMeta(null);
-      setTradingHistory([]);
-      setQuantfuryAnalysis(null);
-      setQuantfuryLoading(false);
       setLoading(false);
       return;
     }
@@ -906,13 +815,7 @@ const processQuantfuryPdf = useCallback(
 
  
 
-  const replaceTradingHistoryBulk = useCallback(
-    async (rows, meta = {}) => {
-      if (!user?.uid) throw new Error('Usuario no autenticado');
-      return await replaceTradingHistoryBulkDb(user.uid, rows, meta);
-    },
-    [user?.uid]
-  );
+
 
   // ─── value del contexto ────────────────────────────────────────────────────
   const value = {
@@ -956,13 +859,8 @@ todayPortfolioMeta,
     removeAsset,
     updateAsset,
     
-    replaceTradingHistoryBulk,
     refreshAll: fetchAll,
     refreshPortfolioAnalysis,
-    tradingHistory,
-    quantfuryAnalysis,
-    quantfuryLoading,
-    processQuantfuryPdf,
     ...manualCtx,
   };
 
