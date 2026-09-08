@@ -17,6 +17,7 @@ import {
   limit,
   getDocs,
   writeBatch,
+  startAfter,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -339,38 +340,116 @@ const normalizeTradingRow = (row, meta, importId) => {
 // =============================================================================
 // TRANSACTIONS
 // =============================================================================
-export const subscribeTransactions = (uid, callback) => {
-  const col = collection(db, 'users', uid, 'transactions');
-  const q = query(col, orderBy('date', 'desc'));
 
-  return onSnapshot(
-    q,
-    (snap) => {
-      const transactions = snap.docs.map((document) => ({
-        id: document.id,
-        ...document.data(),
-      }));
+const transactionCollection = (uid) =>
+  collection(db, 'users', uid, 'transactions');
 
-      callback(transactions);
-    },
-    (error) => {
-      console.error('Error leyendo transacciones:', error);
-      callback([]);
-    }
+const normalizeDateRange = ({ from = null, to = null } = {}) => ({
+  from: from || null,
+  to: to || null,
+});
+
+const buildTransactionsQuery = (
+  uid,
+  { from = null, to = null, cursor = null, pageSize = 50 } = {}
+) => {
+  const range = normalizeDateRange({ from, to });
+  const constraints = [];
+
+  if (range.from) constraints.push(where('date', '>=', range.from));
+  if (range.to) constraints.push(where('date', '<=', range.to));
+
+  constraints.push(orderBy('date', 'desc'));
+
+  if (cursor) constraints.push(startAfter(cursor));
+
+  constraints.push(limit(pageSize));
+
+  return query(transactionCollection(uid), ...constraints);
+};
+
+const mapTransactionDocument = (document) => ({
+  id: document.id,
+  ...document.data(),
+});
+
+/**
+ * Obtiene una página para mostrar en pantalla.
+ * El cursor recibido debe ser el último DocumentSnapshot de la página anterior.
+ */
+export const getTransactionsPage = async (
+  uid,
+  { from = null, to = null, cursor = null, pageSize = 50 } = {}
+) => {
+  if (!uid) {
+    return {
+      transactions: [],
+      cursor: null,
+      hasMore: false,
+    };
+  }
+
+  const snapshot = await getDocs(
+    buildTransactionsQuery(uid, {
+      from,
+      to,
+      cursor,
+      pageSize,
+    })
   );
+
+  const documents = snapshot.docs;
+
+  return {
+    transactions: documents.map(mapTransactionDocument),
+    cursor: documents.length ? documents[documents.length - 1] : null,
+    hasMore: documents.length === pageSize,
+  };
+};
+
+/**
+ * Obtiene todos los documentos de un período en lotes.
+ * Solo se utiliza para el CSV, nunca para la lista visual.
+ */
+export const getAllTransactionsForExport = async (
+  uid,
+  { from = null, to = null, batchSize = 500 } = {}
+) => {
+  if (!uid) return [];
+
+  const allTransactions = [];
+  let cursor = null;
+  let hasMore = true;
+
+  while (hasMore) {
+    const page = await getTransactionsPage(uid, {
+      from,
+      to,
+      cursor,
+      pageSize: batchSize,
+    });
+
+    allTransactions.push(...page.transactions);
+    cursor = page.cursor;
+    hasMore = page.hasMore && Boolean(cursor);
+  }
+
+  return allTransactions;
 };
 
 export const addTransaction = (uid, tx) =>
-  addDoc(collection(db, 'users', uid, 'transactions'), {
+  addDoc(transactionCollection(uid), {
     title: tx.title || tx.concept || '',
     concept: tx.concept || '',
     amount: Number(tx.amount),
     currency: tx.currency || 'USD',
     type: tx.type || 'expense',
     category: tx.category || 'other',
+    parentCategory: tx.parentCategory || 'otros',
     date: tx.date,
     note: tx.note || '',
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   });
 
 export const updateTransaction = (uid, id, updates) =>
@@ -381,15 +460,16 @@ export const updateTransaction = (uid, id, updates) =>
     ...(updates.currency !== undefined && { currency: updates.currency }),
     ...(updates.type !== undefined && { type: updates.type }),
     ...(updates.category !== undefined && { category: updates.category }),
+    ...(updates.parentCategory !== undefined && {
+      parentCategory: updates.parentCategory,
+    }),
     ...(updates.date !== undefined && { date: updates.date }),
     ...(updates.note !== undefined && { note: updates.note }),
     updatedAt: serverTimestamp(),
   });
 
-
 export const removeTransaction = (uid, id) =>
   deleteDoc(doc(db, 'users', uid, 'transactions', id));
-
 
 // =============================================================================
 // PORTFOLIO HISTORY
@@ -513,7 +593,8 @@ export const subscribeStandouts = (callback) => {
 };
 
 export async function getPortfolioSnapshotByDate(userId, date) {
-  const ref = doc(db, 'users', userId, 'portfolioHistoryV2', date);
+  const ref = doc(db, 'users', userId, 'portfolioHistory', date);
+  // const ref = doc(db, 'users', userId, 'portfolioHistoryV2', date);
   const snap = await getDoc(ref);
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }

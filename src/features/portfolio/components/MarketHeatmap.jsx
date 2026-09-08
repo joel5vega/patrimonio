@@ -8,7 +8,7 @@ import {
   Lock, Shield, CreditCard, Flame, Sun, ShoppingBag, 
   ShoppingCart, Droplet, Signal, Globe2, Gem, Box, Smartphone
 } from 'lucide-react';
-import './MarketHeatmap.css';
+import '../styles/MarketHeatmap.css';
 import {animate, stagger} from 'animejs'
 /* ─── utils ─────────────────────────────────────────────── */
 const fmt    = (v, d = 0) => v == null ? '—' : '$' + Number(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
@@ -342,6 +342,7 @@ function RoleBlock({ role, assets, roleTotalVal, totalGlobalVal }) {
 
 /* ─── Main ───────────────────────────────────────────────── */
 export default function MarketHeatmap({ assets }) {
+  // console.log('MarketHeatmap assets:', assets);
   const gridRef = useRef(null);
     useEffect(() => {
     if (!gridRef.current) return;
