@@ -21,12 +21,14 @@ export default function Portfolio() {
   loading,
   todayPortfolioAnalysis,
   todayPortfolioV3,
+  manualAssets
 } = useApp();
 
 const portfolio = usePortfolioData({
   loading,
   todayPortfolioAnalysis,
   todayPortfolioV3,
+  manualAssets,
 });
   const exporter = usePortfolioExport(portfolio.aiReport);
 
