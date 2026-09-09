@@ -1180,3 +1180,35 @@
     flex-direction: column;
   }
 }
+
+/* Update prices */
+
+.portfolio-action-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.portfolio-quote-status,
+.portfolio-quote-error {
+  margin: 0.35rem 0 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.portfolio-quote-status {
+  color: #34d399;
+}
+
+.portfolio-quote-error {
+  color: #fb7185;
+}
+
+.portfolio-spin {
+  animation: portfolio-spin 0.8s linear infinite;
+}
+
+@keyframes portfolio-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -506,18 +506,18 @@ export function usePortfolioData({
     fx.rateBOBPerUSD ?? analysis?.aiReport?.snapshot?.bobRate,
     null,
   );
-console.table(
-  assets
-    .filter((asset) => asset.source === 'quantfury')
-    .map((asset) => ({
-      symbol: asset.symbol,
-      quantity: asset.quantity,
-      entryPrice: asset.entryPrice,
-      sourceMetaEntryPrice: asset.sourceMeta?.entryPrice,
-      costBasisUSD: asset.costBasisUSD,
-      valueUSD: asset.valueUSD,
-    })),
-);
+// console.table(
+//   assets
+//     .filter((asset) => asset.source === 'quantfury')
+//     .map((asset) => ({
+//       symbol: asset.symbol,
+//       quantity: asset.quantity,
+//       entryPrice: asset.entryPrice,
+//       sourceMetaEntryPrice: asset.sourceMeta?.entryPrice,
+//       costBasisUSD: asset.costBasisUSD,
+//       valueUSD: asset.valueUSD,
+//     })),
+// );
   return {
     loading,
     analysis,

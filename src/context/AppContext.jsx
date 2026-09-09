@@ -18,6 +18,7 @@ import {
   getPortfolioHistory,
   replacePortfolioSnapshot,
   getLatestPortfolioAnalysis,
+  refreshQuantfuryQuotes,
   // procesarQuantfuryPdf,  
 } from '../lib/firebase';
 import { useAuth } from './AuthContext';
@@ -592,7 +593,43 @@ const riskData = useMemo(() => {
   },
   [user?.uid],
 );
+const refreshMarketQuotes = useCallback(
+  async ({ force = false } = {}) => {
+    if (!user?.uid) {
+      return {
+        ok: false,
+        reason: 'unauthenticated',
+      };
+    }
 
+    try {
+      const result = await refreshQuantfuryQuotes(
+        force,
+      );
+      // Da tiempo a que Firestore propague el update
+      // y luego vuelve a cargar el análisis backend.
+      await refreshPortfolioAnalysis();
+
+      return {
+        ok: true,
+        ...result,
+      };
+    } catch (error) {
+      console.error(
+        'No se pudieron refrescar las cotizaciones de Quantfury:',
+        error,
+      );
+
+      return {
+        ok: false,
+        message:
+          error?.message ||
+          'No se pudieron actualizar las cotizaciones.',
+      };
+    }
+  },
+  [user?.uid, refreshPortfolioAnalysis],
+);
   
   // ─── fetchAll ──────────────────────────────────────────────────────────────
   const fetchAll = useCallback(
@@ -861,6 +898,7 @@ todayPortfolioMeta,
     
     refreshAll: fetchAll,
     refreshPortfolioAnalysis,
+    refreshMarketQuotes,
     ...manualCtx,
   };
 

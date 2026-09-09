@@ -1,7 +1,10 @@
 import { useState } from 'react';
+
 import { useApp } from '../context/AppContext';
 import { usePortfolioData } from '../features/portfolio/hooks/usePortfolioData';
 import { usePortfolioExport } from '../features/portfolio/hooks/usePortfolioExport';
+import { usePortfolioQuotes } from '../features/portfolio/hooks/usePortfolioQuotes';
+
 import PortfolioHeader from '../features/portfolio/components/PortfolioHeader';
 import PortfolioProfileSelector from '../features/portfolio/components/PortfolioProfileSelector';
 import PortfolioHeatmap from '../features/portfolio/components/PortfolioHeatmap';
@@ -10,32 +13,48 @@ import PortfolioDecisionSupport from '../features/portfolio/components/Portfolio
 import PortfolioAssets from '../features/portfolio/components/PortfolioAssets';
 import PortfolioSecondaryDetails from '../features/portfolio/components/PortfolioSecondaryDetails';
 import PortfolioSectorMap from '../features/portfolio/components/PortfolioSectorMap';
+
 import '../features/portfolio/styles/portfolio.css';
 
 export default function Portfolio() {
-  const app = useApp();
-
-  const [investorProfile, setInvestorProfile] = useState('moderado');
-  // const portfolio = usePortfolioData({ ...app, investorProfile });
   const {
-  loading,
-  todayPortfolioAnalysis,
-  todayPortfolioV3,
-  manualAssets
-} = useApp();
+    loading,
+    todayPortfolioAnalysis,
+    todayPortfolioV3,
+    refreshMarketQuotes,
+    manualAssets,
+  } = useApp();
 
-const portfolio = usePortfolioData({
-  loading,
-  todayPortfolioAnalysis,
-  todayPortfolioV3,
-  manualAssets,
-});
-  const exporter = usePortfolioExport(portfolio.aiReport);
+  const [investorProfile, setInvestorProfile] =
+    useState('moderado');
+
+  const portfolio = usePortfolioData({
+    loading,
+    todayPortfolioAnalysis,
+    todayPortfolioV3,
+    manualAssets,
+  });
+
+  const exporter = usePortfolioExport(
+    portfolio.aiReport,
+  );
+
+  const {
+    refreshingQuotes,
+    quoteMessage,
+    quoteError,
+    refreshQuotesNow,
+  } = usePortfolioQuotes({
+    loading,
+    refreshMarketQuotes,
+  });
 
   if (portfolio.loading) {
     return (
       <main className="portfolio-page">
-        <div className="portfolio-loading">Cargando análisis…</div>
+        <div className="portfolio-loading">
+          Cargando análisis…
+        </div>
       </main>
     );
   }
@@ -43,12 +62,16 @@ const portfolio = usePortfolioData({
   return (
     <main className="portfolio-page">
       <PortfolioHeader
-        profile={portfolio.profile}
+        profile={investorProfile}
         generatedAt={portfolio.generatedAt}
         bobRate={portfolio.bobRate}
         onCopy={exporter.copy}
         onDownload={exporter.download}
         copied={exporter.copied}
+        onRefreshQuotes={refreshQuotesNow}
+        refreshingQuotes={refreshingQuotes}
+        quoteMessage={quoteMessage}
+        quoteError={quoteError}
       />
 
       <PortfolioHeatmap
@@ -69,8 +92,6 @@ const portfolio = usePortfolioData({
       <PortfolioSectorMap
         sectorAnalysis={portfolio.sectorAnalysis}
       />
-
-      
 
       <PortfolioDecisionSupport
         decisionSupport={portfolio.decisionSupport}

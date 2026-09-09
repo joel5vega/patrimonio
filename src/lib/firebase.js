@@ -19,6 +19,7 @@ import {
   writeBatch,
   startAfter,
 } from 'firebase/firestore';
+import {getFunctions, httpsCallable} from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -819,3 +820,23 @@ export function subscribeQuantfuryPositions(uid, callback, onError) {
   );
 }
 
+//Functions
+const functions = getFunctions(
+  app,
+  'us-central1',
+);
+
+export async function refreshQuantfuryQuotes(
+  force = false,
+) {
+  const refreshQuotes = httpsCallable(
+    functions,
+    'refreshQuantfuryQuotesOnDemand',
+  );
+
+  const result = await refreshQuotes({
+    force,
+  });
+
+  return result.data;
+}
