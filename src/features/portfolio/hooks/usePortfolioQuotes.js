@@ -1,33 +1,84 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+// src/features/portfolio/hooks/usePortfolioQuotes.js
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 export function usePortfolioQuotes({
   loading = false,
   refreshMarketQuotes,
+  refreshBinanceSnapshot,
+  refreshAll,
 } = {}) {
-  const [refreshing, setRefreshing] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [refreshing, setRefreshing] =
+    useState(false);
 
-  const automaticRefreshStartedRef = useRef(false);
+  const [message, setMessage] =
+    useState('');
+
+  const [error, setError] =
+    useState('');
+
+  const automaticRefreshStartedRef =
+    useRef(false);
 
   const refreshQuotes = useCallback(
-    async ({ force = false } = {}) => {
-      if (typeof refreshMarketQuotes !== 'function') {
+    async ({
+      force = false,
+      includeBinance = false,
+    } = {}) => {
+      console.log(
+        '[Portfolio quotes] refreshQuotes iniciado',
+        {
+          force,
+          includeBinance,
+          hasMarketRefresh:
+            typeof refreshMarketQuotes === 'function',
+          hasBinanceRefresh:
+            typeof refreshBinanceSnapshot === 'function',
+          hasRefreshAll:
+            typeof refreshAll === 'function',
+        },
+      );
+
+      if (refreshing) {
+        console.warn(
+          '[Portfolio quotes] Ya existe un refresh en progreso',
+        );
+
+        return {
+          ok: false,
+          message:
+            'Ya se está ejecutando una actualización.',
+        };
+      }
+
+      const canRefreshMarket =
+        typeof refreshMarketQuotes === 'function';
+
+      const canRefreshBinance =
+        includeBinance &&
+        typeof refreshBinanceSnapshot === 'function';
+
+      if (!canRefreshMarket && !canRefreshBinance) {
         const nextError =
-          'La actualización de cotizaciones no está disponible.';
+          'No hay ninguna función de actualización disponible.';
+
+        console.error(
+          '[Portfolio quotes] Funciones no disponibles',
+          {
+            canRefreshMarket,
+            canRefreshBinance,
+          },
+        );
 
         setError(nextError);
 
         return {
           ok: false,
           message: nextError,
-        };
-      }
-
-      if (refreshing) {
-        return {
-          ok: false,
-          message: 'Ya se están actualizando las cotizaciones.',
         };
       }
 
@@ -36,43 +87,115 @@ export function usePortfolioQuotes({
       setError('');
 
       try {
-        const result = await refreshMarketQuotes({
-          force,
-        });
+        const tasks = [];
 
-        if (result?.ok === false) {
-          throw new Error(
-            result.message ||
-              'No se pudieron actualizar las cotizaciones.',
+        if (canRefreshMarket) {
+          console.log(
+            '[Portfolio quotes] Iniciando Quantfury',
+          );
+
+          tasks.push(
+            refreshMarketQuotes({
+              force,
+            }).then((result) => {
+              console.log(
+                '[Portfolio quotes] Quantfury terminó',
+                result,
+              );
+
+              if (result?.ok === false) {
+                throw new Error(
+                  result.message ||
+                    'Falló la actualización de Quantfury.',
+                );
+              }
+
+              return {
+                source: 'quantfury',
+                result,
+              };
+            }),
           );
         }
 
-        const refreshed = Number(result?.refreshed || 0);
+        if (canRefreshBinance) {
+          console.log(
+            '[Portfolio quotes] Iniciando Binance snapshot',
+          );
 
-        const nextMessage = refreshed > 0
-          ? `${refreshed} precio(s) actualizado(s).`
+          tasks.push(
+            refreshBinanceSnapshot().then((result) => {
+              console.log(
+                '[Portfolio quotes] Binance terminó',
+                result,
+              );
+
+              if (result?.ok === false) {
+                throw new Error(
+                  result.error ||
+                    result.message ||
+                    'Falló el snapshot de Binance.',
+                );
+              }
+
+              return {
+                source: 'binance',
+                result,
+              };
+            }),
+          );
+        }
+
+        console.log(
+          '[Portfolio quotes] Tareas iniciadas:',
+          tasks.length,
+        );
+
+        const results = await Promise.all(tasks);
+
+        console.log(
+          '[Portfolio quotes] Todas las tareas terminaron',
+          results,
+        );
+
+        if (typeof refreshAll === 'function') {
+          console.log(
+            '[Portfolio quotes] Ejecutando refreshAll',
+          );
+
+          await refreshAll();
+
+          console.log(
+            '[Portfolio quotes] refreshAll terminó',
+          );
+        }
+
+        const nextMessage = includeBinance
+          ? 'Binance y cotizaciones actualizados.'
           : 'Cotizaciones verificadas.';
 
         setMessage(nextMessage);
 
-        console.log(
-          '[Portfolio quotes] Refresh exitoso:',
-          result,
-        );
-
         return {
           ok: true,
-          ...result,
+          force,
+          includeBinance,
+          results,
         };
       } catch (refreshError) {
+        console.error(
+          '[Portfolio quotes] Error actualizando',
+          {
+            code: refreshError?.code,
+            message: refreshError?.message,
+            details: refreshError?.details,
+            stack: refreshError?.stack,
+          },
+        );
+
         const nextError =
           refreshError?.message ||
-          'No se pudieron actualizar las cotizaciones.';
-
-        console.error(
-          '[Portfolio quotes] Error actualizando:',
-          refreshError,
-        );
+          'No se pudieron actualizar los datos de mercado.';
 
         setError(nextError);
 
@@ -81,41 +204,61 @@ export function usePortfolioQuotes({
           message: nextError,
         };
       } finally {
+        console.log(
+          '[Portfolio quotes] Finalizando refresh',
+        );
+
         setRefreshing(false);
       }
     },
-    [refreshMarketQuotes, refreshing],
+    [
+      refreshAll,
+      refreshBinanceSnapshot,
+      refreshMarketQuotes,
+      refreshing,
+    ],
   );
 
   useEffect(() => {
     if (
       loading ||
-      automaticRefreshStartedRef.current ||
-      typeof refreshMarketQuotes !== 'function'
+      automaticRefreshStartedRef.current
     ) {
       return;
     }
 
     automaticRefreshStartedRef.current = true;
 
+    // Al abrir la página solo se consultan quotes de Quantfury.
+    // Binance se ejecuta únicamente con el botón manual.
     refreshQuotes({
       force: false,
+      includeBinance: false,
+    }).catch((error) => {
+      console.error(
+        '[Portfolio quotes] Error automático',
+        error,
+      );
     });
-  }, [
-    loading,
-    refreshMarketQuotes,
-    refreshQuotes,
-  ]);
+  }, [loading, refreshQuotes]);
 
   return {
     refreshingQuotes: refreshing,
     quoteMessage: message,
     quoteError: error,
 
-    // Botón manual: forzar actualización, aunque cache aún esté vigente.
+    // Esta es la función que Portfolio.jsx ya está usando.
+    refreshPortfolioPrices: () =>
+      refreshQuotes({
+        force: true,
+        includeBinance: true,
+      }),
+
+    // Opcional: solo Quantfury.
     refreshQuotesNow: () =>
       refreshQuotes({
         force: true,
+        includeBinance: false,
       }),
   };
 }

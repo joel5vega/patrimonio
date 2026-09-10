@@ -77,7 +77,7 @@ export default function PortfolioHeader({
 
           {refreshingQuotes
             ? 'Actualizando…'
-            : 'Precios'}
+            : 'Update'}
         </button>
 
         <button

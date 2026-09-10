@@ -1,3 +1,4 @@
+// src/context/AppContext.jsx
 import {
   createContext,
   useContext,
@@ -131,24 +132,184 @@ export const AppProvider = ({ children }) => {
     () => getLatestSnapshotByType(admiralsSnaps, 'trade'),
     [admiralsSnaps]
   );
+  
+const cryptoAssets = useMemo(() => {
+  const snapshot = binanceSnap?.snapshot || {};
 
-  const cryptoAssets = useMemo(() => {
-    const bs = binanceSnap?.snapshot || {};
-    return (bs.assets || []).map((a, i) => ({
-      id: `crypto-${a.asset}-${i}`,
-      name: a.asset,
-      symbol: a.asset,
-      type: 'crypto',
-      quantity: a.amount ?? 0,
-      avgBuyPrice: 0,
-      currentPrice: a.price ?? 0,
-      valueUSD: a.valueUSD ?? 0,
-      netExposureUSD: a.valueUSD ?? 0,
-      weightPct: a.weightPct ?? 0,
-      pendingBuyUSD: a.pendingBuyUSD ?? 0,
-      unrealizedPL: null,
-    }));
-  }, [binanceSnap]);
+    // return (snapshot.assets || []).map(
+  const normalized = (snapshot.assets || []).map(
+    (asset, index) => {
+      const quantity = Number(
+        asset.quantity ?? asset.amount ?? 0,
+      );
+
+      const entryPrice = Number(
+        asset.entryPrice ??
+        asset.entry_price ??
+        0,
+      ) || null;
+
+      const marketPrice = Number(
+        asset.marketPrice ??
+        asset.priceUSD ??
+        asset.price ??
+        0,
+      ) || null;
+
+      const costBasisUSD = Number(
+        asset.costBasisUSD ??
+        asset.cost_basis_usd ??
+        0,
+      ) || null;
+
+      const marketValueUSD = Number(
+        asset.marketValueUSD ??
+        asset.market_value_usd ??
+        asset.valueUSD ??
+        0,
+      ) || null;
+
+      const unrealizedPnlUSD = Number(
+        asset.unrealizedPnlUSD ??
+        asset.unrealized_pnl_usd ??
+        0,
+      ) || null;
+
+      const unrealizedPnlPct = Number(
+        asset.unrealizedPnlPct ??
+        asset.unrealized_pnl_pct ??
+        0,
+      ) || null;
+
+      return {
+        ...asset,
+
+        id:
+          asset.id ??
+          `binance-${asset.asset ?? asset.symbol}-${index}`,
+
+        name:
+          asset.name ??
+          asset.asset ??
+          asset.symbol ??
+          'Crypto',
+
+        symbol:
+          asset.symbol ??
+          asset.asset ??
+          '—',
+
+        type:
+          asset.type ??
+          (
+            ['USDT', 'USDC', 'BUSD', 'DAI', 'FDUSD'].includes(
+              asset.asset ?? asset.symbol,
+            )
+              ? 'stablecoin'
+              : 'crypto'
+          ),
+
+        source: 'binance',
+
+        groupKey:
+          asset.groupKey ??
+          'binance',
+
+        quantity,
+
+        // Contrato de precio normalizado.
+        entryPrice,
+        avgBuyPrice: entryPrice,
+
+        marketPrice,
+        currentPrice: marketPrice,
+
+        costBasisUSD,
+
+        marketValueUSD:
+          marketValueUSD ??
+          Number(asset.valueUSD ?? 0),
+
+        valueUSD:
+          marketValueUSD ??
+          Number(asset.valueUSD ?? 0),
+
+        netExposureUSD:
+          marketValueUSD ??
+          Number(asset.valueUSD ?? 0),
+
+        unrealizedPnlUSD,
+        unrealizedPnlPct,
+
+        // Aliases que usa MarketHeatmap.
+        pnlUSD: unrealizedPnlUSD,
+        pnlPct: unrealizedPnlPct,
+
+        weightPct:
+          Number(asset.weightPct ?? 0),
+
+        pendingBuyUSD:
+          Number(asset.pendingBuyUSD ?? 0),
+
+        entryPriceSource:
+          asset.entryPriceSource ??
+          null,
+
+        entryPriceMeta:
+          asset.entryPriceMeta ??
+          null,
+
+        sourceMeta: {
+          ...(asset.sourceMeta ?? {}),
+
+          quantity,
+          entryPrice,
+          marketPrice,
+
+          costBasisUSD,
+
+          marketValueUSD:
+            marketValueUSD ??
+            Number(asset.valueUSD ?? 0),
+
+          unrealizedPnlUSD,
+          unrealizedPnlPct,
+
+          pnlUSD: unrealizedPnlUSD,
+          pnlPct: unrealizedPnlPct,
+
+          entryPriceSource:
+            asset.entryPriceSource ??
+            null,
+
+          entryPriceMeta:
+            asset.entryPriceMeta ??
+            null,
+        },
+      };
+    },
+  );
+
+  // console.table(
+  //   normalized.map((asset) => ({
+  //     symbol: asset.symbol,
+  //     quantity: asset.quantity,
+  //     entryPrice: asset.entryPrice,
+  //     avgBuyPrice: asset.avgBuyPrice,
+  //     marketPrice: asset.marketPrice,
+  //     currentPrice: asset.currentPrice,
+  //     costBasisUSD: asset.costBasisUSD,
+  //     marketValueUSD: asset.marketValueUSD,
+  //     unrealizedPnlUSD: asset.unrealizedPnlUSD,
+  //     unrealizedPnlPct: asset.unrealizedPnlPct,
+  //     pnlPct: asset.pnlPct,
+  //     sourceMetaEntryPrice:
+  //       asset.sourceMeta?.entryPrice,
+  //   })),
+  // );
+
+  return normalized;
+}, [binanceSnap]);
 
   const totalCryptoUSD = useMemo(() => {
   const snapshot = binanceSnap?.snapshot || {};
@@ -851,7 +1012,6 @@ const refreshMarketQuotes = useCallback(
   );
 
  
-
 
 
   // ─── value del contexto ────────────────────────────────────────────────────

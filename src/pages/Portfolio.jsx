@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 
 import { useApp } from '../context/AppContext';
 import { usePortfolioData } from '../features/portfolio/hooks/usePortfolioData';
@@ -13,7 +13,7 @@ import PortfolioDecisionSupport from '../features/portfolio/components/Portfolio
 import PortfolioAssets from '../features/portfolio/components/PortfolioAssets';
 import PortfolioSecondaryDetails from '../features/portfolio/components/PortfolioSecondaryDetails';
 import PortfolioSectorMap from '../features/portfolio/components/PortfolioSectorMap';
-
+import { refreshBinanceSnapshot } from '../lib/binanceSnapshotClient';
 import '../features/portfolio/styles/portfolio.css';
 
 export default function Portfolio() {
@@ -22,11 +22,14 @@ export default function Portfolio() {
     todayPortfolioAnalysis,
     todayPortfolioV3,
     refreshMarketQuotes,
+    refreshAll,
     manualAssets,
+    cryptoAssets
   } = useApp();
 
   const [investorProfile, setInvestorProfile] =
     useState('moderado');
+
 
   const portfolio = usePortfolioData({
     loading,
@@ -43,10 +46,12 @@ export default function Portfolio() {
     refreshingQuotes,
     quoteMessage,
     quoteError,
-    refreshQuotesNow,
+    refreshPortfolioPrices,
   } = usePortfolioQuotes({
     loading,
     refreshMarketQuotes,
+    refreshBinanceSnapshot,
+    refreshAll,
   });
 
   if (portfolio.loading) {
@@ -68,7 +73,7 @@ export default function Portfolio() {
         onCopy={exporter.copy}
         onDownload={exporter.download}
         copied={exporter.copied}
-        onRefreshQuotes={refreshQuotesNow}
+        onRefreshQuotes={refreshPortfolioPrices}
         refreshingQuotes={refreshingQuotes}
         quoteMessage={quoteMessage}
         quoteError={quoteError}

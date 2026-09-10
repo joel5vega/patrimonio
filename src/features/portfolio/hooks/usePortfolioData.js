@@ -53,8 +53,28 @@ function getQuantity(asset) {
   );
 }
 
+function getPositiveNumber(...values) {
+  for (const value of values) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ''
+    ) {
+      continue;
+    }
+
+    const number = Number(value);
+
+    if (Number.isFinite(number) && number > 0) {
+      return number;
+    }
+  }
+
+  return null;
+}
+
 function getEntryPrice(asset) {
-  return firstFiniteNumber(
+  return getPositiveNumber(
     asset?.entryPrice,
     asset?.entry_price,
     asset?.avgEntryPrice,
@@ -67,7 +87,7 @@ function getEntryPrice(asset) {
 }
 
 function getMarketPrice(asset) {
-  return firstFiniteNumber(
+  return getPositiveNumber(
     asset?.marketPrice,
     asset?.market_price,
     asset?.priceUSD,
@@ -106,8 +126,12 @@ function getUnrealizedPnl(asset) {
     asset?.unrealizedPnlUSD,
     asset?.unrealized_pnl_usd,
     asset?.pnlUSD,
+    asset?.pnl_usd,
+
     asset?.sourceMeta?.unrealizedPnlUSD,
     asset?.sourceMeta?.unrealized_pnl_usd,
+    asset?.sourceMeta?.pnlUSD,
+    asset?.sourceMeta?.pnl_usd,
   );
 }
 
@@ -116,8 +140,16 @@ function getUnrealizedPnlPct(asset) {
     asset?.unrealizedPnlPct,
     asset?.unrealized_pnl_pct,
     asset?.pnlPct,
+    asset?.pnl_pct,
+    asset?.changePct,
+    asset?.change_pct,
+
     asset?.sourceMeta?.unrealizedPnlPct,
     asset?.sourceMeta?.unrealized_pnl_pct,
+    asset?.sourceMeta?.pnlPct,
+    asset?.sourceMeta?.pnl_pct,
+    asset?.sourceMeta?.changePct,
+    asset?.sourceMeta?.change_pct,
   );
 }
 
@@ -188,7 +220,12 @@ function normalizeAsset(asset = {}, index = 0) {
     weightPct: safeNumber(asset.weightPct ?? asset.weight),
     pnlUSD: unrealizedPnlUSD,
     pnlPct: unrealizedPnlPct,
-
+    changePct: firstFiniteNumber(
+      asset?.changePct,
+      asset?.change_pct,
+      asset?.sourceMeta?.changePct,
+      asset?.sourceMeta?.change_pct,
+    ),
     sourceMeta: {
       ...(asset.sourceMeta ?? {}),
       quantity,

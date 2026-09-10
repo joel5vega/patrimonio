@@ -66,6 +66,7 @@ export default function PortfolioHeatmap({ assets = [], bobRate }) {
         };
       });
   }, [assets]);
+  // console.log('normalizedAssets', assets);
 
   return (
     <MarketHeatmap
