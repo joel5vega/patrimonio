@@ -22,29 +22,15 @@ export default function PortfolioHeader({
   return (
     <header className="portfolio-header">
       <div>
-        <span className="portfolio-eyebrow">
-          Análisis automático
-        </span>
+       
 
         <h1 className="portfolio-title">
-          Dashboard · Portafolio invertible
+          Portafolio invertible
         </h1>
 
         <p className="portfolio-subtitle">
           {formatDate(generatedAt)} · {profile}
         </p>
-
-        {quoteMessage && !quoteError && (
-          <p className="portfolio-quote-status">
-            {quoteMessage}
-          </p>
-        )}
-
-        {quoteError && (
-          <p className="portfolio-quote-error">
-            {quoteError}
-          </p>
-        )}
       </div>
 
       <div className="portfolio-header-actions">
