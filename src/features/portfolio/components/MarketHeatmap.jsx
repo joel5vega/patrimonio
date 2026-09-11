@@ -376,6 +376,8 @@ const SI_SLUGS = {
   USDT: 'tether',
   USDC: 'usdcoin',
   DAI: 'dai',
+
+
 };
 
 const SI_COLORS = {
@@ -420,6 +422,15 @@ const SYMBOL_LUCIDE = {
   MU: { Icon: Cpu, color: '#60a5fa' },
   LITE: { Icon: Cpu, color: '#60a5fa' },
   MELI: { Icon: ShoppingBag, color: '#facc15' },
+  SLV: { Icon: Gem, color: '#eab308' },
+  MRNA: { Icon: HeartPulse, color: '#fb7185' },
+  HSY: { Icon: ShoppingCart, color: '#14b8a6' },
+  SCHW: { Icon: Landmark, color: '#3b82f6' },
+  ZTS: { Icon: HeartPulse, color: '#fb7185' },
+  MCHI: { Icon: Globe2, color: '#06b6d4' },
+  EMBJ: { Icon: Globe2, color: '#06b6d4' },
+  CEG: { Icon: Droplet, color: '#f59e0b' },
+  ECL: { Icon: Droplet, color: '#f59e0b' },
 };
 
 const SECTOR_META = {
