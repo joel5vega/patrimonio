@@ -4,38 +4,38 @@ import {
   Pencil,
   Trash2,
   TrendingDown,
-  TrendingUp,
-} from 'lucide-react';
-import { TX_CATEGORIES, TX_GROUPS } from '../../hooks/useTransactions';
-import { formatDateFull, formatTime } from '../../utils/dateUtils';
-import s from '../../pages/Transactions.module.css';
+  TrendingUp
+} from "lucide-react";
+import { TX_CATEGORIES, TX_GROUPS } from "../../hooks/useTransactions";
+import { formatDateFull, formatTime } from "../../utils/dateUtils";
+import s from "../../pages/Transactions.module.css";
 
 export const TYPE_META = {
   expense: {
-    label: 'Gasto',
+    label: "Gasto",
     icon: TrendingDown,
-    colorHex: '#fb7185',
-    bgHex: 'rgba(251, 113, 133, 0.14)',
+    colorHex: "#fb7185",
+    bgHex: "rgba(251, 113, 133, 0.14)"
   },
   income: {
-    label: 'Ingreso',
+    label: "Ingreso",
     icon: TrendingUp,
-    colorHex: '#34d399',
-    bgHex: 'rgba(52, 211, 153, 0.14)',
+    colorHex: "#34d399",
+    bgHex: "rgba(52, 211, 153, 0.14)"
   },
   transfer: {
-    label: 'Transferencia',
+    label: "Transferencia",
     icon: ArrowLeftRight,
-    colorHex: '#60a5fa',
-    bgHex: 'rgba(96, 165, 250, 0.14)',
-  },
+    colorHex: "#60a5fa",
+    bgHex: "rgba(96, 165, 250, 0.14)"
+  }
 };
 
 export const categoryMeta = (value) =>
   TX_CATEGORIES.find((category) => category.value === value) || {
-    label: value || 'Otro',
-    emoji: '📦',
-    parent: 'otros',
+    label: value || "Otro",
+    emoji: "📦",
+    parent: "otros"
   };
 
 export function PeriodFilter({ value, onChange, periods }) {
@@ -46,7 +46,7 @@ export function PeriodFilter({ value, onChange, periods }) {
           key={period.label}
           type="button"
           className={`${s.periodBtn} ${
-            value === period.value ? s.periodBtnActive : ''
+            value === period.value ? s.periodBtnActive : ""
           }`}
           onClick={() => onChange(period.value)}
         >
@@ -63,7 +63,7 @@ export function CategoryFilter({ value, onChange }) {
       <span className={s.srOnly}>Filtrar por categoría</span>
       <select
         className={s.categorySelect}
-        value={value || ''}
+        value={value || ""}
         onChange={(event) => onChange(event.target.value || null)}
       >
         <option value="">Todas las categorías</option>
@@ -94,44 +94,48 @@ export function TransactionCard({ tx, onEdit, onDelete }) {
   const Icon = meta.icon;
   const category = categoryMeta(tx.category);
   const amount = Math.abs(Number(tx.amount || 0));
-  const currency = tx.currency || 'USD';
+  const currency = tx.currency || "USD";
 
   return (
     <article className={s.card}>
       <span className={s.cardStripe} style={{ background: meta.colorHex }} />
 
       <div className={s.cardTop}>
-        <span
-          className={s.typeIconWrap}
-          style={{ background: meta.bgHex, color: meta.colorHex }}
-        >
-          <Icon size={16} />
-        </span>
-
         <div className={s.cardInfo}>
-          <div className={s.concept}>{tx.concept || tx.title || 'Sin concepto'}</div>
+          {/* <div className={s.concept}>{tx.concept || tx.title || 'Sin concepto'}</div> */}
 
           <div className={s.meta}>
             <span className={s.badge}>
-              {category.emoji} {category.label}
+              {category.emoji}
+              {/* {category.label} */}
             </span>
-            <span className={s.date}>{formatDateFull(tx.date || tx.createdAt)}</span>
+           
+            <div className={s.concept}>
+              {tx.concept || tx.title || "Sin concepto"}
+            </div>
+                <span className={s.date}>
+              <span>{formatDateFull(tx.date || tx.createdAt)}</span>
+            {tx.createdAt ? (
+              <>
+                <span className={s.dateSeparator}>·</span>
+                <span className={s.time}>{formatTime(tx.createdAt)}</span>
+              </>
+            ) : null}
+          </span>
           </div>
-
-          {tx.note ? <div className={s.note}>{tx.note}</div> : null}
         </div>
       </div>
 
       <div className={s.cardRight}>
-        <div className={s.amount} style={{ color: meta.colorHex }}>
-          {currency}{' '}
-          {amount.toLocaleString('es-BO', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </div>
-
         <div className={s.actions}>
+        
+       <div className={s.amount} style={{ color: meta.colorHex }}>
+              {currency}{" "}
+              {amount.toLocaleString("es-BO", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 1
+              })}
+            </div>
           <button
             type="button"
             className={`${s.btnIcon} ${s.btnEdit}`}
