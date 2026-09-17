@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
   ChevronDown,
-  ChevronUp,
   Layers3,
   Cpu,
   HeartPulse,
@@ -31,7 +30,8 @@ import {
   BriefcaseBusiness,
   Factory,
   Radio,
-  Zap,BadgeDollarSign,
+  Zap,
+  BadgeDollarSign,
 } from 'lucide-react';
 
 const SECTOR_ICONS = {
@@ -105,19 +105,12 @@ const SECTOR_LABELS = {
 };
 
 const SECTOR_COLORS = [
-  '#22d3ee',
-  '#60a5fa',
-  '#34d399',
-  '#facc15',
-  '#fb7185',
-  '#a78bfa',
-  '#fb923c',
-  '#2dd4bf',
-  '#f472b6',
-  '#94a3b8',
-  '#818cf8',
-  '#4ade80',
+  '#22d3ee', '#60a5fa', '#34d399', '#facc15',
+  '#fb7185', '#a78bfa', '#fb923c', '#2dd4bf',
+  '#f472b6', '#94a3b8', '#818cf8', '#4ade80',
 ];
+
+const VISIBLE_LIMIT = 8;
 
 const formatSector = (sector) =>
   SECTOR_LABELS[sector] || String(sector || 'otros').replaceAll('_', ' ');
@@ -156,28 +149,24 @@ function SectorDonut({ sectors, activeIndex, onHover }) {
   const size = 172;
   const center = size / 2;
   const radius = 59;
-  const strokeWidth = 24;
+  const strokeWidth = 22;
   const circumference = 2 * Math.PI * radius;
-  const total = sectors.reduce((sum, sector) => sum + Math.max(0, sector.pct), 0) || 1;
+  const total = sectors.reduce((sum, s) => sum + Math.max(0, s.pct), 0) || 1;
   let offset = 0;
 
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
+    <div className="portfolio-donut-wrap">
       <svg
         viewBox={`0 0 ${size} ${size}`}
-        className="h-full w-full -rotate-90"
+        className="portfolio-donut-svg"
+        style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}
         role="img"
         aria-label="Distribución de la cartera por sector"
       >
         <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="rgba(51, 65, 85, 0.35)"
-          strokeWidth={strokeWidth}
+          cx={center} cy={center} r={radius}
+          fill="none" stroke="rgba(51,65,85,0.35)" strokeWidth={strokeWidth}
         />
-
         {sectors.map((sector, index) => {
           const segment = (Math.max(0, sector.pct) / total) * circumference;
           const gap = sectors.length > 1 ? 2 : 0;
@@ -188,9 +177,7 @@ function SectorDonut({ sectors, activeIndex, onHover }) {
           return (
             <circle
               key={`${sector.sector}-${index}`}
-              cx={center}
-              cy={center}
-              r={radius}
+              cx={center} cy={center} r={radius}
               fill="none"
               stroke={getColor(index)}
               strokeWidth={activeIndex === index ? strokeWidth + 5 : strokeWidth}
@@ -198,27 +185,18 @@ function SectorDonut({ sectors, activeIndex, onHover }) {
               strokeDasharray={`${visibleSegment} ${circumference - visibleSegment}`}
               strokeDashoffset={-currentOffset}
               opacity={activeIndex === null || activeIndex === index ? 1 : 0.28}
-              className="cursor-pointer transition-all duration-200"
+              style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
               onMouseEnter={() => onHover(index)}
               onMouseLeave={() => onHover(null)}
             />
           );
         })}
       </svg>
-
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-semibold tracking-tight text-slate-100">
-          {sectors.length}
-        </span>
-        <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
-          sectores
-        </span>
-      </div>
     </div>
   );
 }
 
-function SectorLegendRow({ sector, color, index, activeIndex, onHover, onSelect }) {
+function SectorLegendCard({ sector, color, index, activeIndex, onHover, onSelect }) {
   const Icon = SECTOR_ICONS[sector.sector] || Layers3;
   const isActive = activeIndex === index;
   const isLookThrough = Number(sector.lookThroughValueUSD || 0) > 0;
@@ -226,11 +204,7 @@ function SectorLegendRow({ sector, color, index, activeIndex, onHover, onSelect 
   return (
     <button
       type="button"
-      className={`group grid w-full grid-cols-[minmax(0,1fr)_70px_88px] items-center gap-3 rounded-xl px-3 py-2 text-left transition-all duration-200 ${
-        isActive
-          ? 'bg-slate-800/90 shadow-[inset_3px_0_0_var(--sector-color)]'
-          : 'hover:bg-slate-800/50'
-      }`}
+      className={`portfolio-legend-card sector-legend-row${isActive ? ' active' : ''}`}
       style={{ '--sector-color': color }}
       onMouseEnter={() => onHover(index)}
       onMouseLeave={() => onHover(null)}
@@ -239,85 +213,58 @@ function SectorLegendRow({ sector, color, index, activeIndex, onHover, onSelect 
       onClick={() => onSelect(index)}
       aria-pressed={isActive}
     >
-      <span className="flex min-w-0 items-center gap-3">
+      <span className="portfolio-legend-top">
         <span
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-          style={{
-            color,
-            backgroundColor: `${color}18`,
-            border: `1px solid ${color}35`,
-          }}
+          className="portfolio-legend-icon"
+          style={{ color, backgroundColor: `${color}18`, borderColor: `${color}35` }}
         >
-          <Icon size={15} strokeWidth={1.8} />
+          <Icon size={14} strokeWidth={1.8} />
         </span>
-        <span className="min-w-0 truncate text-xs font-medium text-slate-300 group-hover:text-slate-100">
-          {formatSector(sector.sector)}
-        </span>
+        <span className="portfolio-legend-label">{formatSector(sector.sector)}</span>
+        <span className="sector-legend-pct">{formatPct(sector.pct)}</span>
       </span>
-
-      <span className="text-right text-sm font-semibold tabular-nums text-slate-200">
-        {formatPct(sector.pct)}
-      </span>
-
-      <span className="flex flex-col items-end">
-        <span className="text-xs tabular-nums text-slate-400">
-          {formatUSD(sector.valueUSD)}
-        </span>
-        {isLookThrough && (
-          <span className="text-[9px] uppercase tracking-wide text-cyan-400/70">
-            ETF look-through
-          </span>
-        )}
+      <span className="portfolio-legend-bottom">
+        <span className="portfolio-legend-value">{formatUSD(sector.valueUSD)}</span>
+        {isLookThrough && <span className="sector-legend-tag">ETF look-through</span>}
       </span>
     </button>
   );
 }
 
-function SectorDetails({ sector }) {
+function SectorDetail({ sector }) {
   if (!sector) return null;
 
-  const sources = sector.sources || [];
   const direct = Number(sector.directValueUSD || 0);
   const lookThrough = Number(sector.lookThroughValueUSD || 0);
+  const sources = sector.sources || [];
 
   return (
-    <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <div className="sector-detail">
+      <div className="sector-detail-head">
         <div>
-          <p className="text-sm font-medium text-slate-100">
-            {formatSector(sector.sector)}
-          </p>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {formatPct(sector.pct)} de los activos invertibles
-          </p>
+          <p className="sector-detail-name">{formatSector(sector.sector)}</p>
+          <p className="sector-detail-sub">{formatPct(sector.pct)} de los activos invertibles</p>
         </div>
-        <p className="text-sm font-semibold text-slate-200">
-          {formatUSD(sector.valueUSD)}
-        </p>
+        <p className="sector-detail-value">{formatUSD(sector.valueUSD)}</p>
       </div>
 
       {(direct > 0 || lookThrough > 0) && (
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-lg bg-slate-900/80 p-2">
-            <p className="text-slate-500">Directo</p>
-            <p className="mt-1 font-medium text-slate-300">{formatUSD(direct)}</p>
+        <div className="v3-metrics-grid" style={{ marginBottom: 0 }}>
+          <div className="v3-metric-card">
+            <span className="v3-metric-label">Directo</span>
+            <span className="v3-metric-value muted">{formatUSD(direct)}</span>
           </div>
-          <div className="rounded-lg bg-cyan-950/20 p-2">
-            <p className="text-cyan-400/70">Por ETFs</p>
-            <p className="mt-1 font-medium text-cyan-200">{formatUSD(lookThrough)}</p>
+          <div className="v3-metric-card">
+            <span className="v3-metric-label">Por ETFs</span>
+            <span className="v3-metric-value" style={{ color: '#22d3ee' }}>{formatUSD(lookThrough)}</span>
           </div>
         </div>
       )}
 
       {sources.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="sector-detail-sources">
           {sources.map((source) => (
-            <span
-              key={source}
-              className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] font-medium text-slate-400"
-            >
-              {source}
-            </span>
+            <span key={source} className="v3-mini-badge">{source}</span>
           ))}
         </div>
       )}
@@ -326,29 +273,27 @@ function SectorDetails({ sector }) {
 }
 
 export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
-  const sectors = useMemo(
-    () => normalizeSectorData(sectorAnalysis),
-    [sectorAnalysis]
-  );
+  const sectors = useMemo(() => normalizeSectorData(sectorAnalysis), [sectorAnalysis]);
   const [activeIndex, setActiveIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [expanded, setExpanded] = useState(false);
 
-  const visibleSectors = expanded ? sectors : sectors.slice(0, 8);
+  const mainSectors = sectors.slice(0, VISIBLE_LIMIT);
+  const extraSectors = sectors.slice(VISIBLE_LIMIT);
   const selectedSector = selectedIndex === null ? null : sectors[selectedIndex];
-  const totalUSD = sectors.reduce((sum, sector) => sum + sector.valueUSD, 0);
+  const totalUSD = sectors.reduce((sum, s) => sum + s.valueUSD, 0);
   const dominantSector = sectors[0];
 
   if (!sectors.length) {
     return (
-      <section className={`rounded-2xl border border-slate-800 bg-slate-950/60 p-6 ${className}`}>
-        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-          Análisis de concentración
-        </p>
-        <h2 className="mt-2 text-base font-semibold text-slate-100">
-          Distribución por sector
-        </h2>
-        <p className="mt-8 text-sm text-slate-500">
+      <section className={`portfolio-card ${className}`}>
+        <div className="portfolio-section-head">
+          <div>
+            <span className="portfolio-eyebrow">Análisis de concentración</span>
+            <span className="v3-section-title">Distribución por sector</span>
+          </div>
+        </div>
+        <p style={{ padding: '0 1.25rem 1.25rem', fontSize: '0.85rem', color: '#64748b' }}>
           No hay datos sectoriales disponibles.
         </p>
       </section>
@@ -356,40 +301,31 @@ export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
   }
 
   return (
-    <section className={`overflow-hidden rounded-2xl border border-slate-800/80 bg-[#070d1c] shadow-2xl shadow-black/10 ${className}`}>
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800/80 px-5 py-4 sm:px-6">
+    <section className={`portfolio-card ${className}`}>
+      <div className="portfolio-section-head">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-            Análisis de concentración
-          </p>
-          <h2 className="mt-1 text-sm font-semibold text-slate-100 sm:text-base">
-            Distribución por sector
-          </h2>
+          <span className="portfolio-eyebrow">Análisis de concentración</span>
+          <span className="v3-section-title">Distribución por sector</span>
         </div>
-
         {dominantSector && (
-          <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-[10px] font-semibold text-cyan-300">
+          <span className="portfolio-risk-badge">
             Principal: {formatSector(dominantSector.sector)} {formatPct(dominantSector.pct)}
           </span>
         )}
-      </header>
+      </div>
 
-      <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[190px_minmax(0,1fr)] lg:items-center">
-        <div className="flex flex-col items-center justify-center">
-          <SectorDonut
-            sectors={sectors}
-            activeIndex={activeIndex}
-            onHover={setActiveIndex}
-          />
-          <p className="mt-3 text-xs tabular-nums text-slate-500">
+      <div className="portfolio-hero-grid">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <SectorDonut sectors={sectors} activeIndex={activeIndex} onHover={setActiveIndex} />
+          <p className="portfolio-stat-label" style={{ marginTop: '0.5rem' }}>
             {formatUSD(totalUSD)} invertidos
           </p>
         </div>
 
-        <div className="min-w-0">
-          <div className="space-y-0.5">
-            {visibleSectors.map((sector, index) => (
-              <SectorLegendRow
+        <div style={{ minWidth: 0 }}>
+          <div className="portfolio-legend-grid">
+            {mainSectors.map((sector, index) => (
+              <SectorLegendCard
                 key={`${sector.sector}-${index}`}
                 sector={sector}
                 index={index}
@@ -401,18 +337,44 @@ export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
             ))}
           </div>
 
-          {sectors.length > 8 && (
-            <button
-              type="button"
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-800 py-2 text-xs font-medium text-slate-400 transition hover:border-slate-700 hover:bg-slate-800/50 hover:text-slate-200"
-              onClick={() => setExpanded((value) => !value)}
-            >
-              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              {expanded ? 'Ver menos sectores' : `Ver todos (${sectors.length})`}
-            </button>
+          {extraSectors.length > 0 && (
+            <>
+              <button
+                type="button"
+                className="portfolio-legend-toggle"
+                onClick={() => setExpanded((v) => !v)}
+                aria-expanded={expanded}
+              >
+                <span className="portfolio-legend-toggle__count">{extraSectors.length}</span>
+                {expanded ? 'Ver menos sectores' : 'Ver todos los sectores'}
+                <ChevronDown
+                  size={14}
+                  className={`portfolio-legend-toggle__chevron${expanded ? ' open' : ''}`}
+                />
+              </button>
+
+              <div className={`portfolio-legend-collapsible${expanded ? ' open' : ''}`}>
+                <div className="portfolio-legend-grid">
+                  {extraSectors.map((sector, i) => {
+                    const index = VISIBLE_LIMIT + i;
+                    return (
+                      <SectorLegendCard
+                        key={`${sector.sector}-${index}`}
+                        sector={sector}
+                        index={index}
+                        color={getColor(index)}
+                        activeIndex={activeIndex}
+                        onHover={setActiveIndex}
+                        onSelect={setSelectedIndex}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
 
-          <SectorDetails sector={selectedSector} />
+          <SectorDetail sector={selectedSector} />
         </div>
       </div>
     </section>
