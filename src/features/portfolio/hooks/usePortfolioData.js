@@ -537,7 +537,11 @@ export function usePortfolioData({
     { sectors: [] };
 
   const decisionSupport = normalizeDecisionSupport(analysis, portfolioV3);
-
+  const historicalContext =
+    analysis?.aiReport?.historicalContext ??
+    portfolioV3?.historicalContext ??
+    analysis?.historicalContext ??
+    null;
   const fx = analysis?.provenance?.fx ?? {};
   const bobRate = safeNumber(
     fx.rateBOBPerUSD ?? analysis?.aiReport?.snapshot?.bobRate,
@@ -598,6 +602,7 @@ export function usePortfolioData({
     decisionSupport,
     rebalance: decisionSupport.rebalancePlan,
     sectorAnalysis,
+    historicalContext,
     heatmapAssets: filters?.investableAssets ?? assets,
     filteredAssets: filters?.filteredAssets ?? assets,
     assets,

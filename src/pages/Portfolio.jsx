@@ -14,6 +14,8 @@ import PortfolioAssets from '../features/portfolio/components/PortfolioAssets';
 import PortfolioSecondaryDetails from '../features/portfolio/components/PortfolioSecondaryDetails';
 import PortfolioSectorMap from '../features/portfolio/components/PortfolioSectorMap';
 import { refreshBinanceSnapshot } from '../lib/binanceSnapshotClient';
+import PortfolioPerformance from '../features/portfolio/components/PortfolioPerformance';
+import '../features/portfolio/styles/PortfolioPerformance.css';
 // import '../features/portfolio/styles/portfolio.css';
 
 export default function Portfolio() {
@@ -78,7 +80,7 @@ export default function Portfolio() {
         quoteMessage={quoteMessage}
         quoteError={quoteError}
       />
-
+<PortfolioPerformance historicalContext={portfolio.historicalContext} />
       <PortfolioHeatmap
         assets={portfolio.heatmapAssets}
         bobRate={portfolio.bobRate}
