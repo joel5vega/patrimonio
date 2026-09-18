@@ -45,6 +45,9 @@ const emptyForm = () => ({
   concept: '',
   note: '',
   currency: 'BOB',
+  originalAmountBOB: "",
+  exchangeRateBOBPerUSD: "",
+  exchangeRateSource: "effective",
 });
 
 const dateKey = (date) => {
@@ -243,20 +246,50 @@ export default function Transactions() {
 
   const openEdit = (transaction) => {
     setEditingId(transaction.id);
+    const originalAmountBOB =
+      transaction.originalAmountBOB ??
+      transaction.conversion?.fromAmount ??
+      "";
+
+    const exchangeRateBOBPerUSD =
+      transaction.exchangeRateBOBPerUSD ??
+      transaction.conversion?.exchangeRate ??
+      "";
+
     setForm({
-      type: transaction.type || 'expense',
-      amount: String(Math.abs(Number(transaction.amount || 0))),
+      type: transaction.type || "expense",
+      amount: String(
+        Math.abs(Number(transaction.amount || 0)),
+      ),
       category:
         transaction.category ||
         DEFAULT_CATEGORY[transaction.type] ||
         DEFAULT_CATEGORY.expense,
       date: toDateInputValue(
         transaction.date || transaction.createdAt,
-        transaction.date || todayLocal()
+        transaction.date || todayLocal(),
       ),
-      concept: transaction.concept || transaction.title || '',
-      note: transaction.note || '',
-      currency: transaction.currency || 'BOB',
+      concept:
+        transaction.concept ||
+        transaction.title ||
+        "",
+      note: transaction.note || "",
+      currency: transaction.currency || "BOB",
+
+      originalAmountBOB:
+        originalAmountBOB === ""
+          ? ""
+          : String(originalAmountBOB),
+
+      exchangeRateBOBPerUSD:
+        exchangeRateBOBPerUSD === ""
+          ? ""
+          : String(exchangeRateBOBPerUSD),
+
+      exchangeRateSource:
+        transaction.exchangeRateSource ||
+        transaction.conversion?.rateType ||
+        "effective",
     });
     setIsFormOpen(true);
   };
@@ -279,6 +312,21 @@ export default function Transactions() {
       return;
     }
 
+    const isUsdInvestment =
+  form.category === "inversion" &&
+  form.currency === "USD";
+
+    const originalAmountBOB =
+      isUsdInvestment
+        ? Number(form.originalAmountBOB)
+        : null;
+
+    const exchangeRateBOBPerUSD =
+      isUsdInvestment &&
+      originalAmountBOB > 0 &&
+      amount > 0
+        ? originalAmountBOB / amount
+        : null;
     const payload = {
       type: form.type,
       amount,
@@ -289,10 +337,20 @@ export default function Transactions() {
       title: concept,
       note: form.note.trim(),
       currency: form.currency || 'BOB',
+      ...(isUsdInvestment
+        ? {
+            originalAmountBOB,
+            originalCurrency: "BOB",
+            exchangeRateBOBPerUSD,
+            exchangeRateSource: "effective",
+            exchangeRateDate: form.date,
+            targetCurrency: "USD",
+          }
+        : {}),
     };
 
     setSaving(true);
-
+    console.log("Payload enviado a Firestore:", payload);
     try {
       if (editingId) {
         await updateTransaction(editingId, payload);

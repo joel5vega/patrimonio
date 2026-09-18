@@ -747,3 +747,138 @@
 :global(body.modal-open) {
   overflow: hidden;
 }
+.exchangeSection {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color, #d9dee8);
+  border-radius: 0.75rem;
+  background: var(--surface-muted, #f7f9fc);
+}
+
+.exchangeHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.exchangeTitle {
+  margin: 0;
+  color: var(--text-primary, #172033);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.exchangeDescription {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary, #667085);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.exchangeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.exchangeField {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.exchangeFieldFull {
+  grid-column: 1 / -1;
+}
+
+.exchangeLabel {
+  color: var(--text-primary, #344054);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.exchangeInput {
+  width: 100%;
+  min-height: 2.6rem;
+  box-sizing: border-box;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-color, #d0d5dd);
+  border-radius: 0.5rem;
+  background: var(--surface, #fff);
+  color: var(--text-primary, #172033);
+  font: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.exchangeInput:focus {
+  border-color: var(--primary-color, #667085);
+  box-shadow: 0 0 0 3px rgb(102 112 133 / 15%);
+}
+
+.exchangeInput:read-only {
+  background: var(--surface-readonly, #eef2f6);
+  color: var(--text-secondary, #475467);
+  cursor: default;
+}
+
+.exchangeHint {
+  margin: 0;
+  color: var(--text-secondary, #667085);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.exchangeRateResult {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgb(59 130 246 / 20%);
+  border-radius: 0.5rem;
+  background: rgb(59 130 246 / 8%);
+}
+
+.exchangeRateLabel {
+  color: var(--text-secondary, #475467);
+  font-size: 0.8rem;
+}
+
+.exchangeRateValue {
+  color: var(--primary-color, #175cd3);
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.exchangeWarning {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgb(245 158 11 / 12%);
+  color: #92400e;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .exchangeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .exchangeFieldFull {
+    grid-column: auto;
+  }
+
+  .exchangeRateResult {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}

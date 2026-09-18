@@ -18,6 +18,7 @@ import {
   getDocs,
   writeBatch,
   startAfter,
+  deleteField,
 } from 'firebase/firestore';
 import {getFunctions, httpsCallable} from 'firebase/functions';
 
@@ -438,37 +439,153 @@ export const getAllTransactionsForExport = async (
   return allTransactions;
 };
 
-export const addTransaction = (uid, tx) =>
-  addDoc(transactionCollection(uid), {
-    title: tx.title || tx.concept || '',
-    concept: tx.concept || '',
+export const addTransaction = async (
+  uid,
+  tx,
+) => {
+  const payload = {
+    title: tx.title || tx.concept,
+    concept: tx.concept,
     amount: Number(tx.amount),
-    currency: tx.currency || 'USD',
-    type: tx.type || 'expense',
-    category: tx.category || 'other',
-    parentCategory: tx.parentCategory || 'otros',
+    currency: tx.currency || "USD",
+    type: tx.type || "expense",
+    category: tx.category || "other",
+    parentCategory:
+      tx.parentCategory || "otros",
     date: tx.date,
-    note: tx.note || '',
+    note: tx.note || "",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  };
 
-export const updateTransaction = (uid, id, updates) =>
-  updateDoc(doc(db, 'users', uid, 'transactions', id), {
-    ...(updates.title !== undefined && { title: updates.title }),
-    ...(updates.concept !== undefined && { concept: updates.concept }),
-    ...(updates.amount !== undefined && { amount: Number(updates.amount) }),
-    ...(updates.currency !== undefined && { currency: updates.currency }),
-    ...(updates.type !== undefined && { type: updates.type }),
-    ...(updates.category !== undefined && { category: updates.category }),
-    ...(updates.parentCategory !== undefined && {
-      parentCategory: updates.parentCategory,
-    }),
-    ...(updates.date !== undefined && { date: updates.date }),
-    ...(updates.note !== undefined && { note: updates.note }),
+  if (
+    tx.category === "inversion" &&
+    tx.currency === "USD"
+  ) {
+    payload.originalAmountBOB =
+      Number(tx.originalAmountBOB);
+
+    payload.originalCurrency =
+      tx.originalCurrency || "BOB";
+
+    payload.exchangeRateBOBPerUSD =
+      Number(tx.exchangeRateBOBPerUSD);
+
+    payload.exchangeRateSource =
+      tx.exchangeRateSource || "effective";
+
+    payload.exchangeRateDate =
+      tx.exchangeRateDate || tx.date;
+
+    payload.targetCurrency =
+      tx.targetCurrency || "USD";
+  }
+
+  return addDoc(
+    transactionCollection(uid),
+    payload,
+  );
+};
+export const updateTransaction = async (
+  uid,
+  id,
+  updates,
+) => {
+  const reference = doc(
+    db,
+    "users",
+    uid,
+    "transactions",
+    id,
+  );
+
+  const payload = {
+    ...(updates.title !== undefined
+      ? { title: updates.title }
+      : {}),
+
+    ...(updates.concept !== undefined
+      ? { concept: updates.concept }
+      : {}),
+
+    ...(updates.amount !== undefined
+      ? { amount: Number(updates.amount) }
+      : {}),
+
+    ...(updates.currency !== undefined
+      ? { currency: updates.currency }
+      : {}),
+
+    ...(updates.type !== undefined
+      ? { type: updates.type }
+      : {}),
+
+    ...(updates.category !== undefined
+      ? { category: updates.category }
+      : {}),
+
+    ...(updates.parentCategory !== undefined
+      ? {
+          parentCategory:
+            updates.parentCategory,
+        }
+      : {}),
+
+    ...(updates.date !== undefined
+      ? { date: updates.date }
+      : {}),
+
+    ...(updates.note !== undefined
+      ? { note: updates.note }
+      : {}),
+
     updatedAt: serverTimestamp(),
-  });
+  };
 
+  const isUsdInvestment =
+    updates.category === "inversion" &&
+    updates.currency === "USD";
+
+  if (isUsdInvestment) {
+    payload.originalAmountBOB =
+      Number(updates.originalAmountBOB);
+
+    payload.originalCurrency =
+      updates.originalCurrency || "BOB";
+
+    payload.exchangeRateBOBPerUSD =
+      Number(updates.exchangeRateBOBPerUSD);
+
+    payload.exchangeRateSource =
+      updates.exchangeRateSource || "effective";
+
+    payload.exchangeRateDate =
+      updates.exchangeRateDate || updates.date;
+
+    payload.targetCurrency =
+      updates.targetCurrency || "USD";
+  } else {
+    payload.originalAmountBOB =
+      deleteField();
+
+    payload.originalCurrency =
+      deleteField();
+
+    payload.exchangeRateBOBPerUSD =
+      deleteField();
+
+    payload.exchangeRateSource =
+      deleteField();
+
+    payload.exchangeRateDate =
+      deleteField();
+
+    payload.targetCurrency =
+      deleteField();
+  }
+
+  await updateDoc(reference, payload);
+};
 export const removeTransaction = (uid, id) =>
   deleteDoc(doc(db, 'users', uid, 'transactions', id));
 

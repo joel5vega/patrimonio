@@ -13,14 +13,38 @@ export function TransactionForm({
   saving,
 }) {
   const [showNote, setShowNote] = useState(Boolean(form.note));
-
+  const isUsdInvestment =
+  form.category === "inversion" &&
+  form.currency === "USD";
   const update = (field, value) => {
-    setForm((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
-  };
+    setForm((previous) => {
+      const next = {
+        ...previous,
+        [field]: value,
+      };
 
+      const isUsdInvestment =
+        next.category === "inversion" &&
+        next.currency === "USD";
+
+      if (!isUsdInvestment) {
+        next.originalAmountBOB = "";
+        next.exchangeRateBOBPerUSD = "";
+        next.exchangeRateSource = "";
+        next.exchangeRateDate = "";
+      }
+
+      return next;
+    });
+  };
+  const calculatedRate =
+  Number(form.amount) > 0 &&
+  Number(form.originalAmountBOB) > 0
+    ? (
+        Number(form.originalAmountBOB) /
+        Number(form.amount)
+      ).toFixed(4)
+    : "";
   return (
     <form className={s.form} onSubmit={onSubmit}>
       <div className={s.typeTabs} role="tablist" aria-label="Tipo de movimiento">
@@ -120,7 +144,47 @@ export function TransactionForm({
           required
         />
       </label>
+          {isUsdInvestment ? (
+  <section className={s.exchangeSection}>
+    <div className={s.exchangeGrid}>
+      <label className={s.exchangeField}>
+        <span className={s.exchangeLabel}>
+          Bolivianos pagados
+        </span>
 
+        <input
+          className={s.exchangeInput}
+          type="number"
+          min="0"
+          step="0.01"
+          value={form.originalAmountBOB || ""}
+          onChange={(event) =>
+            update(
+              "originalAmountBOB",
+              event.target.value,
+            )
+          }
+          placeholder="Ej. 2281.30"
+        />
+      </label>
+
+      <label className={s.exchangeField}>
+        <span className={s.exchangeLabel}>
+          Tipo de cambio efectivo
+        </span>
+
+        <input
+          className={s.exchangeInput}
+          type="number"
+          value={calculatedRate}
+          readOnly
+          placeholder="Se calcula automáticamente"
+        />
+      </label>
+
+    </div>
+  </section>
+) : null}
       {showNote ? (
         <label className={s.field}>
           <span className={s.labelModal}>Nota</span>
