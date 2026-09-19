@@ -18,6 +18,7 @@ import PortfolioPerformance from '../features/portfolio/components/PortfolioPerf
 import '../features/portfolio/styles/PortfolioPerformance.css';
 import '../features/portfolio/styles/portfolio.css';
 
+
 export default function Portfolio() {
   const {
     loading,
