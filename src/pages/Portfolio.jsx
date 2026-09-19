@@ -15,7 +15,7 @@ import PortfolioSecondaryDetails from '../features/portfolio/components/Portfoli
 import PortfolioSectorMap from '../features/portfolio/components/PortfolioSectorMap';
 import { refreshBinanceSnapshot } from '../lib/binanceSnapshotClient';
 import PortfolioPerformance from '../features/portfolio/components/PortfolioPerformance';
-// import '../features/portfolio/styles/PortfolioPerformance.css';
+import '../features/portfolio/styles/PortfolioPerformance.css';
 import '../features/portfolio/styles/portfolio.css';
 
 export default function Portfolio() {
