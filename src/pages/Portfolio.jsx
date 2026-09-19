@@ -17,7 +17,7 @@ import { refreshBinanceSnapshot } from '../lib/binanceSnapshotClient';
 import PortfolioPerformance from '../features/portfolio/components/PortfolioPerformance';
 
 import '../features/portfolio/styles/portfolio.css';
-import '../features/portfolio/styles/PortfolioPerformance.css';
+// import '../features/portfolio/styles/PortfolioPerformance.css';
 
 export default function Portfolio() {
   const {
