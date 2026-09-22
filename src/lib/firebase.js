@@ -342,46 +342,56 @@ const normalizeTradingRow = (row, meta, importId) => {
 // =============================================================================
 // TRANSACTIONS
 // =============================================================================
-
 const transactionCollection = (uid) =>
   collection(db, 'users', uid, 'transactions');
 
-const normalizeDateRange = ({ from = null, to = null } = {}) => ({
-  from: from || null,
-  to: to || null,
-});
-
 const buildTransactionsQuery = (
   uid,
-  { from = null, to = null, cursor = null, pageSize = 50 } = {}
+  {
+    from = null,
+    to = null,
+    cursor = null,
+    pageSize = 50,
+  } = {}
 ) => {
-  const range = normalizeDateRange({ from, to });
   const constraints = [];
 
-  if (range.from) constraints.push(where('date', '>=', range.from));
-  if (range.to) constraints.push(where('date', '<=', range.to));
+  // Convertir Date a string ISO para que coincida con el formato almacenado
+  if (from) {
+    const fromString = from instanceof Date
+      ? from.toISOString().split('T')[0]
+      : String(from).split('T')[0];
+    constraints.push(where('date', '>=', fromString));
+  }
+
+  if (to) {
+    const toString = to instanceof Date
+      ? to.toISOString().split('T')[0]
+      : String(to).split('T')[0];
+    constraints.push(where('date', '<=', toString));
+  }
 
   constraints.push(orderBy('date', 'desc'));
 
   if (cursor) constraints.push(startAfter(cursor));
-
   constraints.push(limit(pageSize));
 
   return query(transactionCollection(uid), ...constraints);
 };
 
-const mapTransactionDocument = (document) => ({
-  id: document.id,
-  ...document.data(),
+const mapTransactionDocument = (snapshot) => ({
+  id: snapshot.id,
+  ...snapshot.data(),
 });
 
-/**
- * Obtiene una página para mostrar en pantalla.
- * El cursor recibido debe ser el último DocumentSnapshot de la página anterior.
- */
 export const getTransactionsPage = async (
   uid,
-  { from = null, to = null, cursor = null, pageSize = 50 } = {}
+  {
+    from = null,
+    to = null,
+    cursor = null,
+    pageSize = 50,
+  } = {}
 ) => {
   if (!uid) {
     return {
@@ -404,22 +414,25 @@ export const getTransactionsPage = async (
 
   return {
     transactions: documents.map(mapTransactionDocument),
-    cursor: documents.length ? documents[documents.length - 1] : null,
+    // startAfter requiere el DocumentSnapshot completo.
+    cursor: documents.length
+      ? documents[documents.length - 1]
+      : null,
     hasMore: documents.length === pageSize,
   };
 };
 
-/**
- * Obtiene todos los documentos de un período en lotes.
- * Solo se utiliza para el CSV, nunca para la lista visual.
- */
 export const getAllTransactionsForExport = async (
   uid,
-  { from = null, to = null, batchSize = 500 } = {}
+  {
+    from = null,
+    to = null,
+    batchSize = 500,
+  } = {}
 ) => {
   if (!uid) return [];
 
-  const allTransactions = [];
+  const result = [];
   let cursor = null;
   let hasMore = true;
 
@@ -431,163 +444,118 @@ export const getAllTransactionsForExport = async (
       pageSize: batchSize,
     });
 
-    allTransactions.push(...page.transactions);
+    result.push(...page.transactions);
     cursor = page.cursor;
     hasMore = page.hasMore && Boolean(cursor);
   }
 
-  return allTransactions;
+  return result;
 };
 
-export const addTransaction = async (
-  uid,
-  tx,
-) => {
+export const addTransaction = async (uid, tx) => {
   const payload = {
-    title: tx.title || tx.concept,
-    concept: tx.concept,
-    amount: Number(tx.amount),
-    currency: tx.currency || "USD",
-    type: tx.type || "expense",
-    category: tx.category || "other",
-    parentCategory:
-      tx.parentCategory || "otros",
+    title: tx.title || tx.concept || '',
+    concept: tx.concept || tx.title || '',
+    amount: Number(tx.amount) || 0,
+    currency: tx.currency || 'BOB',
+    type: tx.type || 'expense',
+    category: tx.category || 'other',
+    parentCategory: tx.parentCategory || 'otros',
     date: tx.date,
-    note: tx.note || "",
+    note: tx.note || '',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
 
   if (
-    tx.category === "inversion" &&
-    tx.currency === "USD"
+    tx.category === 'inversion' &&
+    tx.currency === 'USD'
   ) {
     payload.originalAmountBOB =
-      Number(tx.originalAmountBOB);
+      Number(tx.originalAmountBOB) || 0;
 
     payload.originalCurrency =
-      tx.originalCurrency || "BOB";
+      tx.originalCurrency || 'BOB';
 
     payload.exchangeRateBOBPerUSD =
-      Number(tx.exchangeRateBOBPerUSD);
+      Number(tx.exchangeRateBOBPerUSD) || 0;
 
     payload.exchangeRateSource =
-      tx.exchangeRateSource || "effective";
+      tx.exchangeRateSource || 'effective';
 
     payload.exchangeRateDate =
       tx.exchangeRateDate || tx.date;
 
     payload.targetCurrency =
-      tx.targetCurrency || "USD";
+      tx.targetCurrency || 'USD';
   }
 
   return addDoc(
     transactionCollection(uid),
-    payload,
+    payload
   );
 };
+
 export const updateTransaction = async (
   uid,
   id,
-  updates,
+  updates
 ) => {
   const reference = doc(
     db,
-    "users",
+    'users',
     uid,
-    "transactions",
-    id,
+    'transactions',
+    id
   );
 
   const payload = {
-    ...(updates.title !== undefined
-      ? { title: updates.title }
-      : {}),
+    ...(updates.title !== undefined && {
+      title: updates.title,
+    }),
 
-    ...(updates.concept !== undefined
-      ? { concept: updates.concept }
-      : {}),
+    ...(updates.concept !== undefined && {
+      concept: updates.concept,
+    }),
 
-    ...(updates.amount !== undefined
-      ? { amount: Number(updates.amount) }
-      : {}),
+    ...(updates.amount !== undefined && {
+      amount: Number(updates.amount) || 0,
+    }),
 
-    ...(updates.currency !== undefined
-      ? { currency: updates.currency }
-      : {}),
+    ...(updates.currency !== undefined && {
+      currency: updates.currency,
+    }),
 
-    ...(updates.type !== undefined
-      ? { type: updates.type }
-      : {}),
+    ...(updates.type !== undefined && {
+      type: updates.type,
+    }),
 
-    ...(updates.category !== undefined
-      ? { category: updates.category }
-      : {}),
+    ...(updates.category !== undefined && {
+      category: updates.category,
+    }),
 
-    ...(updates.parentCategory !== undefined
-      ? {
-          parentCategory:
-            updates.parentCategory,
-        }
-      : {}),
+    ...(updates.parentCategory !== undefined && {
+      parentCategory: updates.parentCategory,
+    }),
 
-    ...(updates.date !== undefined
-      ? { date: updates.date }
-      : {}),
+    ...(updates.date !== undefined && {
+      date: updates.date,
+    }),
 
-    ...(updates.note !== undefined
-      ? { note: updates.note }
-      : {}),
+    ...(updates.note !== undefined && {
+      note: updates.note,
+    }),
 
     updatedAt: serverTimestamp(),
   };
 
-  const isUsdInvestment =
-    updates.category === "inversion" &&
-    updates.currency === "USD";
-
-  if (isUsdInvestment) {
-    payload.originalAmountBOB =
-      Number(updates.originalAmountBOB);
-
-    payload.originalCurrency =
-      updates.originalCurrency || "BOB";
-
-    payload.exchangeRateBOBPerUSD =
-      Number(updates.exchangeRateBOBPerUSD);
-
-    payload.exchangeRateSource =
-      updates.exchangeRateSource || "effective";
-
-    payload.exchangeRateDate =
-      updates.exchangeRateDate || updates.date;
-
-    payload.targetCurrency =
-      updates.targetCurrency || "USD";
-  } else {
-    payload.originalAmountBOB =
-      deleteField();
-
-    payload.originalCurrency =
-      deleteField();
-
-    payload.exchangeRateBOBPerUSD =
-      deleteField();
-
-    payload.exchangeRateSource =
-      deleteField();
-
-    payload.exchangeRateDate =
-      deleteField();
-
-    payload.targetCurrency =
-      deleteField();
-  }
-
   await updateDoc(reference, payload);
 };
+
 export const removeTransaction = (uid, id) =>
-  deleteDoc(doc(db, 'users', uid, 'transactions', id));
+  deleteDoc(
+    doc(db, 'users', uid, 'transactions', id)
+  );
 
 // =============================================================================
 // PORTFOLIO HISTORY

@@ -714,11 +714,37 @@ const handleSave = () => {
 
 // ── Página principal ──────────────────────────────────────────
 export default function Budget() {
-  const { transactions }                 = useTransactions();
-  const { budgets, saveBudget, loading } = useBudget();
+  const transactionRange = useMemo(() => {
+    const now = new Date();
+
+    return {
+      from: new Date(now.getFullYear(), now.getMonth() - 5, 1),
+      to: null,
+      enabled: true,
+      loadRange: true,
+    };
+  }, []);
+
+  const {
+    transactions,
+    loading: transactionsLoading,
+    error: transactionsError,
+  } = useTransactions(transactionRange);
+
+  const {
+    budgets,
+    saveBudget,
+    loading: budgetsLoading,
+  } = useBudget();
+
+  const loading = transactionsLoading || budgetsLoading;
+  const error = transactionsError;
+
   const [globalModal, setGlobalModal]    = useState(null);
 
-  const groups = TX_GROUPS.filter(g => g.value !== 'ingresos');
+  const groups = TX_GROUPS.filter(
+    (group) => group.value !== 'ingresos'
+  );
 
   // Mapear presupuestos totales calculados por grupo
   const groupBudgetsMap = useMemo(() => {
@@ -789,12 +815,25 @@ export default function Budget() {
     });
   }, [transactions, groupBudgetsMap, groups]);
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-40">
-      <p className="text-white/40 text-sm animate-pulse">Cargando presupuesto...</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <p className="text-white/40 text-sm animate-pulse">
+          Cargando presupuesto...
+        </p>
+      </div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-40 px-4">
+        <p className="text-rose-400 text-sm text-center">
+          {error}
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-5 pb-24">
 

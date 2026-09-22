@@ -72,30 +72,24 @@ export const TX_CATEGORIES = [
   { value: 'comunicaciones', label: 'Comunicaciones', parent: 'hogar', emoji: '📱' },
   { value: 'transporte', label: 'Transporte', parent: 'hogar', emoji: '🚌' },
   { value: 'mantenimiento', label: 'Hogar y Equipamiento', parent: 'hogar', emoji: '🧹' },
-
   { value: 'citas_salidas', label: 'Salidas y Citas', parent: 'estilo_vida', emoji: '🍿' },
   { value: 'comida_fuera', label: 'Comida Afuera', parent: 'estilo_vida', emoji: '🍔' },
   { value: 'ropa', label: 'Ropa y Calzado', parent: 'estilo_vida', emoji: '👔' },
   { value: 'regalos_familia', label: 'Regalos y Familia', parent: 'estilo_vida', emoji: '🎁' },
-
   { value: 'cuidado_personal', label: 'Cuidado Personal', parent: 'bienestar', emoji: '🧴' },
   { value: 'salud', label: 'Salud', parent: 'bienestar', emoji: '🏥' },
   { value: 'educacion_utiles', label: 'Educación', parent: 'bienestar', emoji: '📚' },
   { value: 'tecnologia', label: 'Tecnología', parent: 'bienestar', emoji: '💻' },
-
   { value: 'diezmo_ofrenda', label: 'Diezmos y Ofrendas', parent: 'fe', emoji: '⛪' },
   { value: 'misiones', label: 'Misiones y Ministerio', parent: 'fe', emoji: '🌍' },
   { value: 'generosidad', label: 'Generosidad', parent: 'fe', emoji: '🤝' },
-
   { value: 'ahorro', label: 'Ahorro', parent: 'finanzas', emoji: '🐖' },
   { value: 'fondo_emergencia', label: 'Fondo de Reserva', parent: 'finanzas', emoji: '🛡️' },
   { value: 'inversion', label: 'Inversiones / Activos', parent: 'finanzas', emoji: '📈' },
-
   { value: 'salario', label: 'Salario / Sueldo', parent: 'ingresos', emoji: '💵' },
   { value: 'freelance_negocio', label: 'Freelance / Negocio', parent: 'ingresos', emoji: '💻' },
   { value: 'rendimientos', label: 'Intereses / Dividendos', parent: 'ingresos', emoji: '💰' },
   { value: 'ingreso_otro', label: 'Otro Ingreso', parent: 'ingresos', emoji: '📦' },
-
   { value: 'impuestos', label: 'Impuestos y Tasas', parent: 'otros', emoji: '🏛️' },
   { value: 'other', label: 'Ajuste / Otro', parent: 'otros', emoji: '⚙️' },
   { value: 'boda', label: 'Boda', parent: 'otros', emoji: '💍' },
@@ -110,152 +104,181 @@ export const enrichTransaction = (transaction) => {
     .replace(/[\u0300-\u036f]/g, '');
 
   const category = OLD_TO_NEW_CATEGORY[rawCategory] || rawCategory || 'other';
-
   const categoryDefinition = TX_CATEGORIES.find(
     (item) => item.value === category
   );
 
   return {
     ...transaction,
+    amount: Number(transaction.amount) || 0,
     category,
-    parentCategory: categoryDefinition?.parent || 'otros',
+    parentCategory:
+      transaction.parentCategory || categoryDefinition?.parent || 'otros',
   };
 };
 
-export function useTransactions({ from = null, to = null } = {}) {
-  const { user } = useAuth();
+export function useTransactions({
+  from = null,
+  to = null,
+  enabled = true,
+  loadRange = false,
+} = {}) {
+  const auth = useAuth();
+  const user = auth?.user;
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState(null);
-
   const cursorRef = useRef(null);
-  const queryKey = `${from || ''}|${to || ''}`;
+  const requestIdRef = useRef(0);
 
-  const loadFirstPage = useCallback(async () => {
-    if (!user?.uid) {
-      setTransactions([]);
-      setHasMore(false);
-      cursorRef.current = null;
-      return;
-    }
+ const loadFirstPage = useCallback(async () => {
+  const requestId = ++requestIdRef.current;
 
-    setLoading(true);
+  if (!enabled || !user?.uid) {
+    setTransactions([]);
+    setLoading(false);
+    setHasMore(false);
     setError(null);
     cursorRef.current = null;
+    return;
+  }
 
-    try {
-      const page = await getTransactionsPage(user.uid, {
-        from,
-        to,
-        pageSize: PAGE_SIZE,
-      });
+  setLoading(true);
+  setError(null);
+  cursorRef.current = null;
 
-      setTransactions(page.transactions.map(enrichTransaction));
-      cursorRef.current = page.cursor;
-      setHasMore(page.hasMore);
-    } catch (requestError) {
-      console.error('Error cargando transacciones:', requestError);
-      setTransactions([]);
-      setHasMore(false);
-      setError('No se pudieron cargar los movimientos.');
-    } finally {
+  try {
+    const page = await getTransactionsPage(user.uid, {
+      from,
+      to,
+      cursor: null,
+      pageSize: PAGE_SIZE,
+    });
+
+    if (requestId !== requestIdRef.current) return;
+
+    let result = page.transactions.map(enrichTransaction);
+    let cursor = page.cursor;
+    let more = page.hasMore;
+
+    if (loadRange && (from || to)) {
+      while (more && cursor) {
+        const nextPage = await getTransactionsPage(user.uid, {
+          from,
+          to,
+          cursor,
+          pageSize: PAGE_SIZE,
+        });
+
+        if (requestId !== requestIdRef.current) return;
+
+        const ids = new Set(
+          result.map((item) => item.id)
+        );
+
+        result = [
+          ...result,
+          ...nextPage.transactions
+            .map(enrichTransaction)
+            .filter((item) => !ids.has(item.id)),
+        ];
+
+        cursor = nextPage.cursor;
+        more = nextPage.hasMore;
+      }
+    }
+
+    
+
+    setTransactions(result);
+    cursorRef.current = cursor;
+    setHasMore(loadRange ? false : more);
+  } catch (requestError) {
+    console.error(
+      '❌ Error cargando transacciones:',
+      requestError
+    );
+
+    setTransactions([]);
+    setHasMore(false);
+    setError(
+      requestError?.message ||
+        'No se pudieron cargar los movimientos.'
+    );
+  } finally {
+    if (requestId === requestIdRef.current) {
       setLoading(false);
     }
-  }, [user?.uid, from, to]);
+  }
+}, [
+  enabled,
+  user?.uid,
+  from,
+  to,
+  loadRange,
+]);
 
   useEffect(() => {
     loadFirstPage();
-  }, [loadFirstPage, queryKey]);
+  }, [loadFirstPage]);
 
   const loadMore = useCallback(async () => {
-    if (!user?.uid || !hasMore || loadingMore || !cursorRef.current) return;
+    if (!enabled || loadRange || !user?.uid || !hasMore || loadingMore || !cursorRef.current) return;
 
     setLoadingMore(true);
-    setError(null);
-
     try {
       const page = await getTransactionsPage(user.uid, {
         from,
         to,
-        cursor: cursorRef.current,
+        cursor: null,
         pageSize: PAGE_SIZE,
       });
 
+      const next = page.transactions.map(enrichTransaction);
       setTransactions((current) => {
-        const ids = new Set(current.map((transaction) => transaction.id));
-
-        const next = page.transactions
-          .map(enrichTransaction)
-          .filter((transaction) => !ids.has(transaction.id));
-
-        return [...current, ...next];
+        const ids = new Set(current.map((item) => item.id));
+        return [...current, ...next.filter((item) => !ids.has(item.id))];
       });
-
       cursorRef.current = page.cursor;
       setHasMore(page.hasMore);
     } catch (requestError) {
       console.error('Error cargando más transacciones:', requestError);
-      setError('No se pudieron cargar más movimientos.');
+      setError(requestError?.message || 'No se pudieron cargar más transacciones.');
     } finally {
       setLoadingMore(false);
     }
-  }, [user?.uid, from, to, hasMore, loadingMore]);
+  }, [enabled, loadRange, user?.uid, from, to, hasMore, loadingMore]);
 
-  const addTransaction = useCallback(
-    async (transaction) => {
-      if (!user?.uid) return;
+  const addTransaction = useCallback(async (transaction) => {
+    if (!user?.uid) return;
+    await addTransactionInFirestore(user.uid, enrichTransaction(transaction));
+    await loadFirstPage();
+  }, [user?.uid, loadFirstPage]);
 
-      await addTransactionInFirestore(user.uid, enrichTransaction(transaction));
-      await loadFirstPage();
-    },
-    [user?.uid, loadFirstPage]
-  );
+  const updateTransaction = useCallback(async (id, updates) => {
+    if (!user?.uid) return;
+    const normalized = enrichTransaction(updates);
+    await updateTransactionInFirestore(user.uid, id, normalized);
+    setTransactions((current) => current.map((item) => item.id === id ? { ...item, ...normalized, id } : item));
+  }, [user?.uid]);
 
-  const updateTransaction = useCallback(
-    async (id, updates) => {
-      if (!user?.uid) return;
-
-      const normalized = enrichTransaction(updates);
-
-      await updateTransactionInFirestore(user.uid, id, normalized);
-
-      setTransactions((current) =>
-        current.map((transaction) =>
-          transaction.id === id
-            ? { ...transaction, ...normalized, id }
-            : transaction
-        )
-      );
-    },
-    [user?.uid]
-  );
-
-  const removeTransaction = useCallback(
-    async (id) => {
-      if (!user?.uid) return;
-
-      await removeTransactionInFirestore(user.uid, id);
-
-      setTransactions((current) =>
-        current.filter((transaction) => transaction.id !== id)
-      );
-    },
-    [user?.uid]
-  );
+  const removeTransaction = useCallback(async (id) => {
+    if (!user?.uid) return;
+    await removeTransactionInFirestore(user.uid, id);
+    setTransactions((current) => current.filter((item) => item.id !== id));
+  }, [user?.uid]);
 
   const getTransactionsForExport = useCallback(async () => {
     if (!user?.uid) return [];
-
-    const allTransactions = await getAllTransactionsForExport(user.uid, {
+    const result = await getAllTransactionsForExport(user.uid, {
       from,
       to,
+      batchSize: 500,
     });
-
-    return allTransactions.map(enrichTransaction);
+    return result.map(enrichTransaction);
   }, [user?.uid, from, to]);
-
   return {
     transactions,
     loading,
