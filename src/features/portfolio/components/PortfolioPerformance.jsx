@@ -24,8 +24,13 @@ function PerformanceCell({ label, data }) {
     );
   }
 
-  const changeUSD = Number(data.financial?.changeUSD || 0);
-  const changePct = Number(data.financial?.changePct || 0);
+  // OJO: financial.changeUSD/changePct es el delta BRUTO de saldo
+  // (currentUSD - baselineUSD): incluye depósitos/retiros como si fueran
+  // ganancia. El número correcto de performance real es
+  // performance.cashFlowAdjustedChangeUSD / netPerformancePct, que ya
+  // viene ajustado por cashFlows.netUSD desde el backend.
+  const changeUSD = Number(data.performance?.cashFlowAdjustedChangeUSD ?? 0);
+  const changePct = Number(data.performance?.netPerformancePct ?? 0);
   const netFlow = Number(data.cashFlows?.netUSD || 0);
   const hasFlow = Math.abs(netFlow) > 0.01;
   const isUp = changeUSD >= 0;
@@ -37,8 +42,8 @@ function PerformanceCell({ label, data }) {
         {isUp ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
         {formatPct(changePct)}
       </span>
-      {/* <span className="perf-cell__usd">{formatUSD(changeUSD)}</span> */}
-      {/* {hasFlow && <span className="perf-cell__flag">incl. aportes</span>} */}
+      <span className="perf-cell__usd">{formatUSD(changeUSD)}</span>
+      {hasFlow && <span className="perf-cell__flag">excl. aportes</span>}
     </div>
   );
 }

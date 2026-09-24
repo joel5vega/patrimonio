@@ -405,6 +405,42 @@ const totalValueBOB = useMemo(
 const riskData = useMemo(() => {
   const snapshot = binanceSnap?.snapshot || {};
 
+  // El backend calcula riesgo sobre TODO el portafolio (crypto + ETFs + manual),
+  // no solo Binance. Preferimos esos valores cuando existen y usamos el
+  // snapshot de Binance como respaldo para lo que es específico de spot/futuros.
+  const backendRisk = todayPortfolioAnalysis?.analysis?.risk ?? {};
+  const backendAlerts = todayPortfolioAnalysis?.analysis?.alerts ?? {};
+  const topPositions =
+    todayPortfolioAnalysis?.riskContext?.concentrationRisk?.topPositions ?? [];
+  const openLeverageX =
+    todayPortfolioAnalysis?.tradingContext?.metrics?.openLeverageX ??
+    todayPortfolioAnalysis?.analysis?.tradingRisk?.effectiveLeverage ?? 0;
+
+  const hhi = backendRisk.hhi ?? snapshot.portfolioHealth?.hhi ?? 0;
+
+  // Umbral de "sobre-exposición" a nivel de posición individual (ver UI: >70%).
+  const OVEREXPOSED_THRESHOLD_PCT = 70;
+  const overExposed = topPositions
+    .filter((p) => (p.pctInvestable ?? 0) > OVEREXPOSED_THRESHOLD_PCT)
+    .map((p) => ({
+      asset: p.symbol,
+      weight: Number((p.pctInvestable ?? 0).toFixed(1)),
+    }));
+
+  // Composite Risk Score (0-100): heurística propia para la UI, NO es un
+  // modelo formal de riesgo (igual que el backend, que declara sus propias
+  // limitaciones — ver analysis.risk.limitations). Combina:
+  //  - concentración (HHI, 40%)
+  //  - apalancamiento abierto en trading (35%)
+  //  - cantidad de alertas activas del backend (25%)
+  const hhiScore = Math.min((hhi / 0.3) * 100, 100);
+  const leverageScore = Math.min(openLeverageX * 20, 100);
+  const activeAlertsCount = Object.values(backendAlerts).filter(Boolean).length;
+  const alertsScore = Math.min(activeAlertsCount * 20, 100);
+  const riskScore = Math.round(
+    hhiScore * 0.4 + leverageScore * 0.35 + alertsScore * 0.25
+  );
+
   return {
     totalSpotUSD: totalCryptoUSD,
 
@@ -412,12 +448,11 @@ const riskData = useMemo(() => {
       snapshot.orders?.spot
         ?.reservedCapitalUSD ?? 0,
 
-    hhi:
-      snapshot.portfolioHealth?.hhi ?? 0,
+    hhi,
 
     top3Concentration:
-      snapshot.portfolioHealth
-        ?.top3ConcentrationPct ?? 0,
+      todayPortfolioAnalysis?.tradingContext?.metrics?.top3ConcentrationPct ??
+      snapshot.portfolioHealth?.top3ConcentrationPct ?? 0,
 
     effectiveAssetCount:
       snapshot.portfolioHealth
@@ -430,9 +465,10 @@ const riskData = useMemo(() => {
     openOrdersCount:
       snapshot.orders?.spot?.count ?? 0,
 
-    overExposed: [],
+    riskScore,
+    overExposed,
   };
-}, [binanceSnap, totalCryptoUSD]);
+}, [binanceSnap, totalCryptoUSD, todayPortfolioAnalysis]);
   const pieData = useMemo(
     () =>
       [
@@ -1044,6 +1080,9 @@ const refreshMarketQuotes = useCallback(
 totalValueBOB,
     totalPnl,
     riskData,
+    // El riesgo depende de binanceSnap + todayPortfolioAnalysis, ambos
+    // cargados dentro del fetch inicial general.
+    loadingRisk: loading,
     pieData,
     accounts,
     transactions,

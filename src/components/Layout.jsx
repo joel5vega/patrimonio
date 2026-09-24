@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import {
   Home, PieChart, Repeat, TrendingUp,
-  PiggyBank, Wallet, BarChart2, PanelLeftClose, PanelLeftOpen,
+  Wallet, BarChart2, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import './Layout.css';
 
@@ -10,11 +10,11 @@ const navItems = [
   { to: '/',             icon: <Home size={20} />,     label: 'Dashboard'   },
   { to: '/portfolio',    icon: <PieChart size={20} />, label: 'Portafolio'  },
   { to: '/history',      icon: <TrendingUp size={20} />,label: 'Historial'  },
-  { to: '/manual',       icon: <PiggyBank size={20} />, label: 'Manual'     },
   { to: '/transactions', icon: <Repeat size={20} />,   label: 'Movimientos' },
   { to: '/analytics',    icon: <BarChart2 size={20} />, label: 'Analytics'  },
   { to: '/budget',       icon: <Wallet size={20} />,   label: 'Presupuesto' },
-  // { to: '/trading-history', icon: <TrendingUp size={20} />, label: 'Trading History' },
+  // Riesgo, Manual y Trading History se lanzan desde tarjetas en el
+  // Dashboard (ver QuickLinks), no viven en la barra principal.
 ];
 
 const Layout = () => {
@@ -26,7 +26,7 @@ const Layout = () => {
         <div className="app-sidebar__brand">
           {!collapsed && (
             <>
-              <p className="app-sidebar__eyebrow">Membresía</p>
+              <p className="app-sidebar__eyebrow">Patrimonio</p>
             </>
           )}
           <button

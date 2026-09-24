@@ -1,0 +1,38 @@
+/*
+ * Tokens de diseño — única fuente de verdad para colores.
+ * Debe reflejar EXACTAMENTE theme.extend.colors en tailwind.config.js.
+ *
+ * Uso:
+ *  - Componentes con Tailwind: clases utilitarias (bg-success, text-danger-light).
+ *  - CSS plano (mientras se migran los .css legados): var(--color-success).
+ *
+ * No agregar hex sueltos en ningún .css nuevo: si falta un color, se agrega
+ * aquí primero y se referencia desde los dos lados.
+ */
+:root {
+  --color-brand-dark: #0d1117;
+  --color-brand-card: #161b22;
+  --color-brand-teal: #2dd4bf;
+
+  --color-success: #10b981;
+  --color-success-light: #34d399;
+
+  --color-danger: #f43f5e;
+  --color-danger-light: #fb7185;
+
+  --color-warning: #facc15;
+
+  --color-info: #3b82f6;
+  --color-info-light: #60a5fa;
+
+  --color-accent-cyan: #22d3ee;
+  --color-accent-orange: #f97316;
+
+  --color-muted: #64748b;
+  --color-muted-light: #94a3b8;
+
+  /* Espaciado y radios comunes, para que las páginas no reinventen valores */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}

@@ -1414,3 +1414,18 @@
   font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.25);
 }
+
+.sector-legend-count {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.12);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.portfolio-legend-card.active {
+  border-color: var(--sector-color);
+  background: color-mix(in srgb, var(--sector-color) 8%, transparent);
+}

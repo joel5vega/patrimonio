@@ -74,7 +74,7 @@ const SECTOR_LABELS = {
   salud: 'Salud',
   defensa: 'Defensa',
   consumo_basico: 'Consumo básico',
-  consumo_discrecional: 'Consumo discrecional',
+  consumo_discrecional: 'Consumo ',
   finanzas: 'Finanzas',
   energia: 'Energía',
   energia_renovable: 'Energía renovable',
@@ -82,26 +82,26 @@ const SECTOR_LABELS = {
   industria: 'Industria',
   inmobiliario: 'Inmobiliario',
   inmobiliario_cotizado: 'Inmobiliario cotizado',
-  servicios_publicos: 'Servicios públicos',
+  servicios_publicos: 'Servicios',
   comunicacion: 'Comunicación',
   bonos_gobierno: 'Bonos gobierno',
   bonos_inflacion: 'Bonos inflación',
   renta_fija: 'Renta fija',
-  crypto_l1: 'Crypto L1',
+  crypto_l1: 'Crypto 🪙',
   crypto_l2: 'Crypto L2',
   crypto_defi: 'Crypto DeFi',
   crypto_stablecoin: 'Stablecoins',
   crypto_pagos: 'Crypto pagos',
   crypto_meme: 'Crypto meme',
-  metales_preciosos: 'Metales preciosos',
+  metales_preciosos: 'Metales ',
   mineria: 'Minería',
   efectivo_global: 'Efectivo global',
   diversificado_eeuu: 'Diversificado EE. UU.',
   diversificado_global: 'Diversificado global',
-  emergentes: 'Mercados emergentes',
-  dividendos_value: 'Dividendos / value',
+  emergentes: 'Emergentes',
+  dividendos_value: 'Dividendos',
   otros: 'Otros',
-  stablecoin_yield: 'Stablecoins con rendimiento',
+  stablecoin_yield: 'Stablecoins 💹',
 };
 
 const SECTOR_COLORS = [
@@ -130,13 +130,21 @@ function normalizeSectorData(sectorAnalysis) {
     : sectorAnalysis?.sectors || [];
 
   return sectors
-    .map((sector) => ({
-      ...sector,
-      sector: sector.sector || sector.key || 'otros',
-      valueUSD: Number(sector.valueUSD || sector.value || 0),
-      pct: Number(sector.pct || sector.weightPct || 0),
-      sources: Array.isArray(sector.sources) ? sector.sources : [],
-    }))
+    .map((sector) => {
+      const sources = Array.isArray(sector.sources) ? sector.sources : [];
+      const count = Number(
+        sector.count ?? sector.positions ?? sector.n ?? sources.length ?? 0
+      );
+
+      return {
+        ...sector,
+        sector: sector.sector || sector.key || 'otros',
+        valueUSD: Number(sector.valueUSD || sector.value || 0),
+        pct: Number(sector.pct || sector.weightPct || 0),
+        sources,
+        count,
+      };
+    })
     .filter((sector) => sector.valueUSD > 0 || sector.pct > 0)
     .sort((a, b) => b.valueUSD - a.valueUSD);
 }
@@ -145,17 +153,26 @@ function getColor(index) {
   return SECTOR_COLORS[index % SECTOR_COLORS.length];
 }
 
-function SectorDonut({ sectors, activeIndex, onHover }) {
-  const size = 172;
+/* ─────────────────────────────────────────────
+   DONUT con centro dinámico (icono + datos)
+───────────────────────────────────────────── */
+function SectorDonut({ sectors, activeIndex, onHover, totalUSD }) {
+  const size = 200;
   const center = size / 2;
-  const radius = 59;
-  const strokeWidth = 22;
+  const radius = 68;
+  const strokeWidth = 26;
   const circumference = 2 * Math.PI * radius;
-  const total = sectors.reduce((sum, s) => sum + Math.max(0, s.pct), 0) || 1;
+  const totalPct = sectors.reduce((sum, s) => sum + Math.max(0, s.pct), 0) || 1;
+
   let offset = 0;
 
+  const activeSector = activeIndex !== null ? sectors[activeIndex] : null;
+  const ActiveIcon = activeSector
+    ? SECTOR_ICONS[activeSector.sector] || Layers3
+    : null;
+
   return (
-    <div className="portfolio-donut-wrap">
+    <div className="portfolio-donut-wrap" style={{ position: 'relative', width: size, height: size }}>
       <svg
         viewBox={`0 0 ${size} ${size}`}
         className="portfolio-donut-svg"
@@ -163,43 +180,157 @@ function SectorDonut({ sectors, activeIndex, onHover }) {
         role="img"
         aria-label="Distribución de la cartera por sector"
       >
+        {/* Fondo del anillo */}
         <circle
-          cx={center} cy={center} r={radius}
-          fill="none" stroke="rgba(51,65,85,0.35)" strokeWidth={strokeWidth}
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke="rgba(51,65,85,0.35)"
+          strokeWidth={strokeWidth}
         />
+
         {sectors.map((sector, index) => {
-          const segment = (Math.max(0, sector.pct) / total) * circumference;
-          const gap = sectors.length > 1 ? 2 : 0;
+          const segment = (Math.max(0, sector.pct) / totalPct) * circumference;
+          const gap = sectors.length > 1 ? 3 : 0;
           const visibleSegment = Math.max(0, segment - gap);
           const currentOffset = offset;
           offset += segment;
 
+          const isActive = activeIndex === index;
+          const isDimmed = activeIndex !== null && !isActive;
+
           return (
             <circle
               key={`${sector.sector}-${index}`}
-              cx={center} cy={center} r={radius}
+              cx={center}
+              cy={center}
+              r={radius}
               fill="none"
               stroke={getColor(index)}
-              strokeWidth={activeIndex === index ? strokeWidth + 5 : strokeWidth}
+              strokeWidth={isActive ? strokeWidth + 6 : strokeWidth}
               strokeLinecap="butt"
               strokeDasharray={`${visibleSegment} ${circumference - visibleSegment}`}
               strokeDashoffset={-currentOffset}
-              opacity={activeIndex === null || activeIndex === index ? 1 : 0.28}
-              style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+              opacity={isDimmed ? 0.25 : 1}
+              style={{
+                cursor: 'pointer',
+                transition: 'stroke-width 0.2s ease, opacity 0.2s ease',
+              }}
               onMouseEnter={() => onHover(index)}
               onMouseLeave={() => onHover(null)}
             />
           );
         })}
       </svg>
+
+      {/* ── Centro dinámico ── */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          textAlign: 'center',
+          padding: '0 12px',
+        }}
+      >
+        {activeSector ? (
+          <>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                background: `${getColor(activeIndex)}18`,
+                border: `1px solid ${getColor(activeIndex)}40`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 6,
+                color: getColor(activeIndex),
+              }}
+            >
+              <ActiveIcon size={18} strokeWidth={1.8} />
+            </div>
+            <p
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                color: '#e2e8f0',
+                margin: 0,
+                lineHeight: 1.2,
+                maxWidth: 110,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {formatSector(activeSector.sector)}
+            </p>
+            <p
+              style={{
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                color: '#fff',
+                margin: '2px 0 0',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              {formatPct(activeSector.pct)}
+            </p>
+            <p
+              style={{
+                fontSize: '0.7rem',
+                color: '#94a3b8',
+                margin: '1px 0 0',
+              }}
+            >
+              {formatUSD(activeSector.valueUSD)}
+            </p>
+          </>
+        ) : (
+          <>
+            <p
+              style={{
+                fontSize: '0.62rem',
+                letterSpacing: '0.12em',
+                color: '#64748b',
+                margin: 0,
+                textTransform: 'uppercase',
+              }}
+            >
+              Total
+            </p>
+            <p
+              style={{
+                fontSize: '1.15rem',
+                fontWeight: 800,
+                color: '#fff',
+                margin: '2px 0 0',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              {formatUSD(totalUSD)}
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────
+   LEGEND CARD
+───────────────────────────────────────────── */
 function SectorLegendCard({ sector, color, index, activeIndex, onHover, onSelect }) {
   const Icon = SECTOR_ICONS[sector.sector] || Layers3;
   const isActive = activeIndex === index;
   const isLookThrough = Number(sector.lookThroughValueUSD || 0) > 0;
+  const hasPositions = sector.count > 0;
 
   return (
     <button
@@ -216,16 +347,28 @@ function SectorLegendCard({ sector, color, index, activeIndex, onHover, onSelect
       <span className="portfolio-legend-top">
         <span
           className="portfolio-legend-icon"
-          style={{ color, backgroundColor: `${color}18`, borderColor: `${color}35` }}
+          style={{
+            color,
+            backgroundColor: `${color}18`,
+            borderColor: `${color}35`,
+          }}
         >
           <Icon size={14} strokeWidth={1.8} />
         </span>
         <span className="portfolio-legend-label">{formatSector(sector.sector)}</span>
         <span className="sector-legend-pct">{formatPct(sector.pct)}</span>
       </span>
+
       <span className="portfolio-legend-bottom">
         <span className="portfolio-legend-value">{formatUSD(sector.valueUSD)}</span>
-        {isLookThrough && <span className="sector-legend-tag">ETF look-through</span>}
+        {hasPositions && (
+          <span className="sector-legend-count">
+            {sector.count} pos.
+          </span>
+        )}
+        {isLookThrough && (
+          <span className="sector-legend-tag">ETF 🔎</span>
+        )}
       </span>
     </button>
   );
@@ -237,13 +380,17 @@ function SectorDetail({ sector }) {
   const direct = Number(sector.directValueUSD || 0);
   const lookThrough = Number(sector.lookThroughValueUSD || 0);
   const sources = sector.sources || [];
+  const count = sector.count || 0;
 
   return (
     <div className="sector-detail">
       <div className="sector-detail-head">
         <div>
           <p className="sector-detail-name">{formatSector(sector.sector)}</p>
-          <p className="sector-detail-sub">{formatPct(sector.pct)} de los activos invertibles</p>
+          <p className="sector-detail-sub">
+            {formatPct(sector.pct)} de los activos invertibles
+            {count > 0 && ` · ${count} ${count === 1 ? 'posición' : 'posiciones'}`}
+          </p>
         </div>
         <p className="sector-detail-value">{formatUSD(sector.valueUSD)}</p>
       </div>
@@ -256,7 +403,9 @@ function SectorDetail({ sector }) {
           </div>
           <div className="v3-metric-card">
             <span className="v3-metric-label">Por ETFs</span>
-            <span className="v3-metric-value" style={{ color: '#22d3ee' }}>{formatUSD(lookThrough)}</span>
+            <span className="v3-metric-value" style={{ color: '#22d3ee' }}>
+              {formatUSD(lookThrough)}
+            </span>
           </div>
         </div>
       )}
@@ -264,7 +413,9 @@ function SectorDetail({ sector }) {
       {sources.length > 0 && (
         <div className="sector-detail-sources">
           {sources.map((source) => (
-            <span key={source} className="v3-mini-badge">{source}</span>
+            <span key={source} className="v3-mini-badge">
+              {source}
+            </span>
           ))}
         </div>
       )}
@@ -272,6 +423,9 @@ function SectorDetail({ sector }) {
   );
 }
 
+/* ─────────────────────────────────────────────
+   COMPONENTE PRINCIPAL
+───────────────────────────────────────────── */
 export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
   const sectors = useMemo(() => normalizeSectorData(sectorAnalysis), [sectorAnalysis]);
   const [activeIndex, setActiveIndex] = useState(null);
@@ -316,8 +470,13 @@ export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
 
       <div className="portfolio-hero-grid">
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <SectorDonut sectors={sectors} activeIndex={activeIndex} onHover={setActiveIndex} />
-          <p className="portfolio-stat-label" style={{ marginTop: '0.5rem' }}>
+          <SectorDonut
+            sectors={sectors}
+            activeIndex={activeIndex}
+            onHover={setActiveIndex}
+            totalUSD={totalUSD}
+          />
+          <p className="portfolio-stat-label" style={{ marginTop: '0.6rem' }}>
             {formatUSD(totalUSD)} invertidos
           </p>
         </div>
