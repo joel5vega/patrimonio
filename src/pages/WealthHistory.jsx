@@ -210,17 +210,14 @@ const fullNetWorthUSD =
     <main className="wh-page">
       <header ref={headerRef} className="wh-header">
         <div>
-          <p className="wh-kicker">Panel financiero</p>
           <h1 className="wh-title">Patrimonio financiero</h1>
-          <p className="wh-subtitle">
-            El total excluye activos clasificados como patrimonio físico.
-          </p>
+         
         </div>
         <ViewModeSelector mode={mode} onChange={setMode} />
       </header>
     
       <section className="wh-top-grid">
-        <section className="wh-hero">
+        {/* <section className="wh-hero">
           <div className="wh-hero-glow" />
           <p className="wh-hero-eyebrow">Total financiero</p>
           <p className="wh-hero-value">
@@ -254,7 +251,7 @@ const fullNetWorthUSD =
               <strong>{liquidity.toFixed(1)}%</strong>
             </div>
           </div>
-        </section>
+        </section> */}
         <section className="wh-chart-card">
           <PeriodSelector
             periods={PERIODS}
