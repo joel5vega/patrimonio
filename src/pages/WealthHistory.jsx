@@ -111,6 +111,8 @@ const fullNetWorthUSD =
       }),
     [chartHistory, period, manualTypes, bobRate]
   );
+
+
   const activeSeries = types
     .filter((item) => visible[item.key])
     .map((item) => ({ ...item, data: seriesMap[item.key] || [] }))
@@ -216,6 +218,7 @@ const fullNetWorthUSD =
         </div>
         <ViewModeSelector mode={mode} onChange={setMode} />
       </header>
+    
       <section className="wh-top-grid">
         <section className="wh-hero">
           <div className="wh-hero-glow" />

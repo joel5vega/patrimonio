@@ -604,8 +604,8 @@ export async function savePortfolioSnapshot(uid, data) {
 export async function getPortfolioHistory(uid) {
   try {
     const q = query(
-      // collection(db, 'users', uid, 'portfolioHistoryV2'),
-      collection(db, 'users', uid, 'portfolioHistory'),
+      collection(db, 'users', uid, 'portfolioHistoryV2'),
+      // collection(db, 'users', uid, 'portfolioHistory'),
       orderBy('date', 'asc')
     );
     const snap = await getDocs(q);
@@ -679,8 +679,8 @@ export const subscribeStandouts = (callback) => {
 };
 
 export async function getPortfolioSnapshotByDate(userId, date) {
-  const ref = doc(db, 'users', userId, 'portfolioHistory', date);
-  // const ref = doc(db, 'users', userId, 'portfolioHistoryV2', date);
+  // const ref = doc(db, 'users', userId, 'portfolioHistory', date);
+  const ref = doc(db, 'users', userId, 'portfolioHistoryV2', date);
   const snap = await getDoc(ref);
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
@@ -925,3 +925,4 @@ export async function refreshQuantfuryQuotes(
 
   return result.data;
 }
+
