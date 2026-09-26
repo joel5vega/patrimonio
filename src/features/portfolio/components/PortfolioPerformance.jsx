@@ -1,7 +1,14 @@
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
-const WINDOW_LABELS = { '1D': '1D', '7D': '7D', '30D': '30D' };
-const WINDOW_ORDER = ['1D', '7D', '30D'];
+/** Ventanas de rendimiento por defecto (orden de visualización). */
+export const DEFAULT_WINDOW_ORDER = ['1D', '7D', '30D'];
+
+/** Etiquetas cortas por ventana. */
+export const DEFAULT_WINDOW_LABELS = {
+  '1D': '1D',
+  '7D': '7D',
+  '30D': '30D',
+};
 
 const formatUSD = (value) =>
   Number(value || 0).toLocaleString('en-US', {
@@ -14,7 +21,17 @@ const formatUSD = (value) =>
 const formatPct = (value) =>
   `${value >= 0 ? '+' : ''}${Number(value || 0).toFixed(2)}%`;
 
-function PerformanceCell({ label, data }) {
+/**
+ * Celda de una ventana de performance.
+ * Usa performance.cashFlowAdjusted* (ajustado por aportes/retiros),
+ * no el delta bruto de saldo.
+ */
+function PerformanceCell({
+  label,
+  data,
+  formatChangeUSD = formatUSD,
+  formatChangePct = formatPct,
+}) {
   if (!data?.available) {
     return (
       <div className="perf-cell perf-cell--empty">
@@ -24,11 +41,6 @@ function PerformanceCell({ label, data }) {
     );
   }
 
-  // OJO: financial.changeUSD/changePct es el delta BRUTO de saldo
-  // (currentUSD - baselineUSD): incluye depósitos/retiros como si fueran
-  // ganancia. El número correcto de performance real es
-  // performance.cashFlowAdjustedChangeUSD / netPerformancePct, que ya
-  // viene ajustado por cashFlows.netUSD desde el backend.
   const changeUSD = Number(data.performance?.cashFlowAdjustedChangeUSD ?? 0);
   const changePct = Number(data.performance?.netPerformancePct ?? 0);
   const netFlow = Number(data.cashFlows?.netUSD || 0);
@@ -40,22 +52,52 @@ function PerformanceCell({ label, data }) {
       <span className="perf-cell__label">{label}</span>
       <span className="perf-cell__pct">
         {isUp ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-        {formatPct(changePct)}
+        {formatChangePct(changePct)}
       </span>
-      <span className="perf-cell__usd">{formatUSD(changeUSD)}</span>
+      <span className="perf-cell__usd">{formatChangeUSD(changeUSD)}</span>
       {hasFlow && <span className="perf-cell__flag">excl. aportes</span>}
     </div>
   );
 }
 
-export default function PortfolioPerformance({ historicalContext, className = '' }) {
+/**
+ * Franja de performance (1D / 7D / 30D).
+ *
+ * @param {object}   props
+ * @param {object}   props.historicalContext  - { available, windows: { '1D'|..., ... } }
+ * @param {string[]} [props.windowOrder]      - orden de columnas (default: 1D, 7D, 30D)
+ * @param {object}   [props.windowLabels]     - mapa key → etiqueta visible
+ * @param {function} [props.formatChangeUSD]  - formatter USD (opcional)
+ * @param {function} [props.formatChangePct]  - formatter % (opcional)
+ * @param {string}   [props.className]
+ */
+export default function PortfolioPerformance({
+  historicalContext,
+  windowOrder = DEFAULT_WINDOW_ORDER,
+  windowLabels = DEFAULT_WINDOW_LABELS,
+  formatChangeUSD,
+  formatChangePct,
+  className = '',
+}) {
   const windows = historicalContext?.windows;
   if (!historicalContext?.available || !windows) return null;
 
   return (
-    <section className={`perf-strip ${className}`}>
-      {WINDOW_ORDER.map((key) => (
-        <PerformanceCell key={key} label={WINDOW_LABELS[key]} data={windows[key]} />
+    <section
+      className={`perf-strip ${className}`}
+      style={{
+        // Parametrizable vía CSS vars o style override
+        '--perf-cols': windowOrder.length,
+      }}
+    >
+      {windowOrder.map((key) => (
+        <PerformanceCell
+          key={key}
+          label={windowLabels[key] ?? key}
+          data={windows[key]}
+          formatChangeUSD={formatChangeUSD}
+          formatChangePct={formatChangePct}
+        />
       ))}
     </section>
   );

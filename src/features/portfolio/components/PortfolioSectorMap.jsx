@@ -34,7 +34,29 @@ import {
   BadgeDollarSign,
 } from 'lucide-react';
 
-const SECTOR_ICONS = {
+/* ─── Parámetros configurables ─────────────────────────────────────────── */
+
+/** Máximo de sectores visibles antes del “Ver más”. */
+export const DEFAULT_VISIBLE_LIMIT = 8;
+
+/** Paleta de colores del donut / legend (cíclica). */
+export const DEFAULT_SECTOR_COLORS = [
+  '#22d3ee',
+  '#60a5fa',
+  '#34d399',
+  '#facc15',
+  '#fb7185',
+  '#a78bfa',
+  '#fb923c',
+  '#2dd4bf',
+  '#f472b6',
+  '#94a3b8',
+  '#818cf8',
+  '#4ade80',
+];
+
+/** Iconos por clave de sector. */
+export const SECTOR_ICONS = {
   tecnologia: Cpu,
   salud: HeartPulse,
   defensa: Shield,
@@ -69,12 +91,13 @@ const SECTOR_ICONS = {
   stablecoin_yield: BadgeDollarSign,
 };
 
-const SECTOR_LABELS = {
+/** Etiquetas legibles (corregidas / completas). */
+export const SECTOR_LABELS = {
   tecnologia: 'Tecnología',
   salud: 'Salud',
   defensa: 'Defensa',
   consumo_basico: 'Consumo básico',
-  consumo_discrecional: 'Consumo ',
+  consumo_discrecional: 'Consumo discrecional',
   finanzas: 'Finanzas',
   energia: 'Energía',
   energia_renovable: 'Energía renovable',
@@ -82,38 +105,32 @@ const SECTOR_LABELS = {
   industria: 'Industria',
   inmobiliario: 'Inmobiliario',
   inmobiliario_cotizado: 'Inmobiliario cotizado',
-  servicios_publicos: 'Servicios',
+  servicios_publicos: 'Servicios públicos',
   comunicacion: 'Comunicación',
   bonos_gobierno: 'Bonos gobierno',
   bonos_inflacion: 'Bonos inflación',
   renta_fija: 'Renta fija',
-  crypto_l1: 'Crypto 🪙',
+  crypto_l1: 'Crypto L1',
   crypto_l2: 'Crypto L2',
   crypto_defi: 'Crypto DeFi',
   crypto_stablecoin: 'Stablecoins',
   crypto_pagos: 'Crypto pagos',
   crypto_meme: 'Crypto meme',
-  metales_preciosos: 'Metales ',
+  metales_preciosos: 'Metales preciosos',
   mineria: 'Minería',
   efectivo_global: 'Efectivo global',
   diversificado_eeuu: 'Diversificado EE. UU.',
   diversificado_global: 'Diversificado global',
   emergentes: 'Emergentes',
-  dividendos_value: 'Dividendos',
+  dividendos_value: 'Dividendos / value',
   otros: 'Otros',
-  stablecoin_yield: 'Stablecoins 💹',
+  stablecoin_yield: 'Stablecoin yield',
 };
 
-const SECTOR_COLORS = [
-  '#22d3ee', '#60a5fa', '#34d399', '#facc15',
-  '#fb7185', '#a78bfa', '#fb923c', '#2dd4bf',
-  '#f472b6', '#94a3b8', '#818cf8', '#4ade80',
-];
+/* ─── Helpers ──────────────────────────────────────────────────────────── */
 
-const VISIBLE_LIMIT = 8;
-
-const formatSector = (sector) =>
-  SECTOR_LABELS[sector] || String(sector || 'otros').replaceAll('_', ' ');
+const formatSector = (sector, labels = SECTOR_LABELS) =>
+  labels[sector] || String(sector || 'otros').replaceAll('_', ' ');
 
 const formatUSD = (value) =>
   Number(value || 0).toLocaleString('en-US', {
@@ -149,20 +166,27 @@ function normalizeSectorData(sectorAnalysis) {
     .sort((a, b) => b.valueUSD - a.valueUSD);
 }
 
-function getColor(index) {
-  return SECTOR_COLORS[index % SECTOR_COLORS.length];
+function getColor(index, palette = DEFAULT_SECTOR_COLORS) {
+  return palette[index % palette.length];
 }
 
-/* ─────────────────────────────────────────────
-   DONUT con centro dinámico (icono + datos)
-───────────────────────────────────────────── */
-function SectorDonut({ sectors, activeIndex, onHover, totalUSD }) {
-  const size = 200;
+/* ─── Donut ────────────────────────────────────────────────────────────── */
+
+function SectorDonut({
+  sectors,
+  activeIndex,
+  onHover,
+  totalUSD,
+  colors = DEFAULT_SECTOR_COLORS,
+  size = 200,
+  radius = 68,
+  strokeWidth = 26,
+  gap = 3,
+}) {
   const center = size / 2;
-  const radius = 68;
-  const strokeWidth = 26;
   const circumference = 2 * Math.PI * radius;
-  const totalPct = sectors.reduce((sum, s) => sum + Math.max(0, s.pct), 0) || 1;
+  const totalPct =
+    sectors.reduce((sum, s) => sum + Math.max(0, s.pct), 0) || 1;
 
   let offset = 0;
 
@@ -170,30 +194,40 @@ function SectorDonut({ sectors, activeIndex, onHover, totalUSD }) {
   const ActiveIcon = activeSector
     ? SECTOR_ICONS[activeSector.sector] || Layers3
     : null;
+  const activeColor =
+    activeIndex !== null ? getColor(activeIndex, colors) : null;
 
   return (
-    <div className="portfolio-donut-wrap" style={{ position: 'relative', width: size, height: size }}>
+    <div
+      className="sector-donut"
+      style={{
+        '--donut-size': `${size}px`,
+        width: size,
+        height: size,
+      }}
+    >
       <svg
         viewBox={`0 0 ${size} ${size}`}
-        className="portfolio-donut-svg"
-        style={{ transform: 'rotate(-90deg)', width: '100%', height: '100%' }}
+        className="sector-donut__svg"
         role="img"
         aria-label="Distribución de la cartera por sector"
       >
-        {/* Fondo del anillo */}
         <circle
+          className="sector-donut__track"
           cx={center}
           cy={center}
           r={radius}
           fill="none"
-          stroke="rgba(51,65,85,0.35)"
           strokeWidth={strokeWidth}
         />
 
         {sectors.map((sector, index) => {
-          const segment = (Math.max(0, sector.pct) / totalPct) * circumference;
-          const gap = sectors.length > 1 ? 3 : 0;
-          const visibleSegment = Math.max(0, segment - gap);
+          const segment =
+            (Math.max(0, sector.pct) / totalPct) * circumference;
+          const visibleSegment = Math.max(
+            0,
+            segment - (sectors.length > 1 ? gap : 0)
+          );
           const currentOffset = offset;
           offset += segment;
 
@@ -203,20 +237,16 @@ function SectorDonut({ sectors, activeIndex, onHover, totalUSD }) {
           return (
             <circle
               key={`${sector.sector}-${index}`}
+              className={`sector-donut__segment${isActive ? ' is-active' : ''}${isDimmed ? ' is-dimmed' : ''}`}
               cx={center}
               cy={center}
               r={radius}
               fill="none"
-              stroke={getColor(index)}
+              stroke={getColor(index, colors)}
               strokeWidth={isActive ? strokeWidth + 6 : strokeWidth}
               strokeLinecap="butt"
               strokeDasharray={`${visibleSegment} ${circumference - visibleSegment}`}
               strokeDashoffset={-currentOffset}
-              opacity={isDimmed ? 0.25 : 1}
-              style={{
-                cursor: 'pointer',
-                transition: 'stroke-width 0.2s ease, opacity 0.2s ease',
-              }}
               onMouseEnter={() => onHover(index)}
               onMouseLeave={() => onHover(null)}
             />
@@ -224,98 +254,31 @@ function SectorDonut({ sectors, activeIndex, onHover, totalUSD }) {
         })}
       </svg>
 
-      {/* ── Centro dinámico ── */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-          textAlign: 'center',
-          padding: '0 12px',
-        }}
-      >
+      <div className="sector-donut__center">
         {activeSector ? (
           <>
             <div
+              className="sector-donut__icon"
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                background: `${getColor(activeIndex)}18`,
-                border: `1px solid ${getColor(activeIndex)}40`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 6,
-                color: getColor(activeIndex),
+                '--sector-color': activeColor,
               }}
             >
               <ActiveIcon size={18} strokeWidth={1.8} />
             </div>
-            <p
-              style={{
-                fontSize: '0.72rem',
-                fontWeight: 600,
-                color: '#e2e8f0',
-                margin: 0,
-                lineHeight: 1.2,
-                maxWidth: 110,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <p className="sector-donut__name">
               {formatSector(activeSector.sector)}
             </p>
-            <p
-              style={{
-                fontSize: '1.05rem',
-                fontWeight: 800,
-                color: '#fff',
-                margin: '2px 0 0',
-                letterSpacing: '-0.02em',
-              }}
-            >
+            <p className="sector-donut__pct">
               {formatPct(activeSector.pct)}
             </p>
-            <p
-              style={{
-                fontSize: '0.7rem',
-                color: '#94a3b8',
-                margin: '1px 0 0',
-              }}
-            >
+            <p className="sector-donut__usd">
               {formatUSD(activeSector.valueUSD)}
             </p>
           </>
         ) : (
           <>
-            <p
-              style={{
-                fontSize: '0.62rem',
-                letterSpacing: '0.12em',
-                color: '#64748b',
-                margin: 0,
-                textTransform: 'uppercase',
-              }}
-            >
-              Total
-            </p>
-            <p
-              style={{
-                fontSize: '1.15rem',
-                fontWeight: 800,
-                color: '#fff',
-                margin: '2px 0 0',
-                letterSpacing: '-0.03em',
-              }}
-            >
-              {formatUSD(totalUSD)}
-            </p>
+            <p className="sector-donut__eyebrow">Total</p>
+            <p className="sector-donut__total">{formatUSD(totalUSD)}</p>
           </>
         )}
       </div>
@@ -323,10 +286,17 @@ function SectorDonut({ sectors, activeIndex, onHover, totalUSD }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   LEGEND CARD
-───────────────────────────────────────────── */
-function SectorLegendCard({ sector, color, index, activeIndex, onHover, onSelect }) {
+/* ─── Legend card ──────────────────────────────────────────────────────── */
+
+function SectorLegendCard({
+  sector,
+  color,
+  index,
+  activeIndex,
+  onHover,
+  onSelect,
+  labels,
+}) {
   const Icon = SECTOR_ICONS[sector.sector] || Layers3;
   const isActive = activeIndex === index;
   const isLookThrough = Number(sector.lookThroughValueUSD || 0) > 0;
@@ -355,16 +325,18 @@ function SectorLegendCard({ sector, color, index, activeIndex, onHover, onSelect
         >
           <Icon size={14} strokeWidth={1.8} />
         </span>
-        <span className="portfolio-legend-label">{formatSector(sector.sector)}</span>
+        <span className="portfolio-legend-label">
+          {formatSector(sector.sector, labels)}
+        </span>
         <span className="sector-legend-pct">{formatPct(sector.pct)}</span>
       </span>
 
       <span className="portfolio-legend-bottom">
-        <span className="portfolio-legend-value">{formatUSD(sector.valueUSD)}</span>
+        <span className="portfolio-legend-value">
+          {formatUSD(sector.valueUSD)}
+        </span>
         {hasPositions && (
-          <span className="sector-legend-count">
-            {sector.count} pos.
-          </span>
+          <span className="sector-legend-count">{sector.count} pos.</span>
         )}
         {isLookThrough && (
           <span className="sector-legend-tag">ETF 🔎</span>
@@ -374,7 +346,9 @@ function SectorLegendCard({ sector, color, index, activeIndex, onHover, onSelect
   );
 }
 
-function SectorDetail({ sector }) {
+/* ─── Detail panel ─────────────────────────────────────────────────────── */
+
+function SectorDetail({ sector, labels }) {
   if (!sector) return null;
 
   const direct = Number(sector.directValueUSD || 0);
@@ -386,10 +360,13 @@ function SectorDetail({ sector }) {
     <div className="sector-detail">
       <div className="sector-detail-head">
         <div>
-          <p className="sector-detail-name">{formatSector(sector.sector)}</p>
+          <p className="sector-detail-name">
+            {formatSector(sector.sector, labels)}
+          </p>
           <p className="sector-detail-sub">
             {formatPct(sector.pct)} de los activos invertibles
-            {count > 0 && ` · ${count} ${count === 1 ? 'posición' : 'posiciones'}`}
+            {count > 0 &&
+              ` · ${count} ${count === 1 ? 'posición' : 'posiciones'}`}
           </p>
         </div>
         <p className="sector-detail-value">{formatUSD(sector.valueUSD)}</p>
@@ -403,7 +380,7 @@ function SectorDetail({ sector }) {
           </div>
           <div className="v3-metric-card">
             <span className="v3-metric-label">Por ETFs</span>
-            <span className="v3-metric-value" style={{ color: '#22d3ee' }}>
+            <span className="v3-metric-value sector-detail-lookthrough">
               {formatUSD(lookThrough)}
             </span>
           </div>
@@ -423,18 +400,43 @@ function SectorDetail({ sector }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   COMPONENTE PRINCIPAL
-───────────────────────────────────────────── */
-export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
-  const sectors = useMemo(() => normalizeSectorData(sectorAnalysis), [sectorAnalysis]);
+/* ─── Componente principal ─────────────────────────────────────────────── */
+
+/**
+ * Mapa de distribución por sector (donut + legend + detalle).
+ *
+ * @param {object}   props
+ * @param {object|array} props.sectorAnalysis  - array o { sectors: [...] }
+ * @param {number}   [props.visibleLimit]      - sectores antes de “Ver más”
+ * @param {string[]} [props.colors]            - paleta del donut/legend
+ * @param {object}   [props.labels]            - override de etiquetas
+ * @param {number}   [props.donutSize]         - tamaño del SVG
+ * @param {number}   [props.donutRadius]
+ * @param {number}   [props.donutStroke]
+ * @param {string}   [props.className]
+ */
+export default function PortfolioSectorMap({
+  sectorAnalysis,
+  visibleLimit = DEFAULT_VISIBLE_LIMIT,
+  colors = DEFAULT_SECTOR_COLORS,
+  labels = SECTOR_LABELS,
+  donutSize = 200,
+  donutRadius = 68,
+  donutStroke = 26,
+  className = '',
+}) {
+  const sectors = useMemo(
+    () => normalizeSectorData(sectorAnalysis),
+    [sectorAnalysis]
+  );
   const [activeIndex, setActiveIndex] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [expanded, setExpanded] = useState(false);
 
-  const mainSectors = sectors.slice(0, VISIBLE_LIMIT);
-  const extraSectors = sectors.slice(VISIBLE_LIMIT);
-  const selectedSector = selectedIndex === null ? null : sectors[selectedIndex];
+  const mainSectors = sectors.slice(0, visibleLimit);
+  const extraSectors = sectors.slice(visibleLimit);
+  const selectedSector =
+    selectedIndex === null ? null : sectors[selectedIndex];
   const totalUSD = sectors.reduce((sum, s) => sum + s.valueUSD, 0);
   const dominantSector = sectors[0];
 
@@ -447,7 +449,7 @@ export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
             <span className="v3-section-title">Distribución por sector</span>
           </div>
         </div>
-        <p style={{ padding: '0 1.25rem 1.25rem', fontSize: '0.85rem', color: '#64748b' }}>
+        <p className="sector-map-empty">
           No hay datos sectoriales disponibles.
         </p>
       </section>
@@ -463,35 +465,41 @@ export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
         </div>
         {dominantSector && (
           <span className="portfolio-risk-badge">
-            Principal: {formatSector(dominantSector.sector)} {formatPct(dominantSector.pct)}
+            Principal: {formatSector(dominantSector.sector, labels)}{' '}
+            {formatPct(dominantSector.pct)}
           </span>
         )}
       </div>
 
       <div className="portfolio-hero-grid">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div className="sector-donut-col">
           <SectorDonut
             sectors={sectors}
             activeIndex={activeIndex}
             onHover={setActiveIndex}
             totalUSD={totalUSD}
+            colors={colors}
+            size={donutSize}
+            radius={donutRadius}
+            strokeWidth={donutStroke}
           />
-          <p className="portfolio-stat-label" style={{ marginTop: '0.6rem' }}>
+          <p className="portfolio-stat-label sector-donut-caption">
             {formatUSD(totalUSD)} invertidos
           </p>
         </div>
 
-        <div style={{ minWidth: 0 }}>
+        <div className="sector-legend-col">
           <div className="portfolio-legend-grid">
             {mainSectors.map((sector, index) => (
               <SectorLegendCard
                 key={`${sector.sector}-${index}`}
                 sector={sector}
                 index={index}
-                color={getColor(index)}
+                color={getColor(index, colors)}
                 activeIndex={activeIndex}
                 onHover={setActiveIndex}
                 onSelect={setSelectedIndex}
+                labels={labels}
               />
             ))}
           </div>
@@ -504,7 +512,9 @@ export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
                 onClick={() => setExpanded((v) => !v)}
                 aria-expanded={expanded}
               >
-                <span className="portfolio-legend-toggle__count">{extraSectors.length}</span>
+                <span className="portfolio-legend-toggle__count">
+                  {extraSectors.length}
+                </span>
                 {expanded ? 'Ver menos sectores' : 'Ver todos los sectores'}
                 <ChevronDown
                   size={14}
@@ -512,19 +522,22 @@ export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
                 />
               </button>
 
-              <div className={`portfolio-legend-collapsible${expanded ? ' open' : ''}`}>
+              <div
+                className={`portfolio-legend-collapsible${expanded ? ' open' : ''}`}
+              >
                 <div className="portfolio-legend-grid">
                   {extraSectors.map((sector, i) => {
-                    const index = VISIBLE_LIMIT + i;
+                    const index = visibleLimit + i;
                     return (
                       <SectorLegendCard
                         key={`${sector.sector}-${index}`}
                         sector={sector}
                         index={index}
-                        color={getColor(index)}
+                        color={getColor(index, colors)}
                         activeIndex={activeIndex}
                         onHover={setActiveIndex}
                         onSelect={setSelectedIndex}
+                        labels={labels}
                       />
                     );
                   })}
@@ -533,7 +546,7 @@ export default function PortfolioSectorMap({ sectorAnalysis, className = '' }) {
             </>
           )}
 
-          <SectorDetail sector={selectedSector} />
+          <SectorDetail sector={selectedSector} labels={labels} />
         </div>
       </div>
     </section>

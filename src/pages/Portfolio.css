@@ -5,7 +5,7 @@
   width: 100%;
   max-width: 100%;
   padding: 1rem;
-  background: #020617;
+  background: #ef4444;
   color: white;
   display: flex;
   flex-direction: column;
@@ -1360,20 +1360,22 @@
   box-shadow: 0 0 8px rgba(244,63,94,0.4);
 }
 
-/* Perform */
 
+/* ═══════════════════════════════════════════════════════════
+   PERFORMANCE STRIP (parametrizado)
+═══════════════════════════════════════════════════════════ */
 .perf-strip {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: repeat(var(--perf-cols, 3), 1fr);
+  gap: var(--perf-gap, 0.5rem);
 }
 
 .perf-cell {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 0.65rem;
+  padding: var(--perf-cell-pad, 0.5rem 0.65rem);
+  border-radius: var(--perf-radius, 0.65rem);
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(148, 163, 184, 0.08);
 }
@@ -1394,8 +1396,8 @@
   font-size: 0.85rem;
   font-weight: 800;
 }
-.perf-cell.up .perf-cell__pct   { color: #10b981; }
-.perf-cell.down .perf-cell__pct { color: #fb7185; }
+.perf-cell.up .perf-cell__pct   { color: var(--perf-up, #10b981); }
+.perf-cell.down .perf-cell__pct { color: var(--perf-down, #fb7185); }
 
 .perf-cell__usd {
   font-family: 'JetBrains Mono', monospace;
@@ -1415,6 +1417,127 @@
   color: rgba(255, 255, 255, 0.25);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   SECTOR MAP — DONUT (antes inline)
+═══════════════════════════════════════════════════════════ */
+.sector-donut {
+  position: relative;
+  width: var(--donut-size, 200px);
+  height: var(--donut-size, 200px);
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.sector-donut__svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+
+.sector-donut__track {
+  stroke: rgba(51, 65, 85, 0.35);
+}
+
+.sector-donut__segment {
+  cursor: pointer;
+  transition: stroke-width 0.2s ease, opacity 0.2s ease;
+}
+.sector-donut__segment.is-dimmed { opacity: 0.25; }
+.sector-donut__segment.is-active { /* strokeWidth handled inline for precision */ }
+
+.sector-donut__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+  padding: 0 12px;
+}
+
+.sector-donut__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sector-color, #22d3ee) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sector-color, #22d3ee) 25%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  color: var(--sector-color, #22d3ee);
+}
+
+.sector-donut__name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0;
+  line-height: 1.2;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sector-donut__pct {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 2px 0 0;
+  letter-spacing: -0.02em;
+}
+
+.sector-donut__usd {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin: 1px 0 0;
+}
+
+.sector-donut__eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: #64748b;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.sector-donut__total {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 2px 0 0;
+  letter-spacing: -0.03em;
+}
+
+.sector-donut-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sector-donut-caption {
+  margin-top: 0.6rem;
+}
+
+.sector-legend-col {
+  min-width: 0;
+}
+
+.sector-map-empty {
+  padding: 0 1.25rem 1.25rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.sector-detail-lookthrough {
+  color: #22d3ee;
+}
+
+/* Legend count + active (ya existían; se refuerzan) */
 .sector-legend-count {
   font-size: 0.68rem;
   font-weight: 600;
@@ -1428,4 +1551,17 @@
 .portfolio-legend-card.active {
   border-color: var(--sector-color);
   background: color-mix(in srgb, var(--sector-color) 8%, transparent);
+}
+
+/* Responsive: strip más compacto en móvil */
+@media (max-width: 480px) {
+  .perf-strip {
+    gap: 0.35rem;
+  }
+  .perf-cell {
+    padding: 0.4rem 0.5rem;
+  }
+  .perf-cell__pct {
+    font-size: 0.78rem;
+  }
 }
