@@ -78,11 +78,11 @@ function Tooltip({ point, position }) {
   const top = clamp(position.y - 12, 8, window.innerHeight - 160);
 
   return ReactDOM.createPortal(
-    <div ref={ref} role="status" aria-live="polite" style={{ position: 'fixed', left, top, zIndex: 50, width: tooltipWidth, pointerEvents: 'none', transformOrigin: 'left center' }} className="rounded-xl border border-slate-200 bg-white/95 p-3 text-sm shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+    <div ref={ref} role="status" aria-live="polite" style={{ position: 'fixed', left, top, zIndex: 50, width: tooltipWidth, pointerEvents: 'none', transformOrigin: 'left center' }} className="rounded-xl border border-slate-200 bg-[#1f1f1f]/95 p-3 text-sm shadow-xl backdrop-blur dark:border-slate-700 dark:bg-[#181818]/95">
       <div className="mb-2 font-semibold text-slate-800 dark:text-slate-100">{point.date}</div>
       {point.values.map((item) => (
         <div key={item.key ?? item.name} className="flex items-center justify-between gap-3">
-          <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span>
+          <span className="flex items-center gap-2 text-[#5e5d59] dark:text-[#a4a19b]"><span className="h-2 w-2 rounded" style={{ backgroundColor: item.color }} />{item.name}</span>
           <strong className="text-slate-800 dark:text-slate-100">{formatUSD(item.v)}</strong>
         </div>
       ))}

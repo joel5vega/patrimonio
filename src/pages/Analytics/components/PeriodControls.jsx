@@ -14,13 +14,13 @@ function DateRangePicker({ startDate, endDate, onStartChange, onEndChange, onCle
   }, []);
 
   return (
-    <div ref={pickerRef} className="bg-brand-card border border-white/10 rounded-2xl p-4 space-y-3" style={{ opacity: 0 }}>
+    <div ref={pickerRef} className="bg-[#1f1f1f] border border-[#262626] rounded-lg p-4 space-y-3" style={{ opacity: 0 }}>
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <Calendar size={13} className="text-brand-teal" />
-          <span className="text-xs font-bold text-white/70">Rango personalizado</span>
+          <Calendar size={13} className="text-[#2b7fff]" />
+          <span className="text-xs font-bold text-[#eeeeee]/70">Rango personalizado</span>
         </div>
-        <button type="button" onClick={onClear} className="text-white/30 hover:text-white/60 transition-colors">
+        <button type="button" onClick={onClear} className="text-[#eeeeee]/30 hover:text-[#eeeeee]/60 transition-colors">
           <X size={14} />
         </button>
       </div>
@@ -39,12 +39,12 @@ function DateRangePicker({ startDate, endDate, onStartChange, onEndChange, onCle
           },
         ].map(({ label, value, max, min, onChange, display }) => (
           <div key={label}>
-            <label className="text-10px text-white/40 block mb-1.5 font-semibold uppercase tracking-wide">{label}</label>
+            <label className="text-10px text-[#eeeeee]/40 block mb-1.5 font-semibold uppercase tracking-wide">{label}</label>
             <input
               type="date" value={value} max={max} min={min} onChange={onChange}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white/80 focus:outline-none focus:border-brand-teal/50 transition-all color-scheme:dark"
+              className="w-full bg-[#1f1f1f]/5 border border-[#262626] rounded-xl px-3 py-2 text-xs text-[#eeeeee]/80 focus:outline-none focus:border-[#2b7fff]/50 transition-all color-scheme:dark"
             />
-            {display && <p className="text-10px text-brand-teal mt-1 ml-1">{fmtDate(display)}</p>}
+            {display && <p className="text-10px text-[#2b7fff] mt-1 ml-1">{fmtDate(display)}</p>}
           </div>
         ))}
       </div>
@@ -56,16 +56,16 @@ function DateRangePicker({ startDate, endDate, onStartChange, onEndChange, onCle
           { label: 'Año 2026', fn: () => { onStartChange(new Date('2026-01-01')); onEndChange(new Date('2026-12-31')); } },
         ].map(({ label, fn }) => (
           <button key={label} type="button" onClick={fn}
-            className="text-10px px-2.5 py-1 rounded-full border border-white/10 text-white/40 hover:text-brand-teal hover:border-brand-teal/40 transition-all font-semibold">
+            className="text-10px px-2.5 py-1 rounded border border-[#262626] text-[#eeeeee]/40 hover:text-[#2b7fff] hover:border-[#2b7fff]/40 transition-all font-semibold">
             {label}
           </button>
         ))}
       </div>
 
       {startDate && endDate && (
-        <div className="bg-brand-teal/10 border border-brand-teal/20 rounded-xl px-3 py-2">
-          <p className="text-11px text-brand-teal font-semibold">{fmtDate(startDate)} → {fmtDate(endDate)}</p>
-          <p className="text-10px text-white/40 mt-0.5">
+        <div className="bg-[#2b7fff]/10 border border-[#2b7fff]/20 rounded-xl px-3 py-2">
+          <p className="text-11px text-[#2b7fff] font-semibold">{fmtDate(startDate)} → {fmtDate(endDate)}</p>
+          <p className="text-10px text-[#eeeeee]/40 mt-0.5">
             {Math.round((endDate - startDate) / 86400000) + 1} días seleccionados
           </p>
         </div>
@@ -82,10 +82,10 @@ export default function PeriodControls({ period, setPeriod, customStart, customE
           <button
             key={p.value}
             onClick={() => setPeriod(p.value)}
-            className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all ${
+            className={`flex-1 py-1.5 rounded text-xs font-bold transition-all ${
               period === p.value
-                ? p.value === 'custom' ? 'bg-purple-500 text-white' : 'bg-brand-teal text-black'
-                : 'bg-brand-card text-white/40 border border-white/10'
+                ? p.value === 'custom' ? 'bg-purple-500 text-[#eeeeee]' : 'bg-[#2b7fff] text-[#eeeeee]'
+                : 'bg-[#1f1f1f] text-[#eeeeee]/40 border border-[#262626]'
             }`}
           >
             {p.value === 'custom' ? (

@@ -36,13 +36,13 @@ export default function GlobalMonthDetailModal({ data, onClose }) {
     <>
       <div className="fixed inset-0 z-50 flex items-end" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={handleClose}>
         <div ref={sheetRef} onClick={(e) => e.stopPropagation()} className="w-full max-h-[88vh] overflow-y-auto rounded-t-3xl"
-          style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', opacity: 0 }}>
+          style={{ background: '#1f1f1f', border: '1px solid rgba(255,255,255,0.08)', opacity: 0 }}>
 
-          <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
+          <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded bg-[#1f1f1f]/20" /></div>
 
           <div className="px-5 pt-2 pb-4 flex justify-between items-start">
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wide font-bold mb-0.5">Cumplimiento global</p>
+              <p className="text-[10px] text-[#eeeeee]/30 uppercase tracking-wide font-bold mb-0.5">Cumplimiento global</p>
               <h2 className="text-xl font-bold">{label} {year}</h2>
               <div className="flex gap-1.5 mt-1.5">
                 <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.55rem', borderRadius: '999px', background: 'rgba(16,185,129,0.12)', color: '#34d399', border: '1px solid rgba(16,185,129,0.3)' }}>
@@ -55,20 +55,20 @@ export default function GlobalMonthDetailModal({ data, onClose }) {
                 )}
               </div>
             </div>
-            <button onClick={handleClose} className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white/70">
+            <button onClick={handleClose} className="p-2 rounded-xl bg-[#1f1f1f]/5 text-[#eeeeee]/40 hover:text-[#eeeeee]/70">
               <X size={16} />
             </button>
           </div>
 
           <div className="px-5 space-y-3 pb-8">
             {total > 0 && (
-              <div className="bg-white/5 rounded-2xl p-3 space-y-2">
-                <div className="flex justify-between text-[10px] text-white/40">
+              <div className="bg-[#1f1f1f]/5 rounded-lg p-3 space-y-2">
+                <div className="flex justify-between text-[10px] text-[#eeeeee]/40">
                   <span>Grupos con presupuesto</span>
                   <span className="font-bold font-mono">{passed}/{total}</span>
                 </div>
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(passed / total) * 100}%`, background: passed === total ? '#10b981' : passed > 0 ? '#eab308' : '#f43f5e' }} />
+                <div className="h-2 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                  <div className="h-full rounded transition-all duration-700" style={{ width: `${(passed / total) * 100}%`, background: passed === total ? '#10b981' : passed > 0 ? '#eab308' : '#f43f5e' }} />
                 </div>
               </div>
             )}
@@ -83,10 +83,10 @@ export default function GlobalMonthDetailModal({ data, onClose }) {
                   <button
                     type="button"
                     onClick={() => setSelected({ groupKey: key, groupLabel: gLabel, budget, spent, ok, hex, label, year, month, transactions })}
-                    className="w-full bg-white/5 rounded-2xl p-3.5 space-y-2.5 text-left hover:bg-white/8 transition-colors active:scale-[0.98]">
+                    className="w-full bg-[#1f1f1f]/5 rounded-lg p-3.5 space-y-2.5 text-left hover:bg-[#1f1f1f]/8 transition-colors active:scale-[0.98]">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: hex }} />
+                        <div className="w-2 h-2 rounded flex-shrink-0" style={{ background: hex }} />
                         <span className="text-sm font-bold" style={{ color: hex }}>{gLabel}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -104,15 +104,15 @@ export default function GlobalMonthDetailModal({ data, onClose }) {
                     </div>
 
                     {budget > 0 && (
-                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, background: isOver ? '#f43f5e' : hex }} />
+                      <div className="h-1.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                        <div className="h-full rounded transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, background: isOver ? '#f43f5e' : hex }} />
                       </div>
                     )}
 
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-white/40">
+                      <span className="text-[#eeeeee]/40">
                         Bs {spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
-                        {budget > 0 && <span className="text-white/20"> / {budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>}
+                        {budget > 0 && <span className="text-[#eeeeee]/20"> / {budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>}
                       </span>
                       {diff !== null && (
                         <span style={{ color: isOver ? '#fb7185' : '#34d399' }} className="font-semibold font-mono">

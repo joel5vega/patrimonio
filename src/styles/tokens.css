@@ -1,38 +1,117 @@
-/*
- * Tokens de diseño — única fuente de verdad para colores.
- * Debe reflejar EXACTAMENTE theme.extend.colors en tailwind.config.js.
- *
- * Uso:
- *  - Componentes con Tailwind: clases utilitarias (bg-success, text-danger-light).
- *  - CSS plano (mientras se migran los .css legados): var(--color-success).
- *
- * No agregar hex sueltos en ningún .css nuevo: si falta un color, se agrega
- * aquí primero y se referencia desde los dos lados.
- */
 :root {
-  --color-brand-dark: #0d1117;
-  --color-brand-card: #161b22;
-  --color-brand-teal: #2dd4bf;
+  --color-carbon-canvas: #181818;
+  --color-obsidian: #111111;
+  --color-graphite-card: #1f1f1f;
+  --color-slate-elevated: #262626;
+  --color-iron-peak: #323232;
+  --color-bone: #eeeeee;
+  --color-ash: #e4e4e4;
+  --color-fog: #a4a19b;
+  --color-smoke: #5e5d59;
+  --color-pewter: #4b4b4b;
+  --color-pure-white: #ffffff;
+  --color-voltage-blue: #2b7fff;
+  --color-mid-navy: #1a365d;
 
-  --color-success: #10b981;
-  --color-success-light: #34d399;
+  --color-success: #2b7fff;
+  --color-success-light: #5a9fff;
+  --color-danger: #e05a68;
+  --color-danger-light: #f07a86;
+  --color-warning: #c9a227;
+  --color-info: #2b7fff;
+  --color-info-light: #5a9fff;
+  --color-muted: #5e5d59;
+  --color-muted-light: #a4a19b;
 
-  --color-danger: #f43f5e;
-  --color-danger-light: #fb7185;
+  --color-brand-dark: #181818;
+  --color-brand-card: #1f1f1f;
+  --color-brand-teal: #2b7fff;
+  --color-accent-cyan: #2b7fff;
+  --color-accent-orange: #c9a227;
+  --color-ledger-navy: #111111;
+  --color-registry-blue: #2b7fff;
+  --color-network-teal: #2b7fff;
+  --color-paper-white: #eeeeee;
+  --color-ink-black: #eeeeee;
+  --color-carbon: #111111;
+  --color-mint-paper: #1f1f1f;
+  --color-sky-paper: #262626;
+  --color-rule-gray: #262626;
+  --color-steel-rule: #323232;
+  --color-quiet-gray: #a4a19b;
 
-  --color-warning: #facc15;
+  --surface-obsidian: #111111;
+  --surface-carbon-canvas: #181818;
+  --surface-graphite-card: #1f1f1f;
+  --surface-slate-elevated: #262626;
+  --surface-iron-peak: #323232;
+  --surface-page: #181818;
+  --surface-card: #1f1f1f;
+  --surface-elevated: #262626;
 
-  --color-info: #3b82f6;
-  --color-info-light: #60a5fa;
+  --border-default: #262626;
+  --border-strong: #323232;
+  --border-focus: #2b7fff;
 
-  --color-accent-cyan: #22d3ee;
-  --color-accent-orange: #f97316;
+  --text-primary: #eeeeee;
+  --text-secondary: #a4a19b;
+  --text-inverse: #181818;
+  --text-muted: #5e5d59;
+  --text-link: #2b7fff;
 
-  --color-muted: #64748b;
-  --color-muted-light: #94a3b8;
+  --font-libre-baskerville: 'Libre Baskerville', Georgia, serif;
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-fira-code: 'Fira Code', ui-monospace, monospace;
+  --font-season-vf: var(--font-libre-baskerville);
+  --font-uncut-sans: var(--font-inter);
+  --font-modern-era-mono: var(--font-fira-code);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-libre-baskerville);
+  --font-mono: var(--font-fira-code);
 
-  /* Espaciado y radios comunes, para que las páginas no reinventen valores */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --text-body: 14px;
+  --leading-body: 1.5;
+  --text-eyebrow: 11px;
+  --text-nav: 14px;
+  --text-heading: 28px;
+  --text-section-heading: 36px;
+  --text-hero-display: 72px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-32: 32px;
+  --spacing-48: 48px;
+  --spacing-64: 64px;
+  --spacing-80: 80px;
+
+  --page-max-width: 1200px;
+  --section-gap: 32px;
+  --card-padding: 12px;
+  --element-gap: 8px;
+
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-2xl: 16px;
+  --radius-cards: 8px;
+  --radius-buttons: 4px;
+  --radius-inputs: 4px;
+  --radius-navigation: 4px;
+  --radius-pill: 4px;
+
+  --shadow-md: rgba(51, 51, 51, 0.05) 0px 2px 15px 0px, rgba(51, 51, 51, 0.05) 0px 1px 2px -1px;
+
+  --sidebar-w: 240px;
+  --sidebar-w-collapsed: 64px;
+  --header-h: 64px;
+
+  --perf-up: #2b7fff;
+  --perf-down: #e05a68;
 }

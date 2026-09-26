@@ -12,7 +12,7 @@
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.5rem 0.65rem;
-  border-radius: 0.65rem;
+  border-radius: var(--radius-cards);
   background: rgba(15, 23, 42, 0.4);
   border: 1px solid rgba(148, 163, 184, 0.08);
 }
@@ -22,22 +22,22 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #64748b;
+  color: var(--color-fog);
 }
 
 .perf-cell__pct {
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-fira-code), monospace;
   font-size: 0.85rem;
   font-weight: 800;
 }
-.perf-cell.up .perf-cell__pct   { color: #10b981; }
-.perf-cell.down .perf-cell__pct { color: #fb7185; }
+.perf-cell.up .perf-cell__pct   { color: var(--color-success); }
+.perf-cell.down .perf-cell__pct { color: var(--color-danger-light); }
 
 .perf-cell__usd {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-fira-code), monospace;
   font-size: 0.68rem;
   color: rgba(255, 255, 255, 0.45);
 }
@@ -45,7 +45,7 @@
 .perf-cell__flag {
   font-size: 0.55rem;
   font-weight: 700;
-  color: #facc15;
+  color: var(--color-warning);
   margin-top: 0.05rem;
 }
 

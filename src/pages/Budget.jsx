@@ -28,15 +28,15 @@ const DEFAULT_SUBCAT_BUDGETS = {
 const GROUP_COLORS = {
   hogar: 'bg-blue-500', familia: 'bg-pink-500',
   desarrollo: 'bg-purple-500', fe: 'bg-yellow-500',
-  inversiones: 'bg-emerald-500', otros: 'bg-white/30',
+  inversiones: 'bg-emerald-500', otros: 'bg-[#1f1f1f]/30',
 };
 const GROUP_TEXT = {
   hogar: 'text-blue-400', familia: 'text-pink-400',
   desarrollo: 'text-purple-400', fe: 'text-yellow-400',
-  inversiones: 'text-emerald-400', otros: 'text-white/40',
+  inversiones: 'text-emerald-400', otros: 'text-[#eeeeee]/40',
 };
 const GROUP_HEX = {
-  hogar: '#3b82f6', familia: '#ec4899', desarrollo: '#a855f7',
+  hogar: '#2b7fff', familia: '#ec4899', desarrollo: '#a855f7',
   fe: '#eab308', inversiones: '#10b981', otros: 'rgba(255,255,255,0.3)',
 };
 const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -101,8 +101,8 @@ function getBudgetHistory(transactions, group, budget, months = 5) {
 
 // ── Bar ───────────────────────────────────────────────────────
 const Bar = ({ pct, color, warn }) => (
-  <div className="flex-1 h-2.5 bg-white/5 rounded-full overflow-hidden">
-    <div className={`h-full rounded-full transition-all duration-500 ${warn ? 'bg-rose-500' : color}`}
+  <div className="flex-1 h-2.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
+    <div className={`h-full rounded transition-all duration-500 ${warn ? 'bg-rose-500' : color}`}
       style={{ width: `${Math.min(pct, 100)}%` }} />
   </div>
 );
@@ -151,10 +151,10 @@ const MonthDetailModal = ({ data, onClose }) => {
       onClick={handleClose}>
       <div ref={sheetRef} onClick={e => e.stopPropagation()}
         className="w-full max-h-[88vh] overflow-y-auto rounded-t-3xl"
-        style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', opacity: 0 }}>
+        style={{ background: '#1f1f1f', border: '1px solid rgba(255,255,255,0.08)', opacity: 0 }}>
 
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+          <div className="w-10 h-1 rounded bg-[#1f1f1f]/20" />
         </div>
 
         <div className="px-5 pt-2 pb-4 flex justify-between items-start">
@@ -173,9 +173,9 @@ const MonthDetailModal = ({ data, onClose }) => {
                 {ok === null ? 'Sin budget' : ok ? '✓ Cumplido' : '✗ Excedido'}
               </span>
             </div>
-            <h2 className="text-xl font-bold text-white">{groupLabel}</h2>
+            <h2 className="text-xl font-bold text-[#eeeeee]">{groupLabel}</h2>
           </div>
-          <button onClick={handleClose} className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white/70">
+          <button onClick={handleClose} className="p-2 rounded-xl bg-[#1f1f1f]/5 text-[#eeeeee]/40 hover:text-[#eeeeee]/70">
             <X size={16} />
           </button>
         </div>
@@ -183,16 +183,16 @@ const MonthDetailModal = ({ data, onClose }) => {
         <div className="px-5 space-y-5 pb-8">
           <div className="grid grid-cols-3 gap-2">
             {[
-              { lbl: 'Gastado',      val: `Bs ${spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}`,   color: isOver ? 'text-rose-400' : 'text-white' },
-              { lbl: 'Budget',       val: budget > 0 ? `Bs ${budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}` : '—', color: 'text-white/60' },
+              { lbl: 'Gastado',      val: `Bs ${spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}`,   color: isOver ? 'text-rose-400' : 'text-[#eeeeee]' },
+              { lbl: 'Budget',       val: budget > 0 ? `Bs ${budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}` : '—', color: 'text-[#eeeeee]/60' },
               { lbl: diff !== null ? (isOver ? 'Exceso' : 'Restó') : 'Transacc.',
                 val: diff !== null
                   ? `Bs ${Math.abs(diff).toLocaleString('es-BO', { maximumFractionDigits: 0 })}`
                   : `${txs.length}`,
-                color: diff !== null ? (isOver ? 'text-rose-400' : 'text-emerald-400') : 'text-white/60' },
+                color: diff !== null ? (isOver ? 'text-rose-400' : 'text-emerald-400') : 'text-[#eeeeee]/60' },
             ].map(({ lbl, val, color }) => (
-              <div key={lbl} className="bg-white/5 rounded-2xl p-3 text-center">
-                <p className="text-[9px] text-white/30 mb-1 uppercase tracking-wide">{lbl}</p>
+              <div key={lbl} className="bg-[#1f1f1f]/5 rounded-lg p-3 text-center">
+                <p className="text-[9px] text-[#eeeeee]/30 mb-1 uppercase tracking-wide">{lbl}</p>
                 <p className={`text-sm font-bold font-mono ${color}`}>{val}</p>
               </div>
             ))}
@@ -200,13 +200,13 @@ const MonthDetailModal = ({ data, onClose }) => {
 
           {budget > 0 && (
             <div className="space-y-1.5">
-              <div className="flex justify-between text-[10px] text-white/30">
+              <div className="flex justify-between text-[10px] text-[#eeeeee]/30">
                 <span>0</span>
                 <span className={pct > 100 ? 'text-rose-400 font-bold' : ''}>{pct.toFixed(0)}%</span>
                 <span>Bs {budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
               </div>
-              <div className="h-3 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-700"
+              <div className="h-3 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                <div className="h-full rounded transition-all duration-700"
                   style={{ width: `${Math.min(pct, 100)}%`, background: isOver ? '#f43f5e' : hex }} />
               </div>
             </div>
@@ -214,22 +214,22 @@ const MonthDetailModal = ({ data, onClose }) => {
 
           {byCategory.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[10px] text-white/30 font-bold uppercase tracking-wide">Por categoría</p>
+              <p className="text-[10px] text-[#eeeeee]/30 font-bold uppercase tracking-wide">Por categoría</p>
               {byCategory.map(({ key, total, label: catLabel, emoji }) => (
                 <div key={key} className="detail-row space-y-1" style={{ opacity: 0 }}>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/70">{emoji} {catLabel}</span>
+                    <span className="text-[#eeeeee]/70">{emoji} {catLabel}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-white/30 text-[10px]">
+                      <span className="text-[#eeeeee]/30 text-[10px]">
                         {spent > 0 ? ((total / spent) * 100).toFixed(0) : 0}%
                       </span>
-                      <span className="text-white/80 font-semibold font-mono">
+                      <span className="text-[#eeeeee]/80 font-semibold font-mono">
                         Bs {total.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
                       </span>
                     </div>
                   </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500"
+                  <div className="h-1.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                    <div className="h-full rounded transition-all duration-500"
                       style={{ width: `${(total / (byCategory[0]?.total || 1)) * 100}%`, background: hex + 'cc' }} />
                   </div>
                 </div>
@@ -277,15 +277,15 @@ const GlobalMonthDetailModal = ({ data, onClose }) => {
         onClick={handleClose}>
         <div ref={sheetRef} onClick={e => e.stopPropagation()}
           className="w-full max-h-[88vh] overflow-y-auto rounded-t-3xl"
-          style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', opacity: 0 }}>
+          style={{ background: '#1f1f1f', border: '1px solid rgba(255,255,255,0.08)', opacity: 0 }}>
 
           <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 rounded-full bg-white/20" />
+            <div className="w-10 h-1 rounded bg-[#1f1f1f]/20" />
           </div>
 
           <div className="px-5 pt-2 pb-4 flex justify-between items-start">
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wide font-bold mb-0.5">Cumplimiento global</p>
+              <p className="text-[10px] text-[#eeeeee]/30 uppercase tracking-wide font-bold mb-0.5">Cumplimiento global</p>
               <h2 className="text-xl font-bold">{label} {year}</h2>
               <div className="flex gap-1.5 mt-1.5">
                 <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.55rem',
@@ -300,20 +300,20 @@ const GlobalMonthDetailModal = ({ data, onClose }) => {
                 )}
               </div>
             </div>
-            <button onClick={handleClose} className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white/70">
+            <button onClick={handleClose} className="p-2 rounded-xl bg-[#1f1f1f]/5 text-[#eeeeee]/40 hover:text-[#eeeeee]/70">
               <X size={16} />
             </button>
           </div>
 
           <div className="px-5 space-y-3 pb-8">
             {total > 0 && (
-              <div className="bg-white/5 rounded-2xl p-3 space-y-2">
-                <div className="flex justify-between text-[10px] text-white/40">
+              <div className="bg-[#1f1f1f]/5 rounded-lg p-3 space-y-2">
+                <div className="flex justify-between text-[10px] text-[#eeeeee]/40">
                   <span>Grupos con budget</span>
                   <span className="font-bold font-mono">{passed}/{total}</span>
                 </div>
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700"
+                <div className="h-2 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                  <div className="h-full rounded transition-all duration-700"
                     style={{ width: `${(passed / total) * 100}%`, background: passed === total ? '#10b981' : passed > 0 ? '#eab308' : '#f43f5e' }} />
                 </div>
               </div>
@@ -329,10 +329,10 @@ const GlobalMonthDetailModal = ({ data, onClose }) => {
                   <button
                     type="button"
                     onClick={() => setSelected({ groupKey: key, groupLabel: gLabel, budget, spent, ok, hex, label, year, month, transactions })}
-                    className="w-full bg-white/5 rounded-2xl p-3.5 space-y-2.5 text-left hover:bg-white/8 transition-colors active:scale-[0.98]">
+                    className="w-full bg-[#1f1f1f]/5 rounded-lg p-3.5 space-y-2.5 text-left hover:bg-[#1f1f1f]/8 transition-colors active:scale-[0.98]">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: hex }} />
+                        <div className="w-2 h-2 rounded flex-shrink-0" style={{ background: hex }} />
                         <span className="text-sm font-bold" style={{ color: hex }}>{gLabel}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -351,16 +351,16 @@ const GlobalMonthDetailModal = ({ data, onClose }) => {
                     </div>
 
                     {budget > 0 && (
-                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-500"
+                      <div className="h-1.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                        <div className="h-full rounded transition-all duration-500"
                           style={{ width: `${Math.min(pct, 100)}%`, background: isOver ? '#f43f5e' : hex }} />
                       </div>
                     )}
 
                     <div className="flex justify-between text-[10px]">
-                      <span className="text-white/40">
+                      <span className="text-[#eeeeee]/40">
                         Bs {spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
-                        {budget > 0 && <span className="text-white/20"> / {budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>}
+                        {budget > 0 && <span className="text-[#eeeeee]/20"> / {budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>}
                       </span>
                       {diff !== null && (
                         <span style={{ color: isOver ? '#fb7185' : '#34d399' }} className="font-semibold font-mono">
@@ -402,7 +402,7 @@ const BudgetHistory = ({ history, hex, transactions, groupKey, groupLabel, budge
   return (
     <>
       <div ref={ref} className="pt-3 border-t border-white/5 space-y-2">
-        <p className="text-[10px] text-white/30 font-bold uppercase tracking-wide">
+        <p className="text-[10px] text-[#eeeeee]/30 font-bold uppercase tracking-wide">
           Historial — toca un mes para ver detalles
         </p>
 
@@ -413,7 +413,7 @@ const BudgetHistory = ({ history, hex, transactions, groupKey, groupLabel, budge
               className="flex-1 flex flex-col items-center gap-1 h-full hover:opacity-80 active:scale-95 transition-all">
               <div className="flex-1 w-full flex items-end relative">
                 {h.budget > 0 && (
-                  <div className="absolute w-full border-t border-dashed border-white/20"
+                  <div className="absolute w-full border-t border-dashed border-[#323232]"
                     style={{ bottom: `${(h.budget / maxSpent) * 100}%` }} />
                 )}
                 <div className="hist-bar w-full rounded-t-sm origin-bottom"
@@ -422,7 +422,7 @@ const BudgetHistory = ({ history, hex, transactions, groupKey, groupLabel, budge
                     background: h.ok === null ? 'rgba(255,255,255,0.15)' : h.ok ? hex + 'cc' : '#f43f5e',
                   }} />
               </div>
-              <span className="text-[8px] text-white/30 leading-none">{h.label}</span>
+              <span className="text-[8px] text-[#eeeeee]/30 leading-none">{h.label}</span>
             </button>
           ))}
         </div>
@@ -515,11 +515,11 @@ const handleSave = () => {
     setEditing(false);
   };
   return (
-    <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-3">
+    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-3">
       {/* Título y Acciones */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <span className={`font-bold text-sm ${GROUP_TEXT[groupKey] || 'text-white/60'}`}>{label}</span>
+          <span className={`font-bold text-sm ${GROUP_TEXT[groupKey] || 'text-[#eeeeee]/60'}`}>{label}</span>
           {groupBudget > 0 && (
             <div className="flex items-center gap-0.5">
               {metCount > 0 && (
@@ -541,7 +541,7 @@ const handleSave = () => {
           {isOver ? <AlertTriangle size={13} className="text-rose-400" />
             : groupBudget > 0 ? <CheckCircle size={13} className="text-emerald-400" /> : null}
           <button onClick={() => editing ? setEditing(false) : handleStartEdit()}
-            className="p-1 rounded-lg bg-white/5 text-white/40 hover:text-white/70 transition-colors">
+            className="p-1 rounded-lg bg-[#1f1f1f]/5 text-[#eeeeee]/40 hover:text-[#eeeeee]/70 transition-colors">
             {editing ? <X size={12} /> : <Edit2 size={12} />}
           </button>
         </div>
@@ -549,8 +549,8 @@ const handleSave = () => {
 
       {/* Panel de Edición */}
       {editing && (
-        <div className="bg-white/5 rounded-xl p-3 space-y-2 border border-white/10">
-          <p className="text-[10px] text-white/40 font-bold uppercase tracking-wide">
+        <div className="bg-[#1f1f1f]/5 rounded-xl p-3 space-y-2 border border-[#262626]">
+          <p className="text-[10px] text-[#eeeeee]/40 font-bold uppercase tracking-wide">
             {subcategories.length > 0 ? 'Ajustar subcategorías' : 'Ajustar Presupuesto Total'}
           </p>
 
@@ -558,16 +558,16 @@ const handleSave = () => {
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {subcategories.map(cat => (
                 <div key={cat.value} className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-white/70 flex items-center gap-1.5">
+                  <span className="text-xs text-[#eeeeee]/70 flex items-center gap-1.5">
                     <span>{cat.emoji || '📦'}</span> {cat.label}
                   </span>
                   <div className="flex items-center gap-1">
-                    <span className="text-white/40 text-[10px]">Bs</span>
+                    <span className="text-[#eeeeee]/40 text-[10px]">Bs</span>
                     <input
                       type="number"
                       value={inputs[cat.value] ?? ''}
                       onChange={e => setInputs({ ...inputs, [cat.value]: e.target.value })}
-                      className="w-20 bg-white/10 rounded-lg px-2 py-1 text-xs text-white text-right outline-none focus:ring-1 focus:ring-brand-teal/50"
+                      className="w-20 bg-[#1f1f1f]/10 rounded-lg px-2 py-1 text-xs text-[#eeeeee] text-right outline-none focus:ring-1 focus:ring-brand-teal/50"
                       placeholder="0"
                     />
                   </div>
@@ -576,14 +576,14 @@ const handleSave = () => {
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-white/70">Monto total grupo</span>
+              <span className="text-xs text-[#eeeeee]/70">Monto total grupo</span>
               <div className="flex items-center gap-1">
-                <span className="text-white/40 text-[10px]">Bs</span>
+                <span className="text-[#eeeeee]/40 text-[10px]">Bs</span>
                 <input
                   type="number"
                   value={singleInput}
                   onChange={e => setSingleInput(e.target.value)}
-                  className="w-24 bg-white/10 rounded-lg px-2 py-1 text-xs text-white text-right outline-none focus:ring-1 focus:ring-brand-teal/50"
+                  className="w-24 bg-[#1f1f1f]/10 rounded-lg px-2 py-1 text-xs text-[#eeeeee] text-right outline-none focus:ring-1 focus:ring-brand-teal/50"
                   placeholder="0"
                 />
               </div>
@@ -591,8 +591,8 @@ const handleSave = () => {
           )}
 
           <div className="pt-2 flex justify-between items-center border-t border-white/5">
-            <span className="text-xs text-white/50">
-              Total: <strong className="text-white font-mono">
+            <span className="text-xs text-[#eeeeee]/50">
+              Total: <strong className="text-[#eeeeee] font-mono">
                 Bs {subcategories.length > 0
                   ? Object.values(inputs).reduce((a, b) => a + Number(b || 0), 0)
                   : Number(singleInput || 0)}
@@ -600,7 +600,7 @@ const handleSave = () => {
             </span>
             <button
               onClick={handleSave}
-              className="bg-brand-teal text-black px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
+              className="bg-[#2b7fff] text-[#eeeeee] px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
               <Save size={12} /> Guardar
             </button>
           </div>
@@ -609,29 +609,29 @@ const handleSave = () => {
 
       {/* Barra de Progreso */}
       <div className="flex items-center gap-2">
-        <Bar pct={groupBudget > 0 ? pct : 0} color={GROUP_COLORS[groupKey] || 'bg-white/20'} warn={isOver} />
-        <span className={`text-xs font-bold min-w-[36px] text-right ${isOver ? 'text-rose-400' : 'text-white/50'}`}>
+        <Bar pct={groupBudget > 0 ? pct : 0} color={GROUP_COLORS[groupKey] || 'bg-[#1f1f1f]/20'} warn={isOver} />
+        <span className={`text-xs font-bold min-w-[36px] text-right ${isOver ? 'text-rose-400' : 'text-[#eeeeee]/50'}`}>
           {groupBudget > 0 ? `${pct.toFixed(0)}%` : '—'}
         </span>
       </div>
 
       {/* Métricas */}
-      <div className="grid grid-cols-3 gap-1 text-[10px] text-white/40">
+      <div className="grid grid-cols-3 gap-1 text-[10px] text-[#eeeeee]/40">
         <div>
           <p>Este mes</p>
-          <p className="text-white/70 font-semibold font-mono">
+          <p className="text-[#eeeeee]/70 font-semibold font-mono">
             Bs {spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
           </p>
         </div>
         <div>
           <p>Presupuesto</p>
-          <p className="text-white/70 font-semibold font-mono">
+          <p className="text-[#eeeeee]/70 font-semibold font-mono">
             Bs {groupBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
           </p>
         </div>
         <div>
           <p>Promedio 3M</p>
-          <p className={`font-semibold font-mono ${avg > (groupBudget || Infinity) ? 'text-rose-400' : 'text-white/70'}`}>
+          <p className={`font-semibold font-mono ${avg > (groupBudget || Infinity) ? 'text-rose-400' : 'text-[#eeeeee]/70'}`}>
             Bs {avg.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
           </p>
         </div>
@@ -651,14 +651,14 @@ const handleSave = () => {
             return (
               <div key={cat.value} className="space-y-1">
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="flex items-center gap-1.5 text-white/70">
+                  <span className="flex items-center gap-1.5 text-[#eeeeee]/70">
                     <span>{cat.emoji || '•'}</span> {cat.label}
                   </span>
                   <div className="flex items-center gap-1.5 font-mono">
-                    <span className={`font-semibold ${isCatOver ? 'text-rose-400' : 'text-white/80'}`}>
+                    <span className={`font-semibold ${isCatOver ? 'text-rose-400' : 'text-[#eeeeee]/80'}`}>
                       Bs {subcatSpent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
                     </span>
-                    <span className="text-white/30 text-[10px]">
+                    <span className="text-[#eeeeee]/30 text-[10px]">
                       / Bs {subcatBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
                     </span>
                   </div>
@@ -666,14 +666,14 @@ const handleSave = () => {
 
                 {subcatBudget > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500"
+                    <div className="flex-1 h-1.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                      <div className="h-full rounded transition-all duration-500"
                         style={{
                           width: `${Math.min(catPct, 100)}%`,
                           background: isCatOver ? '#f43f5e' : hex,
                         }} />
                     </div>
-                    <span className={`text-[9px] font-bold font-mono min-w-[28px] text-right ${isCatOver ? 'text-rose-400' : 'text-white/30'}`}>
+                    <span className={`text-[9px] font-bold font-mono min-w-[28px] text-right ${isCatOver ? 'text-rose-400' : 'text-[#eeeeee]/30'}`}>
                       {catPct.toFixed(0)}%
                     </span>
                   </div>
@@ -693,7 +693,7 @@ const handleSave = () => {
               : `✓ Restan Bs ${(groupBudget - spent).toLocaleString('es-BO', { maximumFractionDigits: 0 })}`}
           </p>
           <button onClick={() => setShowHist(v => !v)}
-            className="flex items-center gap-1 text-[10px] text-white/30 hover:text-white/60 transition-colors">
+            className="flex items-center gap-1 text-[10px] text-[#eeeeee]/30 hover:text-[#eeeeee]/60 transition-colors">
             Historial
             <ChevronDown size={11} className={`transition-transform duration-200 ${showHist ? 'rotate-180' : ''}`} />
           </button>
@@ -818,7 +818,7 @@ export default function Budget() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-40">
-        <p className="text-white/40 text-sm animate-pulse">
+        <p className="text-[#eeeeee]/40 text-sm animate-pulse">
           Cargando presupuesto...
         </p>
       </div>
@@ -840,26 +840,26 @@ export default function Budget() {
       {/* Header */}
       <div className="pt-2">
         <h1 className="text-2xl font-bold">Presupuesto</h1>
-        <p className="text-white/40 text-xs mt-0.5">
+        <p className="text-[#eeeeee]/40 text-xs mt-0.5">
           {new Date().toLocaleString('es-BO', { month: 'long', year: 'numeric' })}
         </p>
       </div>
 
       {/* Resumen global */}
-      <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-3">
-        <div className="flex justify-between text-xs text-white/50">
+      <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-3">
+        <div className="flex justify-between text-xs text-[#eeeeee]/50">
           <span>Gastado este mes</span>
           <span>
-            <span className={overallPct > 100 ? 'text-rose-400 font-bold' : 'text-white/70'}>
+            <span className={overallPct > 100 ? 'text-rose-400 font-bold' : 'text-[#eeeeee]/70'}>
               Bs {totalSpentM.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
             </span>
             {totalBudget > 0 && (
-              <span className="text-white/30"> / Bs {totalBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
+              <span className="text-[#eeeeee]/30"> / Bs {totalBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
             )}
           </span>
         </div>
         <Bar pct={overallPct} color="bg-teal-500" warn={overallPct > 100} />
-        <div className="flex justify-between text-[10px] text-white/30">
+        <div className="flex justify-between text-[10px] text-[#eeeeee]/30">
           <span>Semana: Bs {totalSpentW.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
           {totalBudget > 0 && <span>{overallPct.toFixed(0)}% del presupuesto total</span>}
         </div>
@@ -867,7 +867,7 @@ export default function Budget() {
         {/* Historial global clickeable */}
         {totalBudget > 0 && (
           <div className="pt-2 border-t border-white/5">
-            <p className="text-[10px] text-white/30 font-bold uppercase tracking-wide mb-2">
+            <p className="text-[10px] text-[#eeeeee]/30 font-bold uppercase tracking-wide mb-2">
               Cumplimiento global — toca para ver detalle
             </p>
             <div className="flex gap-2">
@@ -887,7 +887,7 @@ export default function Budget() {
                   <span style={{ fontSize: '1rem', filter: h.total === 0 ? 'grayscale(1) opacity(0.3)' : undefined }}>
                     {h.total === 0 ? '○' : h.allGood ? '✅' : h.passed > 0 ? '⚠️' : '❌'}
                   </span>
-                  <span className="text-[8px] text-white/30">{h.label}</span>
+                  <span className="text-[8px] text-[#eeeeee]/30">{h.label}</span>
                   {h.total > 0 && (
                     <span className="text-[8px] font-mono font-bold" style={{
                       color: h.allGood ? '#10b981' : h.passed > 0 ? '#eab308' : '#f43f5e',

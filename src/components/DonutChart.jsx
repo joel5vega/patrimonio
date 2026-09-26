@@ -77,7 +77,7 @@ export default function DonutChart({ total, ytd, segments = [] }) {
               fontSize: '0.58rem',
               letterSpacing: '0.22em',
               marginBottom: 4,
-              color: '#94a3b8',
+              color: '#a4a19b',
             }}
           >
             Total Assets
@@ -87,7 +87,7 @@ export default function DonutChart({ total, ytd, segments = [] }) {
             style={{
               fontSize: '1.75rem',
               fontWeight: 900,
-              color: '#fff',
+              color: '#1f1f1f',
               letterSpacing: '-0.03em',
               lineHeight: 1.1,
             }}
@@ -189,7 +189,7 @@ export default function DonutChart({ total, ytd, segments = [] }) {
                 style={{
                   fontSize: '0.62rem',
                   letterSpacing: '0.14em',
-                  color: '#94a3b8',
+                  color: '#a4a19b',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -213,7 +213,7 @@ export default function DonutChart({ total, ytd, segments = [] }) {
                 style={{
                   fontSize: '0.9rem',
                   fontWeight: 700,
-                  color: '#fff',
+                  color: '#1f1f1f',
                 }}
               >
                 {s.valueUSD}
@@ -225,7 +225,7 @@ export default function DonutChart({ total, ytd, segments = [] }) {
                     style={{
                       fontSize: '0.65rem',
                       fontWeight: 600,
-                      color: '#64748b',
+                      color: '#a4a19b',
                       background: 'rgba(148,163,184,.12)',
                       padding: '0.12rem 0.4rem',
                       borderRadius: 999,
@@ -238,7 +238,7 @@ export default function DonutChart({ total, ytd, segments = [] }) {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 700,
-                    color: '#64748b',
+                    color: '#a4a19b',
                   }}
                 >
                   {s.pct}

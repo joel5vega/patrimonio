@@ -3,7 +3,7 @@ export default function TrendChart({ monthlyTrend }) {
   const maxVal = Math.max(...monthlyTrend.map((x) => Math.max(x.exp, x.inc)), 1);
 
   return (
-    <div className="bg-brand-card rounded-2xl border border-white/5 p-4 analytics-card">
+    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 analytics-card">
       <h3 className="font-bold text-sm mb-4">Tendencia Semestral</h3>
       <div className="flex items-end gap-2 h-20">
         {monthlyTrend.map((m, i) => {
@@ -20,19 +20,19 @@ export default function TrendChart({ monthlyTrend }) {
                   style={{ height: `${(m.inc / maxVal) * 100}%` }}
                 />
               </div>
-              <span className="text-9px text-white/30 capitalize">{m.label}</span>
+              <span className="text-9px text-[#eeeeee]/30 capitalize">{m.label}</span>
             </div>
           );
         })}
       </div>
       <div className="flex gap-3 mt-2">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-rose-500" />
-          <span className="text-10px text-white/40">Gastos</span>
+          <div className="w-2 h-2 rounded bg-rose-500" />
+          <span className="text-10px text-[#eeeeee]/40">Gastos</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-10px text-white/40">Ingresos</span>
+          <div className="w-2 h-2 rounded bg-emerald-500" />
+          <span className="text-10px text-[#eeeeee]/40">Ingresos</span>
         </div>
       </div>
     </div>

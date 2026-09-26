@@ -129,7 +129,7 @@ const fullNetWorthUSD =
       label: "ETFs",
       key: "etfs",
       valueUSD: totalInversionUSD,
-      color: "#3b82f6"
+      color: "#2b7fff"
     },
     {
       label: "Reservas",

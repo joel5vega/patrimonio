@@ -61,7 +61,7 @@ export default function AlertPanel({ alerts = [] }) {
               {/* Body */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <p style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f1f5f9' }}>{a.title}</p>
+                  <p style={{ fontSize: '0.88rem', fontWeight: 700, color: '#eeeeee' }}>{a.title}</p>
                   <span style={{
                     ...s.badge,
                     fontSize: '0.58rem', fontWeight: 900,
@@ -71,7 +71,7 @@ export default function AlertPanel({ alerts = [] }) {
                     {s.label}
                   </span>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: '#94a3b8', lineHeight: 1.5 }}>{a.description}</p>
+                <p style={{ fontSize: '0.78rem', color: '#a4a19b', lineHeight: 1.5 }}>{a.description}</p>
               </div>
             </div>
           );

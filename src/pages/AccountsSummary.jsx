@@ -23,36 +23,36 @@ const AccountsSummary = () => {
   const netWorth = totalAssets - totalLiabilities;
 
   return (
-    <div className="min-h-screen bg-brand-dark text-white p-4 pb-24 max-w-md mx-auto">
+    <div className="min-h-screen bg-[#181818] text-[#eeeeee] p-4 pb-24 max-w-md mx-auto">
       <div className="flex items-center gap-3 pt-2 mb-6">
-        <button onClick={() => navigate(-1)} className="bg-brand-card p-2 rounded-xl border border-white/10">
+        <button onClick={() => navigate(-1)} className="bg-[#1f1f1f] p-2 rounded-xl border border-[#262626]">
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-xl font-bold">Mis Cuentas</h1>
         <div className="ml-auto flex gap-2">
-          <button className="bg-brand-card p-2 rounded-xl border border-white/10"><Edit2 size={16} className="text-white/40" /></button>
-          <button className="bg-brand-card p-2 rounded-xl border border-white/10"><Plus size={16} className="text-brand-teal" /></button>
+          <button className="bg-[#1f1f1f] p-2 rounded-xl border border-[#262626]"><Edit2 size={16} className="text-[#eeeeee]/40" /></button>
+          <button className="bg-[#1f1f1f] p-2 rounded-xl border border-[#262626]"><Plus size={16} className="text-[#2b7fff]" /></button>
         </div>
       </div>
 
       {/* Totals */}
-      <div className="bg-brand-card rounded-3xl p-5 border border-white/5 mb-6">
+      <div className="bg-[#1f1f1f] rounded-lg p-5 border border-white/5 mb-6">
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
-            <p className="text-[10px] font-bold text-white/30 uppercase mb-1">Activos</p>
+            <p className="text-[10px] font-bold text-[#eeeeee]/30 uppercase mb-1">Activos</p>
             <p className="font-mono font-bold text-emerald-400 text-sm">
               Bs {totalAssets.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-white/30 uppercase mb-1">Pasivos</p>
+            <p className="text-[10px] font-bold text-[#eeeeee]/30 uppercase mb-1">Pasivos</p>
             <p className="font-mono font-bold text-rose-400 text-sm">
               -Bs {totalLiabilities.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
             </p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-white/30 uppercase mb-1">Neto</p>
-            <p className="font-mono font-bold text-brand-teal text-sm">
+            <p className="text-[10px] font-bold text-[#eeeeee]/30 uppercase mb-1">Neto</p>
+            <p className="font-mono font-bold text-[#2b7fff] text-sm">
               Bs {netWorth.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
             </p>
           </div>
@@ -66,8 +66,8 @@ const AccountsSummary = () => {
           return (
             <div key={i}>
               <div className="flex justify-between items-end mb-3 pb-2 border-b border-white/5">
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{section.title}</p>
-                <p className={`font-mono font-bold text-sm ${section.isLiability ? 'text-rose-400' : 'text-brand-teal'}`}>
+                <p className="text-[10px] font-bold text-[#eeeeee]/40 uppercase tracking-widest">{section.title}</p>
+                <p className={`font-mono font-bold text-sm ${section.isLiability ? 'text-rose-400' : 'text-[#2b7fff]'}`}>
                   {section.isLiability ? '-' : ''}Bs {section.totalBOB.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
                 </p>
               </div>
@@ -75,22 +75,22 @@ const AccountsSummary = () => {
                 {section.items.map((item, j) => (
                   <div key={j} className="flex justify-between items-center px-1">
                     <div className="flex items-center gap-3">
-                      <div className="bg-brand-card p-2 rounded-xl border border-white/5">
-                        <Icon size={16} className="text-white/40" />
+                      <div className="bg-[#1f1f1f] p-2 rounded-xl border border-white/5">
+                        <Icon size={16} className="text-[#eeeeee]/40" />
                       </div>
                       <div>
                         <p className="font-medium text-sm">{item.name}</p>
                         {item.currency && (
-                          <p className="text-[10px] text-white/30">{item.currency}</p>
+                          <p className="text-[10px] text-[#eeeeee]/30">{item.currency}</p>
                         )}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-mono text-sm font-bold ${item.isLiability ? 'text-rose-400' : 'text-white'}`}>
+                      <p className={`font-mono text-sm font-bold ${item.isLiability ? 'text-rose-400' : 'text-[#eeeeee]'}`}>
                         {item.displayValue}
                       </p>
                       {item.valueBOB && (
-                        <p className="text-[10px] text-white/30">
+                        <p className="text-[10px] text-[#eeeeee]/30">
                           Bs {item.valueBOB.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
                         </p>
                       )}

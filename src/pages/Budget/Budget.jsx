@@ -12,7 +12,7 @@ export default function Budget() {
   if (d.loading) {
     return (
       <div className="flex items-center justify-center h-40">
-        <p className="text-white/40 text-sm animate-pulse">Cargando presupuesto...</p>
+        <p className="text-[#eeeeee]/40 text-sm animate-pulse">Cargando presupuesto...</p>
       </div>
     );
   }
@@ -29,7 +29,7 @@ export default function Budget() {
     <div className="space-y-5 pb-24">
       <div className="pt-2">
         <h1 className="text-2xl font-bold">Presupuesto</h1>
-        <p className="text-white/40 text-xs mt-0.5">
+        <p className="text-[#eeeeee]/40 text-xs mt-0.5">
           {new Date().toLocaleString('es-BO', { month: 'long', year: 'numeric' })}
         </p>
       </div>

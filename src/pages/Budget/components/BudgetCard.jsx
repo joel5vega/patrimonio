@@ -75,10 +75,10 @@ export default function BudgetCard({ groupKey, label, transactions, subcategorie
   };
 
   return (
-    <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-3">
+    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-3">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <span className={`font-bold text-sm ${GROUP_TEXT[groupKey] || 'text-white/60'}`}>{label}</span>
+          <span className={`font-bold text-sm ${GROUP_TEXT[groupKey] || 'text-[#eeeeee]/60'}`}>{label}</span>
           {groupBudget > 0 && (
             <div className="flex items-center gap-0.5">
               {metCount > 0 && (
@@ -96,15 +96,15 @@ export default function BudgetCard({ groupKey, label, transactions, subcategorie
         </div>
         <div className="flex items-center gap-1.5">
           {isOver ? <AlertTriangle size={13} className="text-rose-400" /> : groupBudget > 0 ? <CheckCircle size={13} className="text-emerald-400" /> : null}
-          <button onClick={() => (editing ? setEditing(false) : handleStartEdit())} className="p-1 rounded-lg bg-white/5 text-white/40 hover:text-white/70 transition-colors">
+          <button onClick={() => (editing ? setEditing(false) : handleStartEdit())} className="p-1 rounded-lg bg-[#1f1f1f]/5 text-[#eeeeee]/40 hover:text-[#eeeeee]/70 transition-colors">
             {editing ? <X size={12} /> : <Edit2 size={12} />}
           </button>
         </div>
       </div>
 
       {editing && (
-        <div className="bg-white/5 rounded-xl p-3 space-y-2 border border-white/10">
-          <p className="text-[10px] text-white/40 font-bold uppercase tracking-wide">
+        <div className="bg-[#1f1f1f]/5 rounded-xl p-3 space-y-2 border border-[#262626]">
+          <p className="text-[10px] text-[#eeeeee]/40 font-bold uppercase tracking-wide">
             {subcategories.length > 0 ? 'Ajustar subcategorías' : 'Ajustar Presupuesto Total'}
           </p>
 
@@ -112,33 +112,33 @@ export default function BudgetCard({ groupKey, label, transactions, subcategorie
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {subcategories.map((cat) => (
                 <div key={cat.value} className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-white/70 flex items-center gap-1.5"><span>{cat.emoji || '📦'}</span> {cat.label}</span>
+                  <span className="text-xs text-[#eeeeee]/70 flex items-center gap-1.5"><span>{cat.emoji || '📦'}</span> {cat.label}</span>
                   <div className="flex items-center gap-1">
-                    <span className="text-white/40 text-[10px]">Bs</span>
+                    <span className="text-[#eeeeee]/40 text-[10px]">Bs</span>
                     <input type="number" value={inputs[cat.value] ?? ''} onChange={(e) => setInputs({ ...inputs, [cat.value]: e.target.value })}
-                      className="w-20 bg-white/10 rounded-lg px-2 py-1 text-xs text-white text-right outline-none focus:ring-1 focus:ring-brand-teal/50" placeholder="0" />
+                      className="w-20 bg-[#1f1f1f]/10 rounded-lg px-2 py-1 text-xs text-[#eeeeee] text-right outline-none focus:ring-1 focus:ring-brand-teal/50" placeholder="0" />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-white/70">Monto total grupo</span>
+              <span className="text-xs text-[#eeeeee]/70">Monto total grupo</span>
               <div className="flex items-center gap-1">
-                <span className="text-white/40 text-[10px]">Bs</span>
+                <span className="text-[#eeeeee]/40 text-[10px]">Bs</span>
                 <input type="number" value={singleInput} onChange={(e) => setSingleInput(e.target.value)}
-                  className="w-24 bg-white/10 rounded-lg px-2 py-1 text-xs text-white text-right outline-none focus:ring-1 focus:ring-brand-teal/50" placeholder="0" />
+                  className="w-24 bg-[#1f1f1f]/10 rounded-lg px-2 py-1 text-xs text-[#eeeeee] text-right outline-none focus:ring-1 focus:ring-brand-teal/50" placeholder="0" />
               </div>
             </div>
           )}
 
           <div className="pt-2 flex justify-between items-center border-t border-white/5">
-            <span className="text-xs text-white/50">
-              Total: <strong className="text-white font-mono">
+            <span className="text-xs text-[#eeeeee]/50">
+              Total: <strong className="text-[#eeeeee] font-mono">
                 Bs {subcategories.length > 0 ? Object.values(inputs).reduce((a, b) => a + Number(b || 0), 0) : Number(singleInput || 0)}
               </strong>
             </span>
-            <button onClick={handleSave} className="bg-brand-teal text-black px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
+            <button onClick={handleSave} className="bg-[#2b7fff] text-[#eeeeee] px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1">
               <Save size={12} /> Guardar
             </button>
           </div>
@@ -146,16 +146,16 @@ export default function BudgetCard({ groupKey, label, transactions, subcategorie
       )}
 
       <div className="flex items-center gap-2">
-        <Bar pct={groupBudget > 0 ? pct : 0} color={GROUP_COLORS[groupKey] || 'bg-white/20'} warn={isOver} />
-        <span className={`text-xs font-bold min-w-[36px] text-right ${isOver ? 'text-rose-400' : 'text-white/50'}`}>
+        <Bar pct={groupBudget > 0 ? pct : 0} color={GROUP_COLORS[groupKey] || 'bg-[#1f1f1f]/20'} warn={isOver} />
+        <span className={`text-xs font-bold min-w-[36px] text-right ${isOver ? 'text-rose-400' : 'text-[#eeeeee]/50'}`}>
           {groupBudget > 0 ? `${pct.toFixed(0)}%` : '—'}
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-1 text-[10px] text-white/40">
-        <div><p>Este mes</p><p className="text-white/70 font-semibold font-mono">Bs {spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</p></div>
-        <div><p>Presupuesto</p><p className="text-white/70 font-semibold font-mono">Bs {groupBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</p></div>
-        <div><p>Promedio 3M</p><p className={`font-semibold font-mono ${avg > (groupBudget || Infinity) ? 'text-rose-400' : 'text-white/70'}`}>Bs {avg.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</p></div>
+      <div className="grid grid-cols-3 gap-1 text-[10px] text-[#eeeeee]/40">
+        <div><p>Este mes</p><p className="text-[#eeeeee]/70 font-semibold font-mono">Bs {spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</p></div>
+        <div><p>Presupuesto</p><p className="text-[#eeeeee]/70 font-semibold font-mono">Bs {groupBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</p></div>
+        <div><p>Promedio 3M</p><p className={`font-semibold font-mono ${avg > (groupBudget || Infinity) ? 'text-rose-400' : 'text-[#eeeeee]/70'}`}>Bs {avg.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</p></div>
       </div>
 
       {!editing && subcategories.length > 0 && (
@@ -169,18 +169,18 @@ export default function BudgetCard({ groupKey, label, transactions, subcategorie
             return (
               <div key={cat.value} className="space-y-1">
                 <div className="flex justify-between items-center text-[11px]">
-                  <span className="flex items-center gap-1.5 text-white/70"><span>{cat.emoji || '•'}</span> {cat.label}</span>
+                  <span className="flex items-center gap-1.5 text-[#eeeeee]/70"><span>{cat.emoji || '•'}</span> {cat.label}</span>
                   <div className="flex items-center gap-1.5 font-mono">
-                    <span className={`font-semibold ${isCatOver ? 'text-rose-400' : 'text-white/80'}`}>Bs {subcatSpent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
-                    <span className="text-white/30 text-[10px]">/ Bs {subcatBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
+                    <span className={`font-semibold ${isCatOver ? 'text-rose-400' : 'text-[#eeeeee]/80'}`}>Bs {subcatSpent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
+                    <span className="text-[#eeeeee]/30 text-[10px]">/ Bs {subcatBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
                   </div>
                 </div>
                 {subcatBudget > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(catPct, 100)}%`, background: isCatOver ? '#f43f5e' : hex }} />
+                    <div className="flex-1 h-1.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                      <div className="h-full rounded transition-all duration-500" style={{ width: `${Math.min(catPct, 100)}%`, background: isCatOver ? '#f43f5e' : hex }} />
                     </div>
-                    <span className={`text-[9px] font-bold font-mono min-w-[28px] text-right ${isCatOver ? 'text-rose-400' : 'text-white/30'}`}>{catPct.toFixed(0)}%</span>
+                    <span className={`text-[9px] font-bold font-mono min-w-[28px] text-right ${isCatOver ? 'text-rose-400' : 'text-[#eeeeee]/30'}`}>{catPct.toFixed(0)}%</span>
                   </div>
                 )}
               </div>
@@ -196,7 +196,7 @@ export default function BudgetCard({ groupKey, label, transactions, subcategorie
               ? `⚠ Excedido por Bs ${(spent - groupBudget).toLocaleString('es-BO', { maximumFractionDigits: 0 })}`
               : `✓ Restan Bs ${(groupBudget - spent).toLocaleString('es-BO', { maximumFractionDigits: 0 })}`}
           </p>
-          <button onClick={() => setShowHist((v) => !v)} className="flex items-center gap-1 text-[10px] text-white/30 hover:text-white/60 transition-colors">
+          <button onClick={() => setShowHist((v) => !v)} className="flex items-center gap-1 text-[10px] text-[#eeeeee]/30 hover:text-[#eeeeee]/60 transition-colors">
             Historial <ChevronDown size={11} className={`transition-transform duration-200 ${showHist ? 'rotate-180' : ''}`} />
           </button>
         </div>

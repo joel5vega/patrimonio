@@ -18,7 +18,7 @@ export default function Analytics() {
   if (d.authLoading) {
     return (
       <div className="flex items-center justify-center h-40">
-        <p className="text-white/40 text-sm animate-pulse">Verificando sesión...</p>
+        <p className="text-[#eeeeee]/40 text-sm animate-pulse">Verificando sesión...</p>
       </div>
     );
   }
@@ -32,7 +32,7 @@ export default function Analytics() {
   if (d.loading) {
     return (
       <div className="flex items-center justify-center h-40">
-        <p className="text-white/40 text-sm animate-pulse">Cargando análisis...</p>
+        <p className="text-[#eeeeee]/40 text-sm animate-pulse">Cargando análisis...</p>
       </div>
     );
   }
@@ -55,18 +55,18 @@ export default function Analytics() {
       <div className="flex justify-between items-center pt-2">
         <div>
           <h1 className="text-2xl font-bold">Análisis Financiero</h1>
-          {showPeriodLabel && <p className="text-11px text-brand-teal mt-0.5">{periodLabelText}</p>}
+          {showPeriodLabel && <p className="text-11px text-[#2b7fff] mt-0.5">{periodLabelText}</p>}
         </div>
         <div className="flex gap-1">
           <button
             onClick={() => d.setViewMode('groups')}
-            className={`p-2 rounded-xl text-sm transition-colors ${d.viewMode === 'groups' ? 'bg-brand-teal text-black' : 'bg-brand-card text-white/40'}`}
+            className={`p-2 rounded-xl text-sm transition-colors ${d.viewMode === 'groups' ? 'bg-[#2b7fff] text-[#eeeeee]' : 'bg-[#1f1f1f] text-[#eeeeee]/40'}`}
           >
             <PieChart size={16} />
           </button>
           <button
             onClick={() => d.setViewMode('categories')}
-            className={`p-2 rounded-xl text-sm transition-colors ${d.viewMode === 'categories' ? 'bg-brand-teal text-black' : 'bg-brand-card text-white/40'}`}
+            className={`p-2 rounded-xl text-sm transition-colors ${d.viewMode === 'categories' ? 'bg-[#2b7fff] text-[#eeeeee]' : 'bg-[#1f1f1f] text-[#eeeeee]/40'}`}
           >
             <BarChart2 size={16} />
           </button>

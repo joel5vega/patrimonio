@@ -21,11 +21,11 @@
   width: min(100%, 520px);
   max-height: min(720px, calc(100dvh - 2rem));
   overflow: hidden;
-  color: #f8fafc;
+  color: #eeeeee;
   background: #111827;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-iron-peak);
   border-radius: 1.25rem;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.72);
+  box-shadow: none;
 }
 
 .manual-modal__header {
@@ -35,12 +35,12 @@
   gap: 1rem;
   flex: 0 0 auto;
   padding: 1.25rem 1.25rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--color-slate-elevated);
 }
 
 .manual-modal__eyebrow {
   margin: 0;
-  color: #2dd4bf;
+  color: var(--color-network-teal);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -49,7 +49,7 @@
 
 .manual-modal__title {
   margin: 0.3rem 0 0;
-  color: #f8fafc;
+  color: #eeeeee;
   font-size: 1.2rem;
   font-weight: 800;
 }
@@ -60,16 +60,16 @@
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  color: rgba(255, 255, 255, 0.64);
+  color: var(--color-fog);
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--color-slate-elevated);
+  border: 1px solid var(--color-iron-peak);
   border-radius: 0.7rem;
 }
 
 .manual-modal__close:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-bone);
+  background: var(--color-iron-peak);
 }
 
 .manual-modal__body {
@@ -80,7 +80,7 @@
   padding: 1rem 1.25rem 1.25rem;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: var(--color-iron-peak) transparent;
 }
 
 .manual-modal__body::-webkit-scrollbar {
@@ -92,8 +92,8 @@
 }
 
 .manual-modal__body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
+  background: var(--color-iron-peak);
+  border-radius: var(--radius-buttons);
 }
 
 .manual-field {
@@ -117,12 +117,12 @@
   width: 100%;
   min-height: 2.85rem;
   padding: 0.7rem 0.85rem;
-  color: #f8fafc;
+  color: #eeeeee;
   font: inherit;
   font-size: 0.88rem;
-  background: rgba(255, 255, 255, 0.065);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.75rem;
+  background: var(--color-graphite-card);
+  border: 1px solid var(--color-iron-peak);
+  border-radius: var(--radius-cards);
   outline: none;
 }
 
@@ -137,7 +137,7 @@
 }
 
 .manual-field select option {
-  color: #f8fafc;
+  color: #eeeeee;
   background: #111827;
 }
 
@@ -146,8 +146,8 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.25rem;
   padding: 0.25rem;
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-graphite-card);
+  border: 1px solid var(--color-iron-peak);
   border-radius: 0.8rem;
 }
 
@@ -155,7 +155,7 @@
   min-width: 0;
   padding: 0.65rem 0.25rem;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--color-fog);
   font: inherit;
   font-size: 0.62rem;
   font-weight: 800;
@@ -169,7 +169,7 @@
 
 .manual-type-tabs button.is-active {
   color: #042f2e;
-  background: #2dd4bf;
+  background: var(--color-network-teal);
 }
 
 .manual-form-grid {
@@ -180,13 +180,13 @@
 
 .manual-preview {
   min-height: 1.2rem;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--color-fog);
   font-size: 0.78rem;
 }
 
 .manual-rate {
   margin: -0.2rem 0 0;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--color-fog);
   font-size: 0.76rem;
 }
 
@@ -207,7 +207,7 @@
   font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-cards);
 }
 
 .manual-button:disabled {
@@ -217,15 +217,15 @@
 
 .manual-button--secondary {
   flex: 0 0 auto;
-  color: rgba(255, 255, 255, 0.72);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--color-fog);
+  background: var(--color-slate-elevated);
+  border: 1px solid var(--color-iron-peak);
 }
 
 .manual-button--primary {
   flex: 1;
   color: #042f2e;
-  background: #2dd4bf;
+  background: var(--color-network-teal);
   border: 1px solid transparent;
 }
 

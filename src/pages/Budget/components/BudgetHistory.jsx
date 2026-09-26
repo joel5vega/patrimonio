@@ -17,19 +17,19 @@ export default function BudgetHistory({ history, hex, transactions, groupKey, gr
   return (
     <>
       <div ref={ref} className="pt-3 border-t border-white/5 space-y-2">
-        <p className="text-[10px] text-white/30 font-bold uppercase tracking-wide">Historial — toca un mes para ver detalles</p>
+        <p className="text-[10px] text-[#eeeeee]/30 font-bold uppercase tracking-wide">Historial — toca un mes para ver detalles</p>
         <div className="flex items-end gap-1.5 h-16">
           {history.map((h, i) => (
             <button key={i} type="button" onClick={() => setModal({ ...h, groupKey, groupLabel, budget, hex, transactions })}
               className="flex-1 flex flex-col items-center gap-1 h-full hover:opacity-80 active:scale-95 transition-all">
               <div className="flex-1 w-full flex items-end relative">
                 {h.budget > 0 && (
-                  <div className="absolute w-full border-t border-dashed border-white/20" style={{ bottom: `${(h.budget / maxSpent) * 100}%` }} />
+                  <div className="absolute w-full border-t border-dashed border-[#323232]" style={{ bottom: `${(h.budget / maxSpent) * 100}%` }} />
                 )}
                 <div className="hist-bar w-full rounded-t-sm origin-bottom"
                   style={{ height: `${Math.max((h.spent / maxSpent) * 100, h.spent > 0 ? 4 : 0)}%`, background: h.ok === null ? 'rgba(255,255,255,0.15)' : h.ok ? hex + 'cc' : '#f43f5e' }} />
               </div>
-              <span className="text-[8px] text-white/30 leading-none">{h.label}</span>
+              <span className="text-[8px] text-[#eeeeee]/30 leading-none">{h.label}</span>
             </button>
           ))}
         </div>

@@ -10,8 +10,8 @@ export default function CategoryRow({ groupKey, total: groupTotal, totalExp: exp
   const [open, setOpen] = useState(false);
   const subRef = useRef(null);
 
-  const color = GROUP_COLORS[groupKey] || 'bg-white/20';
-  const text = GROUP_TEXT[groupKey] || 'text-white/60';
+  const color = GROUP_COLORS[groupKey] || 'bg-[#1f1f1f]/20';
+  const text = GROUP_TEXT[groupKey] || 'text-[#eeeeee]/60';
   const hex = GROUP_HEX[groupKey] || 'rgba(255,255,255,0.3)';
   const groupLabel = TX_GROUPS?.find((group) => group.value === groupKey)?.label || groupKey;
 
@@ -35,23 +35,23 @@ export default function CategoryRow({ groupKey, total: groupTotal, totalExp: exp
         <div className="flex justify-between items-center text-xs">
           <div className="flex items-center gap-1.5">
             {subItems.length > 0 && (
-              <ChevronRight size={12} className={`transition-transform duration-200 ${open ? 'rotate-90' : ''} text-white/30`} />
+              <ChevronRight size={12} className={`transition-transform duration-200 ${open ? 'rotate-90' : ''} text-[#eeeeee]/30`} />
             )}
             <span className={`font-bold ${text}`}>{groupLabel}</span>
-            {subItems.length > 0 && <span className="text-10px text-white/20">{subItems.length} cat.</span>}
+            {subItems.length > 0 && <span className="text-10px text-[#eeeeee]/20">{subItems.length} cat.</span>}
           </div>
           <div className="flex items-center gap-2">
             <DeltaBadge current={groupTotal} previous={prevRowTotal} invert />
-            <span className="text-white/30 text-10px">{groupPercentage.toFixed(0)}%</span>
-            <span className="font-bold text-white/80">
+            <span className="text-[#eeeeee]/30 text-10px">{groupPercentage.toFixed(0)}%</span>
+            <span className="font-bold text-[#eeeeee]/80">
               Bs {groupTotal.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
             </span>
           </div>
         </div>
       </button>
 
-      <div className="mt-1.5 h-1.5 bg-white/5 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full transition-all duration-500 ${color}`} style={{ width: `${Math.min((groupTotal / groupMax) * 100, 100)}%` }} />
+      <div className="mt-1.5 h-1.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
+        <div className={`h-full rounded transition-all duration-500 ${color}`} style={{ width: `${Math.min((groupTotal / groupMax) * 100, 100)}%` }} />
       </div>
 
       {open && subItems.length > 0 && (
@@ -62,18 +62,18 @@ export default function CategoryRow({ groupKey, total: groupTotal, totalExp: exp
             return (
               <div key={key} className="sub-cat-row space-y-1" style={{ opacity: 0 }}>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-white/60 flex items-center gap-1.5">
+                  <span className="text-[#eeeeee]/60 flex items-center gap-1.5">
                     <span className="text-sm">{emoji}</span>{label}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-white/25 text-10px">{subPercentage.toFixed(0)}%</span>
-                    <span className="text-white/50 font-semibold">
+                    <span className="text-[#eeeeee]/25 text-10px">{subPercentage.toFixed(0)}%</span>
+                    <span className="text-[#eeeeee]/50 font-semibold">
                       Bs {subTotal.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
                     </span>
                   </div>
                 </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full opacity-60 transition-all duration-500" style={{ width: `${Math.min(subBarPercentage, 100)}%`, background: hex }} />
+                <div className="h-1 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                  <div className="h-full rounded opacity-60 transition-all duration-500" style={{ width: `${Math.min(subBarPercentage, 100)}%`, background: hex }} />
                 </div>
               </div>
             );

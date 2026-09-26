@@ -1,21 +1,21 @@
 :root {
   --tx-bg: #07111f;
   --tx-surface: rgba(255, 255, 255, 0.045);
-  --tx-surface-hover: rgba(255, 255, 255, 0.08);
-  --tx-border: rgba(255, 255, 255, 0.1);
-  --tx-border-strong: rgba(255, 255, 255, 0.18);
-  --tx-text: #f8fafc;
-  --tx-muted: #94a3b8;
-  --tx-dim: #64748b;
-  --tx-accent: #2dd4bf;
+  --tx-surface-hover: var(--color-slate-elevated);
+  --tx-border: var(--color-iron-peak);
+  --tx-border-strong: var(--color-iron-peak);
+  --tx-text: #1f1f1f;
+  --tx-muted: var(--color-fog);
+  --tx-dim: var(--color-fog);
+  --tx-accent: var(--color-network-teal);
   --tx-accent-dark: #0f766e;
-  --tx-danger: #fb7185;
-  --tx-success: #34d399;
+  --tx-danger: var(--color-danger-light);
+  --tx-success: var(--color-success-light);
   --tx-radius: 14px;
   --tx-radius-sm: 10px;
   --tx-radius-pill: 999px;
   --tx-shadow: 0 16px 42px rgba(0, 0, 0, 0.26);
-  --tx-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --tx-font-mono: var(--font-fira-code), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .page {
@@ -289,7 +289,7 @@
   width: 30px;
   height: 30px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--tx-muted);
   cursor: pointer;
@@ -361,7 +361,7 @@
   overflow: hidden;
   padding: 3px 7px;
   border-radius: var(--tx-radius-pill);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--color-slate-elevated);
   color: var(--tx-muted);
   font-size: 0.62rem;
   font-weight: 700;
@@ -498,9 +498,9 @@
   width: 54px;
   height: 54px;
   border: 0;
-  border-radius: 16px;
+  border-radius: var(--radius-cards);
   background: var(--tx-accent);
-  box-shadow: 0 10px 28px rgba(45, 212, 191, 0.3);
+  box-shadow: none;
   color: #052e2a;
   cursor: pointer;
   z-index: 100;
@@ -513,7 +513,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(2, 6, 23, 0.78);
+  background: var(--color-carbon-canvas);
   backdrop-filter: blur(7px);
 }
 
@@ -527,7 +527,7 @@
   border-bottom: 0;
   border-radius: 20px 20px 0 0;
   background: #0a1323;
-  box-shadow: var(--tx-shadow);
+  box-shadow: none;
 }
 
 .fsHeader {
@@ -568,7 +568,7 @@
   padding: 4px;
   border: 1px solid var(--tx-border);
   border-radius: var(--tx-radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-graphite-card);
 }
 
 .typeTab {
@@ -753,7 +753,7 @@
   margin-top: 1rem;
   padding: 1rem;
   border: 1px solid var(--border-color, #d9dee8);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-cards);
   background: var(--surface-muted, #f7f9fc);
 }
 
@@ -806,7 +806,7 @@
   padding: 0.65rem 0.75rem;
   border: 1px solid var(--border-color, #d0d5dd);
   border-radius: 0.5rem;
-  background: var(--surface, #fff);
+  background: var(--surface, #1f1f1f);
   color: var(--text-primary, #172033);
   font: inherit;
   font-size: 0.9rem;
@@ -818,7 +818,7 @@
 
 .exchangeInput:focus {
   border-color: var(--primary-color, #667085);
-  box-shadow: 0 0 0 3px rgb(102 112 133 / 15%);
+  box-shadow: none;
 }
 
 .exchangeInput:read-only {

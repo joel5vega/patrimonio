@@ -13,11 +13,11 @@ function QuickLinkCard({ to, icon: Icon, label, accent = 'brand-teal' }) {
     <button
       onClick={() => navigate(to)}
       className="flex flex-1 min-w-[110px] flex-col items-center gap-2 rounded-lg
-                 bg-brand-card border border-white/5 px-3 py-4
+                 bg-[#1f1f1f] border border-white/5 px-3 py-4
                  hover:border-white/15 active:scale-[0.98] transition"
     >
       <span
-        className="flex h-10 w-10 items-center justify-center rounded-full"
+        className="flex h-10 w-10 items-center justify-center rounded"
         style={{ backgroundColor: `color-mix(in srgb, ${accentVar} 18%, transparent)` }}
       >
         <Icon size={18} style={{ color: accentVar }} />

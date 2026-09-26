@@ -13,9 +13,9 @@ export const VIEW_MODES = [
 ];
 
 export const FIXED_TYPES = [
-  { key: 'total', label: 'Total financiero', field: 'totalPortfolioUSD', color: '#14b8a6', icon: 'wallet' },
+  { key: 'total', label: 'Total financiero', field: 'totalPortfolioUSD', color: '#2b7fff', icon: 'wallet' },
   { key: 'crypto', label: 'Crypto', field: 'cryptoUSD', color: '#f97316', icon: 'coins' },
-  { key: 'etfs', label: 'ETFs', field: 'inversionUSD', color: '#3b82f6', icon: 'chart' },
+  { key: 'etfs', label: 'ETFs', field: 'inversionUSD', color: '#2b7fff', icon: 'chart' },
 ];
 
 export const SPECIAL_TODO = {
@@ -29,7 +29,7 @@ export const ROLE_TYPES = [
   { key: 'role_yield', label: 'Yield', color: '#a855f7', icon: 'percent' },
   { key: 'role_reserve', label: 'Reservas', color: '#facc15', icon: 'shield' },
   // Patrimonio permanece disponible como serie individual.
-  { key: 'role_patrimony', label: 'Patrimonio', color: '#06b6d4', icon: 'landmark' },
+  { key: 'role_patrimony', label: 'Patrimonio', color: '#2b7fff', icon: 'landmark' },
 ];
 
 export const MANUAL_PALETTE = ['#a855f7', '#ec4899', '#facc15', '#10b981'];

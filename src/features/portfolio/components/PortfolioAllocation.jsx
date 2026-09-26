@@ -49,7 +49,7 @@ function StatusIcon({ status }) {
 }
 
 function AllocationCard({ row }) {
-  const color = ROLE_COLORS[row.role] || '#94a3b8';
+  const color = ROLE_COLORS[row.role] || '#a4a19b';
   const current = toNumber(row.currentPct ?? row.current);
   const target = toNumber(row.targetPct ?? row.target);
   const difference = current - target;

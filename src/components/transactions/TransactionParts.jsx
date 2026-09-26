@@ -26,7 +26,7 @@ export const TYPE_META = {
   transfer: {
     label: "Transferencia",
     icon: ArrowLeftRight,
-    colorHex: "#60a5fa",
+    colorHex: "#5a9fff",
     bgHex: "rgba(96, 165, 250, 0.14)"
   }
 };

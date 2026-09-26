@@ -5,8 +5,8 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) return (
-    <div className="min-h-screen bg-brand-dark flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-brand-teal border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-[#181818] flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#2b7fff] border-t-transparent rounded animate-spin" />
     </div>
   );
 

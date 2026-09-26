@@ -10,8 +10,8 @@ const CRYPTO_ICONS = {
   DEFAULT: 'generating_tokens',
 };
 const ROLE_COLORS = {
-  core: '#3b82f6', growth: '#10b981', defensive: '#facc15',
-  liquidity: '#06b6d4', yield: '#14b8a6', speculative: '#f43f5e',
+  core: '#2b7fff', growth: '#10b981', defensive: '#facc15',
+  liquidity: '#2b7fff', yield: '#2b7fff', speculative: '#f43f5e',
   trading: '#a855f7', patrimony: '#f97316',
 };
 const TABS = ['Todos', 'Crypto', 'ETFs', 'Manual'];

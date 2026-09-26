@@ -1,0 +1,1107 @@
+// src/context/AppContext.jsx
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
+import {
+  getLatestBinanceSnapshot,
+  getAdmiralsSnapshots,
+  getStatements,
+  getReports,
+  getSnapshotHistory,
+  getAllDailySnapshots,
+  savePortfolioSnapshot,
+  getPortfolioHistory,
+  replacePortfolioSnapshot,
+  getLatestPortfolioAnalysis,
+  refreshQuantfuryQuotes,
+  // procesarQuantfuryPdf,  
+} from '../lib/firebase';
+import { useAuth } from './AuthContext';
+import { useManualAssets } from '../hooks/useManualAssets';
+import { buildPortfolioV3 } from '../features/portfolio/utils/portfolioAnalysis';
+
+const AppContext = createContext(null);
+
+// ─── Constantes de módulo ───────────────────────────────────────────────────
+const STABLES = ['USDT', 'USDC', 'BUSD', 'DAI', 'FDUSD'];
+
+
+// ─── Utilidades ─────────────────────────────────────────────────────────────
+async function fetchBobRate() {
+  try {
+    const res = await fetch('https://bo.dolarapi.com/v1/dolares/binance');
+    const data = await res.json();
+    return data?.venta ?? data?.compra ?? null;
+  } catch (e) {
+    console.error('bobRate error:', e);
+    return null;
+  }
+}
+
+const mapUiNameToLogical = (uiName) => {
+  if (uiName === 'Ahorro $') return 'Ahorro';
+  if (uiName === 'Ahorro en Bs') return 'AhorroBs';
+  return uiName;
+};
+
+const isQuantfuryAsset = (a) =>
+  String(a?.note || '').toLowerCase().includes('[quantfury]') ||
+  String(a?.note || '').toLowerCase().includes('quantfury');
+
+const normalizeSnapshotDate = (snap) => {
+  const raw =
+    snap?.statementDate ??
+    snap?.snapshot?.statementDate ??
+    snap?.createdAt?.toDate?.()?.toISOString?.() ??
+    snap?.createdAt?.seconds ??
+    '';
+  return String(raw);
+};
+
+const getLatestSnapshotByType = (snaps, accountType) => {
+  return (
+    (snaps || [])
+      .filter((s) => s?.accountType === accountType)
+      .sort((a, b) => normalizeSnapshotDate(b).localeCompare(normalizeSnapshotDate(a)))[0] ??
+    null
+  );
+};
+
+function computeRoleFields({ cryptoAssets, inversionPositions, manualAssets, totalUSD }) {
+  const allAssets = [
+    ...cryptoAssets.map((a) => ({ ...a, groupKey: 'binance', type: a.type || 'crypto' })),
+    ...inversionPositions.map((a) => ({ ...a, groupKey: 'admirals', type: 'etf' })),
+    ...(manualAssets ?? []).map((a) => ({
+      ...a,
+      groupKey: isQuantfuryAsset(a) ? 'quantfury' : 'manual',
+      type: isQuantfuryAsset(a) ? 'stock' : a.type || 'manual',
+      valueUSD: a.valueUSD ?? 0,
+    })),
+  ];
+
+  try {
+    const analysis = buildPortfolioV3({ allAssets, totalUSD });
+    const roleFields = {};
+    Object.entries(analysis?.portfolio?.byRole || {}).forEach(([role, pct]) => {
+      const usd = (pct / 100) * (analysis?.totals?.investableUSD ?? 0);
+      roleFields[`role_${role}`] = Number(usd.toFixed(2));
+    });
+    return roleFields;
+  } catch (e) {
+    console.error('computeRoleFields error:', e);
+    return {};
+  }
+}
+
+// ─── Provider ───────────────────────────────────────────────────────────────
+export const AppProvider = ({ children }) => {
+  const { user } = useAuth();
+  const manualCtx = useManualAssets();
+
+  const [binanceSnap, setBinanceSnap] = useState(null);
+  const [admiralsSnaps, setAdmiralsSnaps] = useState([]);
+  const [statements, setStatements] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [chartHistory, setChartHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [bobRate, setBobRate] = useState(null);
+  const [todayPortfolioV3, setTodayPortfolioV3] = useState(null);
+  const [todayPortfolioMeta, setTodayPortfolioMeta] = useState(null);
+  const [
+  todayPortfolioAnalysis,
+  setTodayPortfolioAnalysis,
+] = useState(null);
+  const totalsRef = useRef({ cryptoUSD: 0, inversionUSD: 0 });
+  const migratedRef = useRef(false);
+  const savedTodayRef = useRef(false);
+
+  const latestInversionSnap = useMemo(
+    () => getLatestSnapshotByType(admiralsSnaps, 'inversion'),
+    [admiralsSnaps]
+  );
+
+  const latestTradeSnap = useMemo(
+    () => getLatestSnapshotByType(admiralsSnaps, 'trade'),
+    [admiralsSnaps]
+  );
+  
+const cryptoAssets = useMemo(() => {
+  const snapshot = binanceSnap?.snapshot || {};
+
+    // return (snapshot.assets || []).map(
+  const normalized = (snapshot.assets || []).map(
+    (asset, index) => {
+      const quantity = Number(
+        asset.quantity ?? asset.amount ?? 0,
+      );
+
+      const entryPrice = Number(
+        asset.entryPrice ??
+        asset.entry_price ??
+        0,
+      ) || null;
+
+      const marketPrice = Number(
+        asset.marketPrice ??
+        asset.priceUSD ??
+        asset.price ??
+        0,
+      ) || null;
+
+      const costBasisUSD = Number(
+        asset.costBasisUSD ??
+        asset.cost_basis_usd ??
+        0,
+      ) || null;
+
+      const marketValueUSD = Number(
+        asset.marketValueUSD ??
+        asset.market_value_usd ??
+        asset.valueUSD ??
+        0,
+      ) || null;
+
+      const unrealizedPnlUSD = Number(
+        asset.unrealizedPnlUSD ??
+        asset.unrealized_pnl_usd ??
+        0,
+      ) || null;
+
+      const unrealizedPnlPct = Number(
+        asset.unrealizedPnlPct ??
+        asset.unrealized_pnl_pct ??
+        0,
+      ) || null;
+
+      return {
+        ...asset,
+
+        id:
+          asset.id ??
+          `binance-${asset.asset ?? asset.symbol}-${index}`,
+
+        name:
+          asset.name ??
+          asset.asset ??
+          asset.symbol ??
+          'Crypto',
+
+        symbol:
+          asset.symbol ??
+          asset.asset ??
+          '—',
+
+        type:
+          asset.type ??
+          (
+            ['USDT', 'USDC', 'BUSD', 'DAI', 'FDUSD'].includes(
+              asset.asset ?? asset.symbol,
+            )
+              ? 'stablecoin'
+              : 'crypto'
+          ),
+
+        source: 'binance',
+
+        groupKey:
+          asset.groupKey ??
+          'binance',
+
+        quantity,
+
+        // Contrato de precio normalizado.
+        entryPrice,
+        avgBuyPrice: entryPrice,
+
+        marketPrice,
+        currentPrice: marketPrice,
+
+        costBasisUSD,
+
+        marketValueUSD:
+          marketValueUSD ??
+          Number(asset.valueUSD ?? 0),
+
+        valueUSD:
+          marketValueUSD ??
+          Number(asset.valueUSD ?? 0),
+
+        netExposureUSD:
+          marketValueUSD ??
+          Number(asset.valueUSD ?? 0),
+
+        unrealizedPnlUSD,
+        unrealizedPnlPct,
+
+        // Aliases que usa MarketHeatmap.
+        pnlUSD: unrealizedPnlUSD,
+        pnlPct: unrealizedPnlPct,
+
+        weightPct:
+          Number(asset.weightPct ?? 0),
+
+        pendingBuyUSD:
+          Number(asset.pendingBuyUSD ?? 0),
+
+        entryPriceSource:
+          asset.entryPriceSource ??
+          null,
+
+        entryPriceMeta:
+          asset.entryPriceMeta ??
+          null,
+
+        sourceMeta: {
+          ...(asset.sourceMeta ?? {}),
+
+          quantity,
+          entryPrice,
+          marketPrice,
+
+          costBasisUSD,
+
+          marketValueUSD:
+            marketValueUSD ??
+            Number(asset.valueUSD ?? 0),
+
+          unrealizedPnlUSD,
+          unrealizedPnlPct,
+
+          pnlUSD: unrealizedPnlUSD,
+          pnlPct: unrealizedPnlPct,
+
+          entryPriceSource:
+            asset.entryPriceSource ??
+            null,
+
+          entryPriceMeta:
+            asset.entryPriceMeta ??
+            null,
+        },
+      };
+    },
+  );
+
+  // console.table(
+  //   normalized.map((asset) => ({
+  //     symbol: asset.symbol,
+  //     quantity: asset.quantity,
+  //     entryPrice: asset.entryPrice,
+  //     avgBuyPrice: asset.avgBuyPrice,
+  //     marketPrice: asset.marketPrice,
+  //     currentPrice: asset.currentPrice,
+  //     costBasisUSD: asset.costBasisUSD,
+  //     marketValueUSD: asset.marketValueUSD,
+  //     unrealizedPnlUSD: asset.unrealizedPnlUSD,
+  //     unrealizedPnlPct: asset.unrealizedPnlPct,
+  //     pnlPct: asset.pnlPct,
+  //     sourceMetaEntryPrice:
+  //       asset.sourceMeta?.entryPrice,
+  //   })),
+  // );
+
+  return normalized;
+}, [binanceSnap]);
+
+  const totalCryptoUSD = useMemo(() => {
+  const snapshot = binanceSnap?.snapshot || {};
+
+  return Number(
+    snapshot.totals?.spotAndEarnValueUSD ??
+    snapshot.totalPortfolioUSD ??
+    snapshot.balancesUSD ??
+    0,
+  );
+}, [binanceSnap]);
+
+  const inversionSnap = latestInversionSnap;
+  const tradeSnap = latestTradeSnap;
+
+  const inversionPositions = useMemo(
+    () =>
+      (inversionSnap?.snapshot?.portfolioStats?.positions || []).map((p) => ({
+        id: p.ticket ?? p.symbol,
+        name: p.symbol,
+        symbol: p.symbol,
+        type: 'etf',
+        quantity: p.size ?? 0,
+        avgBuyPrice: p.entry ?? 0,
+        currentPrice: p.marketPrice ?? 0,
+        valueUSD: p.marketValue ?? 0,
+        valueBOB: (p.marketValue ?? 0) * bobRate,
+        weightPct: p.weight ?? 0,
+        unrealizedPL: p.unrealizedPL ?? 0,
+        tp: p.tp,
+        sl: p.sl,
+      })),
+    [inversionSnap, bobRate]
+  );
+
+  const totalInversionUSD = useMemo(
+    () => inversionSnap?.snapshot?.portfolioStats?.totalMarketValue ?? 0,
+    [inversionSnap]
+  );
+
+  const totalInversionPnl = useMemo(
+    () => inversionSnap?.snapshot?.portfolioStats?.totalUnrealizedPL ?? 0,
+    [inversionSnap]
+  );
+
+  const totalManualUSD = useMemo(
+    () => manualCtx?.totalManualUSD ?? 0,
+    [manualCtx?.totalManualUSD]
+  );
+
+  const stableAssets = useMemo(
+    () => cryptoAssets.filter((a) => STABLES.includes(a.symbol) && a.netExposureUSD > 0),
+    [cryptoAssets]
+  );
+
+  const volatileAssets = useMemo(
+    () => cryptoAssets.filter((a) => !STABLES.includes(a.symbol) && a.netExposureUSD > 0),
+    [cryptoAssets]
+  );
+
+  const totalVolatileUSD = useMemo(
+    () => volatileAssets.reduce((s, a) => s + (a.netExposureUSD ?? 0), 0),
+    [volatileAssets]
+  );
+
+  const totalETFUSD = useMemo(
+    () => inversionPositions.reduce((s, p) => s + (p.valueUSD ?? 0), 0),
+    [inversionPositions]
+  );
+
+  const totalValueUSD = useMemo(
+  () =>
+    totalCryptoUSD +
+    totalInversionUSD +
+    totalManualUSD,
+  [
+    totalCryptoUSD,
+    totalInversionUSD,
+    totalManualUSD,
+  ],
+);
+
+const totalValueBOB = useMemo(
+  () =>
+    bobRate > 0
+      ? totalValueUSD * bobRate
+      : null,
+  [totalValueUSD, bobRate],
+);
+
+  const totalPnl = totalInversionPnl;
+
+const riskData = useMemo(() => {
+  const snapshot = binanceSnap?.snapshot || {};
+
+  // El backend calcula riesgo sobre TODO el portafolio (crypto + ETFs + manual),
+  // no solo Binance. Preferimos esos valores cuando existen y usamos el
+  // snapshot de Binance como respaldo para lo que es específico de spot/futuros.
+  const backendRisk = todayPortfolioAnalysis?.analysis?.risk ?? {};
+  const backendAlerts = todayPortfolioAnalysis?.analysis?.alerts ?? {};
+  const topPositions =
+    todayPortfolioAnalysis?.riskContext?.concentrationRisk?.topPositions ?? [];
+  const openLeverageX =
+    todayPortfolioAnalysis?.tradingContext?.metrics?.openLeverageX ??
+    todayPortfolioAnalysis?.analysis?.tradingRisk?.effectiveLeverage ?? 0;
+
+  const hhi = backendRisk.hhi ?? snapshot.portfolioHealth?.hhi ?? 0;
+
+  // Umbral de "sobre-exposición" a nivel de posición individual (ver UI: >70%).
+  const OVEREXPOSED_THRESHOLD_PCT = 70;
+  const overExposed = topPositions
+    .filter((p) => (p.pctInvestable ?? 0) > OVEREXPOSED_THRESHOLD_PCT)
+    .map((p) => ({
+      asset: p.symbol,
+      weight: Number((p.pctInvestable ?? 0).toFixed(1)),
+    }));
+
+  // Composite Risk Score (0-100): heurística propia para la UI, NO es un
+  // modelo formal de riesgo (igual que el backend, que declara sus propias
+  // limitaciones — ver analysis.risk.limitations). Combina:
+  //  - concentración (HHI, 40%)
+  //  - apalancamiento abierto en trading (35%)
+  //  - cantidad de alertas activas del backend (25%)
+  const hhiScore = Math.min((hhi / 0.3) * 100, 100);
+  const leverageScore = Math.min(openLeverageX * 20, 100);
+  const activeAlertsCount = Object.values(backendAlerts).filter(Boolean).length;
+  const alertsScore = Math.min(activeAlertsCount * 20, 100);
+  const riskScore = Math.round(
+    hhiScore * 0.4 + leverageScore * 0.35 + alertsScore * 0.25
+  );
+
+  return {
+    totalSpotUSD: totalCryptoUSD,
+
+    reservedCapital:
+      snapshot.orders?.spot
+        ?.reservedCapitalUSD ?? 0,
+
+    hhi,
+
+    top3Concentration:
+      todayPortfolioAnalysis?.tradingContext?.metrics?.top3ConcentrationPct ??
+      snapshot.portfolioHealth?.top3ConcentrationPct ?? 0,
+
+    effectiveAssetCount:
+      snapshot.portfolioHealth
+        ?.effectiveAssetCount ?? 0,
+
+    futuresGrossNotionalUSD:
+      snapshot.totals
+        ?.futuresGrossNotionalUSD ?? 0,
+
+    openOrdersCount:
+      snapshot.orders?.spot?.count ?? 0,
+
+    riskScore,
+    overExposed,
+  };
+}, [binanceSnap, totalCryptoUSD, todayPortfolioAnalysis]);
+  const pieData = useMemo(
+    () =>
+      [
+        ...(totalVolatileUSD > 0
+          ? [{ label: 'Crypto', valueUSD: totalVolatileUSD, color: '#f97316' }]
+          : []),
+        ...stableAssets.map((a) => ({
+          label: `${a.symbol} (Cash)`,
+          valueUSD: a.netExposureUSD,
+          color: '#10b981',
+        })),
+        ...(totalETFUSD > 0 ? [{ label: 'ETFs', valueUSD: totalETFUSD, color: '#3b82f6' }] : []),
+        ...(manualCtx.manualAssets || [])
+          .filter((a) => (a.valueUSD ?? 0) > 0)
+          .map((a, i) => ({
+            label: a.name,
+            valueUSD: a.valueUSD,
+            color: ['#a855f7', '#ec4899', '#facc15', '#06b6d4'][i % 4],
+          })),
+      ].filter((d) => d.valueUSD > 0),
+    [totalVolatileUSD, stableAssets, totalETFUSD, manualCtx.manualAssets]
+  );
+
+  const transactions = useMemo(
+    () =>
+      statements.map((st) => ({
+        id: st.id,
+        title: st.subject || `${(st.accountType || 'broker').toUpperCase()} Statement`,
+        subtitle: `${st.accountType || 'Broker'} • ${st.statementDate || ''}`,
+        amount:
+          st.summary?.closedTradePL != null
+            ? `${st.summary.closedTradePL >= 0 ? '+' : ''}$${st.summary.closedTradePL.toFixed(2)}`
+            : `fPL: $${(st.floatingPL ?? 0).toFixed(2)}`,
+        type: (st.summary?.closedTradePL ?? st.floatingPL ?? 0) >= 0 ? 'up' : 'down',
+        category: st.accountType || 'trade',
+        date: st.statementDate,
+      })),
+    [statements]
+  );
+
+  const accounts = useMemo(
+    () => ({
+      sections: [
+        {
+          title: 'Binance Crypto',
+          iconType: 'crypto',
+          isLiability: false,
+          totalBOB: totalCryptoUSD * bobRate,
+          items: cryptoAssets
+            .filter((a) => a.netExposureUSD > 0)
+            .map((a) => ({
+              name: a.symbol,
+              displayValue: `$${a.netExposureUSD.toFixed(2)}`,
+              currency: 'USD',
+              valueBOB: a.netExposureUSD * bobRate,
+            })),
+        },
+        {
+          title: 'Admirals Inversión',
+          iconType: 'etf',
+          isLiability: false,
+          totalBOB: totalInversionUSD * bobRate,
+          items: inversionPositions.map((p) => ({
+            name: p.symbol,
+            displayValue: `$${p.valueUSD.toFixed(2)}`,
+            currency: 'USD',
+            valueBOB: p.valueBOB,
+            pnl: p.unrealizedPL,
+          })),
+        },
+        {
+          title: 'Activos Manuales',
+          iconType: 'manual',
+          isLiability: false,
+          totalBOB: totalManualUSD * bobRate,
+          items: (manualCtx.manualAssets ?? []).map((a) => ({
+            name: a.name,
+            displayValue:
+              a.currency === 'BOB'
+                ? `Bs ${Number(a.amount ?? 0).toFixed(2)}`
+                : `$${Number(a.amount ?? 0).toFixed(2)}`,
+            currency: a.currency,
+            valueBOB: a.valueBOB,
+          })),
+        },
+      ],
+    }),
+    [
+      totalCryptoUSD,
+      totalInversionUSD,
+      totalManualUSD,
+      bobRate,
+      cryptoAssets,
+      inversionPositions,
+      manualCtx.manualAssets,
+    ]
+  );
+
+  // ─── Quantfury: builder de análisis desde tradingHistory ──────────────────
+  const buildQuantfuryAnalysisFromHistory = useCallback((rows = []) => {
+    if (!rows.length) return null;
+
+    const first = rows[0] || {};
+    const summary = first.import_summary ?? {};
+
+    const grouped = {};
+    const byAsset = {};
+
+    for (const row of rows) {
+      const symbol = String(row.symbol || '—').toUpperCase();
+      const assetType = String(row.asset_type || 'other').toLowerCase();
+      const pnl = Number(row.realized_pnl ?? 0);
+      const notional = Number(row.notional_usd ?? row.value_usd ?? 0);
+      const isClosing = Boolean(row.is_closing_leg);
+
+      if (!grouped[symbol]) {
+        grouped[symbol] = {
+          symbol,
+          asset_type: assetType,
+          trades: 0,
+          closing_legs: 0,
+          winning_legs: 0,
+          losing_legs: 0,
+          realized_pnl: 0,
+          total_notional: 0,
+        };
+      }
+
+      grouped[symbol].trades += 1;
+      grouped[symbol].total_notional += notional;
+
+      if (isClosing && row.realized_pnl != null) {
+        grouped[symbol].closing_legs += 1;
+        grouped[symbol].realized_pnl += pnl;
+        if (pnl > 0) grouped[symbol].winning_legs += 1;
+        if (pnl < 0) grouped[symbol].losing_legs += 1;
+      }
+
+      if (!byAsset[assetType]) {
+        byAsset[assetType] = {
+          assetType,
+          legs: 0,
+          closingLegs: 0,
+          totalPnl: 0,
+          totalNotional: 0,
+        };
+      }
+
+      byAsset[assetType].legs += 1;
+      byAsset[assetType].totalNotional += notional;
+      if (isClosing && row.realized_pnl != null) {
+        byAsset[assetType].closingLegs += 1;
+        byAsset[assetType].totalPnl += pnl;
+      }
+    }
+
+    const by_symbol = Object.values(grouped).sort((a, b) => b.realized_pnl - a.realized_pnl);
+
+    const top_winners_symbols = [...by_symbol]
+      .filter((x) => x.realized_pnl > 0)
+      .sort((a, b) => b.realized_pnl - a.realized_pnl)
+      .slice(0, 10);
+
+    const top_losers_symbols = [...by_symbol]
+      .filter((x) => x.realized_pnl < 0)
+      .sort((a, b) => a.realized_pnl - b.realized_pnl)
+      .slice(0, 10);
+
+    const top_notional_symbols = [...by_symbol]
+      .sort((a, b) => b.total_notional - a.total_notional)
+      .slice(0, 10);
+
+    return {
+      summary,
+      analytics: {
+        by_symbol,
+        top_winners_symbols,
+        top_losers_symbols,
+        top_notional_symbols,
+        by_asset_type: Object.values(byAsset),
+      },
+      round_trips: [],
+      raw_legs: rows,
+    };
+  }, []);
+
+  // ─── Portfolio analysis (cloud function) ───────────────────────────────────
+  const migrateHistoryOnce = useCallback(async () => {
+    if (!user?.uid) return;
+    if (migratedRef.current) return;
+    migratedRef.current = true;
+
+    const existing = await getPortfolioHistory(user.uid);
+    if (existing.length > 0) return;
+
+    const all = await getAllDailySnapshots();
+    const binanceSnaps = all.filter((d) => d.accountType === 'crypto');
+    const admiralsDocs = all.filter((d) => d.accountType !== 'crypto');
+
+    const cryptoByDate = {};
+    binanceSnaps.forEach((d) => {
+      const raw = d.snapshot?.statementDate ?? d.statementDate ?? d.id.slice(0, 10);
+      const date = String(raw).replace(/\./g, '-');
+      cryptoByDate[date] = d.snapshot?.totalPortfolioUSD ?? d.snapshot?.balancesUSD ?? 0;
+    });
+
+    const invByDate = admiralsDocs.reduce((acc, d) => {
+      const raw = d.snapshot?.statementDate ?? d.statementDate ?? d.id.slice(0, 10);
+      const date = String(raw).replace(/\./g, '-');
+      const val =
+        d.snapshot?.portfolioStats?.totalMarketValue ??
+        d.snapshot?.portfolioStats?.equity ??
+        d.snapshot?.balance ??
+        d.snapshot?.equity ??
+        0;
+      if (d.accountType === 'inversion' || !d.accountType) acc[date] = (acc[date] ?? 0) + val;
+      return acc;
+    }, {});
+
+    const allDatesSet = new Set([
+      ...Object.keys(cryptoByDate),
+      ...Object.keys(invByDate),
+      ...(MANUAL_HISTORY.Ahorro || []).map((x) => x.date),
+      ...(MANUAL_HISTORY.AirTM || []).map((x) => x.date),
+      ...(MANUAL_HISTORY.SAFI || []).map((x) => x.date),
+      ...(MANUAL_HISTORY.AhorroBs || []).map((x) => x.date),
+    ]);
+    const allDates = Array.from(allDatesSet).sort();
+
+    const getLastValue = (series, date, getter) => {
+      const valid = series.filter((p) => p.date <= date).sort((a, b) => a.date.localeCompare(b.date));
+      return valid.length ? getter(valid[valid.length - 1]) : 0;
+    };
+
+    let lastCrypto = 0;
+    let lastInv = 0;
+
+    await Promise.all(
+      allDates.map((date) => {
+        if (cryptoByDate[date] != null) lastCrypto = cryptoByDate[date];
+        if (invByDate[date] != null) lastInv = invByDate[date];
+
+        const fields = {};
+        if (MANUAL_HISTORY.Ahorro) {
+          const v = getLastValue(MANUAL_HISTORY.Ahorro, date, (p) => p.valueUSD);
+          if (v > 0) fields.manual_Ahorro = v;
+        }
+        if (MANUAL_HISTORY.AirTM) {
+          const v = getLastValue(MANUAL_HISTORY.AirTM, date, (p) => p.valueUSD);
+          if (v > 0) fields.manual_AirTM = v;
+        }
+        if (MANUAL_HISTORY.SAFI) {
+          const v = getLastValue(MANUAL_HISTORY.SAFI, date, (p) => p.valueUSD);
+          if (v > 0) fields.manual_SAFI = v;
+        }
+        if (MANUAL_HISTORY.AhorroBs) {
+          const vBOB = getLastValue(MANUAL_HISTORY.AhorroBs, date, (p) => p.valueBOB);
+          if (vBOB > 0) fields.manual_AhorroBs = vBOB;
+        }
+
+        const manualUSDsum =
+          (fields.manual_Ahorro ?? 0) +
+          (fields.manual_AirTM ?? 0) +
+          (fields.manual_SAFI ?? 0);
+
+        return savePortfolioSnapshot(user.uid, {
+          date,
+          cryptoUSD: lastCrypto,
+          inversionUSD: lastInv,
+          totalPortfolioUSD: lastCrypto + lastInv + manualUSDsum,
+          ...fields,
+        });
+      })
+    );
+  }, [user]);
+
+  const refreshPortfolioAnalysis = useCallback(
+  async () => {
+    if (!user?.uid) {
+      setTodayPortfolioAnalysis(null);
+      setTodayPortfolioV3(null);
+      setTodayPortfolioMeta(null);
+      return;
+    }
+
+    try {
+      const analysis =
+        await getLatestPortfolioAnalysis(user.uid);
+
+      setTodayPortfolioAnalysis(analysis);
+      
+      setTodayPortfolioV3(
+        analysis?.portfolioV3 ?? null,
+      );
+
+      setTodayPortfolioMeta(
+        analysis
+          ? {
+              id: analysis.id,
+              date:
+                analysis.asOfDate ??
+                analysis.date ??
+                analysis.id,
+              status: analysis.status ?? null,
+              source: "cloud-function",
+            }
+          : null,
+      );
+    } catch (error) {
+      console.warn(
+        "No se pudo cargar el análisis backend:",
+        error,
+      );
+
+      setTodayPortfolioAnalysis(null);
+      setTodayPortfolioV3(null);
+      setTodayPortfolioMeta(null);
+    }
+  },
+  [user?.uid],
+);
+const refreshMarketQuotes = useCallback(
+  async ({ force = false } = {}) => {
+    if (!user?.uid) {
+      return {
+        ok: false,
+        reason: 'unauthenticated',
+      };
+    }
+
+    try {
+      const result = await refreshQuantfuryQuotes(
+        force,
+      );
+      // Da tiempo a que Firestore propague el update
+      // y luego vuelve a cargar el análisis backend.
+      await refreshPortfolioAnalysis();
+
+      return {
+        ok: true,
+        ...result,
+      };
+    } catch (error) {
+      console.error(
+        'No se pudieron refrescar las cotizaciones de Quantfury:',
+        error,
+      );
+
+      return {
+        ok: false,
+        message:
+          error?.message ||
+          'No se pudieron actualizar las cotizaciones.',
+      };
+    }
+  },
+  [user?.uid, refreshPortfolioAnalysis],
+);
+  
+  // ─── fetchAll ──────────────────────────────────────────────────────────────
+  const fetchAll = useCallback(
+    async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [
+          binance,
+          admirals,
+          stmts,
+          rpts,
+          hist,
+          savedRate,
+          portHistory,
+          tHistory,
+        ] = await Promise.all([
+          getLatestBinanceSnapshot(),
+          getAdmiralsSnapshots(),
+          getStatements(50),
+          getReports(20),
+          getSnapshotHistory(90),
+          fetchBobRate(),
+          user ? getPortfolioHistory(user.uid) : Promise.resolve([]),
+        ]);
+
+        const latestInversion = getLatestSnapshotByType(admirals, 'inversion');
+        const latestTrade = getLatestSnapshotByType(admirals, 'trade');
+
+        setBinanceSnap(binance);
+        setAdmiralsSnaps([latestInversion, latestTrade].filter(Boolean));
+        setStatements(stmts);
+        setReports(rpts);
+        setHistory(hist);
+        setChartHistory(portHistory);
+
+        if (savedRate) setBobRate(savedRate);
+
+        await refreshPortfolioAnalysis();
+      } catch (e) {
+        console.error('fetchAll error:', e);
+        setError(e?.message || 'Error cargando datos');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user, refreshPortfolioAnalysis, buildQuantfuryAnalysisFromHistory]
+  );
+
+  // ─── Effects ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    savedTodayRef.current = false;
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user) {
+      setBinanceSnap(null);
+      setAdmiralsSnaps([]);
+      setStatements([]);
+      setReports([]);
+      setHistory([]);
+      setChartHistory([]);
+      setTodayPortfolioV3(null);
+      setTodayPortfolioMeta(null);
+      setLoading(false);
+      return;
+    }
+    fetchAll();
+  }, [user, fetchAll]);
+
+  useEffect(() => {
+    totalsRef.current = { cryptoUSD: totalCryptoUSD, inversionUSD: totalInversionUSD };
+  }, [totalCryptoUSD, totalInversionUSD]);
+
+  useEffect(() => {
+    if (!user?.uid || loading) return;
+    if (savedTodayRef.current) return;
+
+    const manualUSDOnly = (manualCtx.manualAssets ?? []).reduce((sum, a) => {
+      const logical = mapUiNameToLogical(a.name);
+      if (logical === 'AhorroBs') return sum;
+      return sum + (a.valueUSD ?? 0);
+    }, 0);
+
+    if (!totalCryptoUSD && !totalInversionUSD && !manualUSDOnly) return;
+
+    const run = async () => {
+      try {
+        await migrateHistoryOnce();
+
+        const manualFields = Object.fromEntries(
+          (manualCtx.manualAssets ?? []).map((a) => {
+            const logical = mapUiNameToLogical(a.name);
+            const value =
+              logical === 'AhorroBs' ? a.valueBOB ?? a.amount ?? 0 : a.valueUSD ?? 0;
+            return [`manual_${logical}`, value];
+          })
+        );
+
+        const totalUSD = totalCryptoUSD + totalInversionUSD + manualUSDOnly;
+
+        const roleFields = computeRoleFields({
+          cryptoAssets,
+          inversionPositions,
+          manualAssets: manualCtx.manualAssets,
+          totalUSD,
+        });
+
+        await savePortfolioSnapshot(user.uid, {
+          cryptoUSD: totalCryptoUSD,
+          inversionUSD: totalInversionUSD,
+          ...manualFields,
+          ...roleFields,
+          totalPortfolioUSD: totalUSD,
+        });
+
+        savedTodayRef.current = true;
+
+        const data = await getPortfolioHistory(user.uid);
+        setChartHistory(data);
+        await refreshPortfolioAnalysis();
+      } catch (e) {
+        console.error('snapshot diario error:', e);
+      }
+    };
+
+    run();
+  }, [user?.uid, loading, totalCryptoUSD, totalInversionUSD, totalManualUSD]); // eslint-disable-line
+
+  // ─── withSnapshot y helpers de activos manuales ────────────────────────────
+  const withSnapshot = useCallback(
+    async (action, assetSince = null) => {
+      await action();
+      if (!user?.uid) return;
+
+      const { cryptoUSD, inversionUSD } = totalsRef.current;
+
+      const manualFields = Object.fromEntries(
+        (manualCtx.manualAssets ?? []).map((a) => {
+          const logical = mapUiNameToLogical(a.name);
+          const value =
+            logical === 'AhorroBs' ? a.valueBOB ?? a.amount ?? 0 : a.valueUSD ?? 0;
+          return [`manual_${logical}`, value];
+        })
+      );
+
+      const manualUSDOnly = (manualCtx.manualAssets ?? []).reduce((sum, a) => {
+        const logical = mapUiNameToLogical(a.name);
+        if (logical === 'AhorroBs') return sum;
+        return sum + (a.valueUSD ?? 0);
+      }, 0);
+
+      const totalUSD = cryptoUSD + inversionUSD + manualUSDOnly;
+
+      const roleFields = computeRoleFields({
+        cryptoAssets,
+        inversionPositions,
+        manualAssets: manualCtx.manualAssets,
+        totalUSD,
+      });
+
+      await savePortfolioSnapshot(user.uid, {
+        cryptoUSD,
+        inversionUSD,
+        ...manualFields,
+        ...roleFields,
+        totalPortfolioUSD: totalUSD,
+      });
+
+      const today = new Date().toISOString().split('T')[0];
+      await replacePortfolioSnapshot(user.uid, today, {
+        cryptoUSD,
+        inversionUSD,
+        ...manualFields,
+        totalPortfolioUSD: totalUSD,
+      });
+
+      if (assetSince && assetSince !== today) {
+        const existing = await getPortfolioHistory(user.uid);
+        const existDoc = existing.find((d) => d.date === assetSince);
+        const pastCrypto = existDoc?.cryptoUSD ?? 0;
+        const pastInv = existDoc?.inversionUSD ?? 0;
+
+        await replacePortfolioSnapshot(user.uid, assetSince, {
+          cryptoUSD: pastCrypto,
+          inversionUSD: pastInv,
+          ...manualFields,
+          totalPortfolioUSD: pastCrypto + pastInv + manualUSDOnly,
+        });
+      }
+
+      const updated = await getPortfolioHistory(user.uid);
+      setChartHistory(updated);
+      await refreshPortfolioAnalysis();
+    },
+    [user, manualCtx.manualAssets, cryptoAssets, inversionPositions, refreshPortfolioAnalysis]
+  );
+
+  const addAsset = useCallback(
+    async (asset) => {
+      await withSnapshot(() => manualCtx.addAsset(asset), asset.since ?? null);
+    },
+    [manualCtx, withSnapshot]
+  );
+
+  const removeAsset = useCallback(
+    async (id) => {
+      await withSnapshot(() => manualCtx.removeAsset(id), null);
+    },
+    [manualCtx, withSnapshot]
+  );
+
+  const updateAsset = useCallback(
+    async (id, updates) => {
+      await withSnapshot(() => manualCtx.updateAsset(id, updates), updates?.since ?? null);
+    },
+    [manualCtx, withSnapshot]
+  );
+
+ 
+
+
+  // ─── value del contexto ────────────────────────────────────────────────────
+  const value = {
+    user,
+    loading,
+    error,
+    bobRate,
+    binanceSnap,
+    admiralsSnaps,
+    inversionSnap,
+    tradeSnap,
+    statements,
+    reports,
+    history,
+    chartHistory,
+    cryptoAssets,
+    inversionPositions,
+    manualAssets: manualCtx.manualAssets ?? [],
+    stableAssets,
+    volatileAssets,
+    totalCryptoUSD,
+    totalInversionUSD,
+    totalInversionPnl,
+    totalManualUSD,
+    totalVolatileUSD,
+    totalETFUSD,
+    totalValue: totalValueBOB,
+    totalValueUSD,
+totalValueBOB,
+    totalPnl,
+    riskData,
+    // El riesgo depende de binanceSnap + todayPortfolioAnalysis, ambos
+    // cargados dentro del fetch inicial general.
+    loadingRisk: loading,
+    pieData,
+    accounts,
+    transactions,
+    todayPortfolioV3,
+    todayPortfolioMeta,
+    todayPortfolioAnalysis,
+todayPortfolioV3,
+todayPortfolioMeta,
+    addAsset,
+    removeAsset,
+    updateAsset,
+    
+    refreshAll: fetchAll,
+    refreshPortfolioAnalysis,
+    refreshMarketQuotes,
+    ...manualCtx,
+  };
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+};
+
+export const useApp = () => useContext(AppContext);

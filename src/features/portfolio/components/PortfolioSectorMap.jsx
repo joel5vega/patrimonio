@@ -41,16 +41,16 @@ export const DEFAULT_VISIBLE_LIMIT = 8;
 
 /** Paleta de colores del donut / legend (cíclica). */
 export const DEFAULT_SECTOR_COLORS = [
-  '#22d3ee',
-  '#60a5fa',
+  '#2b7fff',
+  '#5a9fff',
   '#34d399',
   '#facc15',
   '#fb7185',
   '#a78bfa',
   '#fb923c',
-  '#2dd4bf',
+  '#2b7fff',
   '#f472b6',
-  '#94a3b8',
+  '#a4a19b',
   '#818cf8',
   '#4ade80',
 ];

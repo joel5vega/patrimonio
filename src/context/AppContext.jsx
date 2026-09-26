@@ -480,13 +480,13 @@ const riskData = useMemo(() => {
           valueUSD: a.netExposureUSD,
           color: '#10b981',
         })),
-        ...(totalETFUSD > 0 ? [{ label: 'ETFs', valueUSD: totalETFUSD, color: '#3b82f6' }] : []),
+        ...(totalETFUSD > 0 ? [{ label: 'ETFs', valueUSD: totalETFUSD, color: '#2b7fff' }] : []),
         ...(manualCtx.manualAssets || [])
           .filter((a) => (a.valueUSD ?? 0) > 0)
           .map((a, i) => ({
             label: a.name,
             valueUSD: a.valueUSD,
-            color: ['#a855f7', '#ec4899', '#facc15', '#06b6d4'][i % 4],
+            color: ['#a855f7', '#ec4899', '#facc15', '#2b7fff'][i % 4],
           })),
       ].filter((d) => d.valueUSD > 0),
     [totalVolatileUSD, stableAssets, totalETFUSD, manualCtx.manualAssets]

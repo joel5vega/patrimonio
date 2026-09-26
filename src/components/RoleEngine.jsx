@@ -30,9 +30,9 @@ export default function RoleEngine({ roles = [] }) {
       }}>
         <div>
           <p className="q-eyebrow q-eyebrow--primary" style={{ fontSize: '0.62rem', marginBottom: 4 }}>Motor de Reglas</p>
-          <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff' }}>Distribución por Rol</h3>
+          <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1f1f1f' }}>Distribución por Rol</h3>
         </div>
-        <span className="material-symbols-outlined" style={{ color: '#475569' }}>expand_more</span>
+        <span className="material-symbols-outlined" style={{ color: '#5e5d59' }}>expand_more</span>
       </div>
 
       {/* Role rows */}
@@ -46,15 +46,15 @@ export default function RoleEngine({ roles = [] }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 999, background: r.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.72rem', fontWeight: 900, textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.06em' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 900, textTransform: 'uppercase', color: '#5e5d59', letterSpacing: '0.06em' }}>
                     {r.name}
                   </span>
-                  <span style={{ fontSize: '0.65rem', color: '#475569', letterSpacing: '-0.01em' }}>
+                  <span style={{ fontSize: '0.65rem', color: '#5e5d59', letterSpacing: '-0.01em' }}>
                     Goal: {r.goal}
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span className="q-mono" style={{ fontSize: '0.78rem', fontWeight: 700, color: '#fff' }}>
+                  <span className="q-mono" style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1f1f1f' }}>
                     {r.currentPct}%
                   </span>
                   <span className="material-symbols-outlined" style={{ fontSize: 16, color: st.color, fontVariationSettings: "'FILL' 1" }}>

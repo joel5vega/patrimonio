@@ -51,83 +51,205 @@ const Login = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-brand-dark flex items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-8">
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 14px 12px 40px',
+    border: '1px solid var(--color-iron-peak)',
+    borderRadius: 4,
+    background: 'var(--color-graphite-card)',
+    color: 'var(--color-bone)',
+    fontFamily: 'var(--font-inter)',
+    fontSize: 14,
+    outline: 'none',
+  };
 
-        {/* Logo */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-teal/10 rounded-3xl mb-4">
-            <TrendingUp size={32} className="text-brand-teal" />
+  const labelStyle = {
+    display: 'block',
+    marginBottom: 8,
+    fontFamily: 'var(--font-inter)',
+    fontSize: 11,
+    fontWeight: 500,
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    color: 'var(--color-fog)',
+  };
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--color-carbon-canvas)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        fontFamily: 'var(--font-inter)',
+        color: 'var(--color-bone)',
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: 400 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 56,
+              height: 56,
+              border: '1px solid var(--color-iron-peak)',
+              borderRadius: 8,
+              marginBottom: 16,
+              background: 'var(--color-graphite-card)',
+            }}
+          >
+            <TrendingUp size={28} color="var(--color-bone)" />
           </div>
-          <h1 className="text-2xl font-black text-white">PatrimonioApp</h1>
-          <p className="text-white/40 text-sm mt-1">Gestión de patrimonio personal</p>
+          <h1
+            style={{
+              margin: 0,
+              fontFamily: 'var(--font-libre-baskerville)',
+              fontSize: 32,
+              fontWeight: 400,
+              letterSpacing: '-0.025em',
+              lineHeight: 1.15,
+              color: 'var(--color-bone)',
+            }}
+          >
+            PatrimonioApp
+          </h1>
+          <p
+            style={{
+              margin: '8px 0 0',
+              fontSize: 14,
+              color: 'var(--color-fog)',
+            }}
+          >
+            Gestión de patrimonio personal
+          </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleEmailLogin} className="space-y-4">
-          <div>
-            <label className="text-xs font-bold text-white/40 uppercase mb-1.5 block">Email</label>
-            <div className="relative">
-              <Mail size={16} className="absolute left-3.5 top-3.5 text-white/30" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
-                required
-                className="w-full bg-brand-card border border-white/10 rounded-2xl py-3 pl-10 pr-4 text-sm focus:border-brand-teal outline-none transition-colors"
-              />
+        <div
+          style={{
+            background: 'var(--color-graphite-card)',
+            border: '1px solid var(--color-slate-elevated)',
+            borderRadius: 8,
+            padding: 24,
+          }}
+        >
+          <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>Email</label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'var(--color-smoke)' }} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                  required
+                  style={inputStyle}
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="text-xs font-bold text-white/40 uppercase mb-1.5 block">Contraseña</label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3.5 top-3.5 text-white/30" />
-              <input
-                type={showPass ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full bg-brand-card border border-white/10 rounded-2xl py-3 pl-10 pr-10 text-sm focus:border-brand-teal outline-none transition-colors"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-3.5 top-3 text-white/30 hover:text-white/60"
+            <div>
+              <label style={labelStyle}>Contraseña</label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={16} style={{ position: 'absolute', left: 14, top: 14, color: 'var(--color-smoke)' }} />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{ ...inputStyle, paddingRight: 40 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  style={{
+                    position: 'absolute',
+                    right: 12,
+                    top: 12,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--color-smoke)',
+                    padding: 0,
+                  }}
+                >
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 12px',
+                  border: '1px solid var(--color-iron-peak)',
+                  background: 'var(--color-slate-elevated)',
+                  borderRadius: 4,
+                }}
               >
-                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
+                <AlertCircle size={16} style={{ color: 'var(--color-fog)', flexShrink: 0 }} />
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--color-fog)', fontWeight: 500 }}>{error}</p>
+              </div>
+            )}
 
-          {error && (
-            <div className="flex items-center gap-2 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2.5">
-              <AlertCircle size={16} className="text-rose-400 shrink-0" />
-              <p className="text-rose-400 text-xs font-medium">{error}</p>
-            </div>
-          )}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                background: 'transparent',
+                color: 'var(--color-bone)',
+                border: '1px solid var(--color-bone)',
+                borderRadius: 4,
+                fontFamily: 'var(--font-inter)',
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            </button>
+          </form>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--color-slate-elevated)' }} />
+            <span style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-smoke)' }}>
+              o
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'var(--color-slate-elevated)' }} />
+          </div>
 
           <button
-            type="submit"
+            type="button"
+            onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full bg-brand-teal text-black py-3.5 rounded-2xl font-bold text-sm active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'transparent',
+              color: 'var(--color-bone)',
+              border: '1px solid var(--color-iron-peak)',
+              borderRadius: 4,
+              fontFamily: 'var(--font-inter)',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1,
+            }}
           >
-            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            Continuar con Google
           </button>
-        </form>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="text-white/30 text-xs font-bold uppercase">o</span>
-          <div className="flex-1 h-px bg-white/10" />
         </div>
-
-        
-
       </div>
     </div>
   );

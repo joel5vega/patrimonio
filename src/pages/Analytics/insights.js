@@ -70,7 +70,7 @@ export function getInsights(savingsRate, byGroup, totalExp, monthlyTrend, expens
   if (tips.length === 0) {
     tips.push({
       icon: '📝',
-      color: 'text-white/50',
+      color: 'text-[#eeeeee]/50',
       msg: 'Registra tus movimientos diariamente para obtener mejores proyecciones.',
     });
   }

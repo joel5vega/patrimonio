@@ -46,9 +46,9 @@ export default function MonthDetailModal({ data, onClose }) {
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-end" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }} onClick={handleClose}>
       <div ref={sheetRef} onClick={(e) => e.stopPropagation()} className="w-full max-h-[88vh] overflow-y-auto rounded-t-3xl"
-        style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', opacity: 0 }}>
+        style={{ background: '#1f1f1f', border: '1px solid rgba(255,255,255,0.08)', opacity: 0 }}>
 
-        <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-white/20" /></div>
+        <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded bg-[#1f1f1f]/20" /></div>
 
         <div className="px-5 pt-2 pb-4 flex justify-between items-start">
           <div>
@@ -65,9 +65,9 @@ export default function MonthDetailModal({ data, onClose }) {
                 {ok === null ? 'Sin presupuesto' : ok ? '✓ Cumplido' : '✗ Excedido'}
               </span>
             </div>
-            <h2 className="text-xl font-bold text-white">{groupLabel}</h2>
+            <h2 className="text-xl font-bold text-[#eeeeee]">{groupLabel}</h2>
           </div>
-          <button onClick={handleClose} className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white/70">
+          <button onClick={handleClose} className="p-2 rounded-xl bg-[#1f1f1f]/5 text-[#eeeeee]/40 hover:text-[#eeeeee]/70">
             <X size={16} />
           </button>
         </div>
@@ -75,16 +75,16 @@ export default function MonthDetailModal({ data, onClose }) {
         <div className="px-5 space-y-5 pb-8">
           <div className="grid grid-cols-3 gap-2">
             {[
-              { lbl: 'Gastado', val: `Bs ${spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}`, color: isOver ? 'text-rose-400' : 'text-white' },
-              { lbl: 'Presupuesto', val: budget > 0 ? `Bs ${budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}` : '—', color: 'text-white/60' },
+              { lbl: 'Gastado', val: `Bs ${spent.toLocaleString('es-BO', { maximumFractionDigits: 0 })}`, color: isOver ? 'text-rose-400' : 'text-[#eeeeee]' },
+              { lbl: 'Presupuesto', val: budget > 0 ? `Bs ${budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}` : '—', color: 'text-[#eeeeee]/60' },
               {
                 lbl: diff !== null ? (isOver ? 'Exceso' : 'Restó') : 'Transacc.',
                 val: diff !== null ? `Bs ${Math.abs(diff).toLocaleString('es-BO', { maximumFractionDigits: 0 })}` : `${txs.length}`,
-                color: diff !== null ? (isOver ? 'text-rose-400' : 'text-emerald-400') : 'text-white/60',
+                color: diff !== null ? (isOver ? 'text-rose-400' : 'text-emerald-400') : 'text-[#eeeeee]/60',
               },
             ].map(({ lbl, val, color }) => (
-              <div key={lbl} className="bg-white/5 rounded-2xl p-3 text-center">
-                <p className="text-[9px] text-white/30 mb-1 uppercase tracking-wide">{lbl}</p>
+              <div key={lbl} className="bg-[#1f1f1f]/5 rounded-lg p-3 text-center">
+                <p className="text-[9px] text-[#eeeeee]/30 mb-1 uppercase tracking-wide">{lbl}</p>
                 <p className={`text-sm font-bold font-mono ${color}`}>{val}</p>
               </div>
             ))}
@@ -92,31 +92,31 @@ export default function MonthDetailModal({ data, onClose }) {
 
           {budget > 0 && (
             <div className="space-y-1.5">
-              <div className="flex justify-between text-[10px] text-white/30">
+              <div className="flex justify-between text-[10px] text-[#eeeeee]/30">
                 <span>0</span>
                 <span className={pct > 100 ? 'text-rose-400 font-bold' : ''}>{pct.toFixed(0)}%</span>
                 <span>Bs {budget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
               </div>
-              <div className="h-3 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%`, background: isOver ? '#f43f5e' : hex }} />
+              <div className="h-3 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                <div className="h-full rounded transition-all duration-700" style={{ width: `${Math.min(pct, 100)}%`, background: isOver ? '#f43f5e' : hex }} />
               </div>
             </div>
           )}
 
           {byCategory.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[10px] text-white/30 font-bold uppercase tracking-wide">Por categoría</p>
+              <p className="text-[10px] text-[#eeeeee]/30 font-bold uppercase tracking-wide">Por categoría</p>
               {byCategory.map(({ key, total, label: catLabel, emoji }) => (
                 <div key={key} className="detail-row space-y-1" style={{ opacity: 0 }}>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-white/70">{emoji} {catLabel}</span>
+                    <span className="text-[#eeeeee]/70">{emoji} {catLabel}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-white/30 text-[10px]">{spent > 0 ? ((total / spent) * 100).toFixed(0) : 0}%</span>
-                      <span className="text-white/80 font-semibold font-mono">Bs {total.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
+                      <span className="text-[#eeeeee]/30 text-[10px]">{spent > 0 ? ((total / spent) * 100).toFixed(0) : 0}%</span>
+                      <span className="text-[#eeeeee]/80 font-semibold font-mono">Bs {total.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
                     </div>
                   </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(total / (byCategory[0]?.total || 1)) * 100}%`, background: hex + 'cc' }} />
+                  <div className="h-1.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
+                    <div className="h-full rounded transition-all duration-500" style={{ width: `${(total / (byCategory[0]?.total || 1)) * 100}%`, background: hex + 'cc' }} />
                   </div>
                 </div>
               ))}

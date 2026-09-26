@@ -308,7 +308,7 @@ function getPerformance(asset = {}) {
 
 const ROLE_META = {
   core: {
-    color: '#3b82f6',
+    color: '#2b7fff',
     Icon: Landmark,
     label: 'Core',
   },
@@ -323,12 +323,12 @@ const ROLE_META = {
     label: 'Defense',
   },
   liquidity: {
-    color: '#06b6d4',
+    color: '#2b7fff',
     Icon: Droplets,
     label: 'Liq',
   },
   yield: {
-    color: '#14b8a6',
+    color: '#2b7fff',
     Icon: Zap,
     label: 'Yield',
   },
@@ -343,7 +343,7 @@ const ROLE_META = {
     label: 'Trade',
   },
   reserve: {
-    color: '#94a3b8',
+    color: '#a4a19b',
     Icon: Briefcase,
     label: 'Reserve',
   },
@@ -353,7 +353,7 @@ const ROLE_META = {
     label: 'Patrimony',
   },
   unclassified: {
-    color: '#64748b',
+    color: '#a4a19b',
     Icon: Briefcase,
     label: 'Other',
   },
@@ -404,31 +404,31 @@ const SYMBOL_LUCIDE = {
   SPY: { Icon: BarChart2, color: '#10b981' },
   IVV: { Icon: BarChart2, color: '#10b981' },
   VTI: { Icon: BarChart2, color: '#34d399' },
-  QQQM: { Icon: Cpu, color: '#60a5fa' },
-  QQQ: { Icon: Cpu, color: '#60a5fa' },
+  QQQM: { Icon: Cpu, color: '#5a9fff' },
+  QQQ: { Icon: Cpu, color: '#5a9fff' },
   NVDA: { Icon: Cpu, color: '#76c442' },
   TSLA: { Icon: Zap, color: '#34d399' },
-  AAPL: { Icon: Smartphone, color: '#94a3b8' },
-  MSFT: { Icon: Cpu, color: '#60a5fa' },
-  VXUS: { Icon: Globe2, color: '#06b6d4' },
-  VWO: { Icon: Globe2, color: '#06b6d4' },
+  AAPL: { Icon: Smartphone, color: '#a4a19b' },
+  MSFT: { Icon: Cpu, color: '#5a9fff' },
+  VXUS: { Icon: Globe2, color: '#2b7fff' },
+  VWO: { Icon: Globe2, color: '#2b7fff' },
   SCHD: { Icon: TrendingUp, color: '#facc15' },
   IAU: { Icon: Gem, color: '#eab308' },
   GLD: { Icon: Gem, color: '#eab308' },
   BND: { Icon: Lock, color: '#facc15' },
   TIP: { Icon: Shield, color: '#facc15' },
   VNQ: { Icon: Building2, color: '#f97316' },
-  SGOV: { Icon: DollarSign, color: '#06b6d4' },
-  MU: { Icon: Cpu, color: '#60a5fa' },
-  LITE: { Icon: Cpu, color: '#60a5fa' },
+  SGOV: { Icon: DollarSign, color: '#2b7fff' },
+  MU: { Icon: Cpu, color: '#5a9fff' },
+  LITE: { Icon: Cpu, color: '#5a9fff' },
   MELI: { Icon: ShoppingBag, color: '#facc15' },
   SLV: { Icon: Gem, color: '#eab308' },
   MRNA: { Icon: HeartPulse, color: '#fb7185' },
-  HSY: { Icon: ShoppingCart, color: '#14b8a6' },
-  SCHW: { Icon: Landmark, color: '#3b82f6' },
+  HSY: { Icon: ShoppingCart, color: '#2b7fff' },
+  SCHW: { Icon: Landmark, color: '#2b7fff' },
   ZTS: { Icon: HeartPulse, color: '#fb7185' },
-  MCHI: { Icon: Globe2, color: '#06b6d4' },
-  EMBJ: { Icon: Globe2, color: '#06b6d4' },
+  MCHI: { Icon: Globe2, color: '#2b7fff' },
+  EMBJ: { Icon: Globe2, color: '#2b7fff' },
   CEG: { Icon: Droplet, color: '#f59e0b' },
   ECL: { Icon: Droplet, color: '#f59e0b' },
 };
@@ -441,17 +441,17 @@ const SECTOR_META = {
   },
   diversificado_global: {
     Icon: Globe2,
-    color: '#06b6d4',
+    color: '#2b7fff',
     bg: 'rgba(6,182,212,0.18)',
   },
   emergentes: {
     Icon: Globe2,
-    color: '#3b82f6',
+    color: '#2b7fff',
     bg: 'rgba(59,130,246,0.15)',
   },
   tecnologia: {
     Icon: Cpu,
-    color: '#60a5fa',
+    color: '#5a9fff',
     bg: 'rgba(96,165,250,0.18)',
   },
   salud: {
@@ -461,12 +461,12 @@ const SECTOR_META = {
   },
   defensa: {
     Icon: Shield,
-    color: '#64748b',
+    color: '#a4a19b',
     bg: 'rgba(100,116,139,0.18)',
   },
   finanzas: {
     Icon: Landmark,
-    color: '#3b82f6',
+    color: '#2b7fff',
     bg: 'rgba(59,130,246,0.18)',
   },
   energia: {
@@ -481,7 +481,7 @@ const SECTOR_META = {
   },
   consumo_basico: {
     Icon: ShoppingCart,
-    color: '#14b8a6',
+    color: '#2b7fff',
     bg: 'rgba(20,184,166,0.18)',
   },
   consumo_discrecional: {
@@ -496,7 +496,7 @@ const SECTOR_META = {
   },
   telecomunicaciones: {
     Icon: Signal,
-    color: '#3b82f6',
+    color: '#2b7fff',
     bg: 'rgba(59,130,246,0.18)',
   },
   inmobiliario_cotizado: {
@@ -521,12 +521,12 @@ const SECTOR_META = {
   },
   efectivo_global: {
     Icon: DollarSign,
-    color: '#06b6d4',
+    color: '#2b7fff',
     bg: 'rgba(6,182,212,0.12)',
   },
   stablecoin_yield: {
     Icon: Zap,
-    color: '#14b8a6',
+    color: '#2b7fff',
     bg: 'rgba(20,184,166,0.18)',
   },
   crypto_l1: {
@@ -541,12 +541,12 @@ const SECTOR_META = {
   },
   crypto_defi: {
     Icon: Zap,
-    color: '#14b8a6',
+    color: '#2b7fff',
     bg: 'rgba(20,184,166,0.18)',
   },
   crypto_pagos: {
     Icon: CreditCard,
-    color: '#3b82f6',
+    color: '#2b7fff',
     bg: 'rgba(59,130,246,0.18)',
   },
   crypto_meme: {
@@ -556,19 +556,19 @@ const SECTOR_META = {
   },
   crypto_stablecoin: {
     Icon: DollarSign,
-    color: '#22d3ee',
+    color: '#2b7fff',
     bg: 'rgba(34,211,238,0.18)',
   },
 };
 
 const TYPE_LUCIDE = {
   crypto: { Icon: Bitcoin, color: '#f97316' },
-  stablecoin: { Icon: DollarSign, color: '#22d3ee' },
-  stable: { Icon: DollarSign, color: '#22d3ee' },
+  stablecoin: { Icon: DollarSign, color: '#2b7fff' },
+  stable: { Icon: DollarSign, color: '#2b7fff' },
   etf: { Icon: BarChart2, color: '#10b981' },
-  stock: { Icon: Building2, color: '#60a5fa' },
+  stock: { Icon: Building2, color: '#5a9fff' },
   futures: { Icon: TrendingUp, color: '#a855f7' },
-  manual: { Icon: Briefcase, color: '#94a3b8' },
+  manual: { Icon: Briefcase, color: '#a4a19b' },
 };
 
 function resolveIconLucide(asset = {}) {
@@ -604,7 +604,7 @@ function resolveIconLucide(asset = {}) {
 
   return {
     Icon: Briefcase,
-    color: '#64748b',
+    color: '#a4a19b',
   };
 }
 
@@ -625,7 +625,7 @@ function AssetIcon({
     return (
       <img
         src={`https://cdn.simpleicons.org/${slug}/${(
-          color || '#ffffff'
+          color || '#1f1f1f'
         ).replace('#', '')}`}
         alt={symbol}
         width={size}
@@ -962,7 +962,7 @@ function TooltipPortal({
 
             <span
               className="hm-tooltip__val"
-              style={{ color: '#14b8a6' }}
+              style={{ color: '#2b7fff' }}
             >
               <Zap
                 size={10}

@@ -1,10 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 @import './styles/tokens.css';
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
 body {
-  background-color: var(--color-brand-dark);
-  color: #ffffff;
+  background-color: #181818 !important;
+  color: #eeeeee !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Force dark surfaces on common wrappers */
+#root,
+.app-shell,
+.app-main,
+.app-content,
+.portfolio-page,
+.db-page,
+main {
+  background-color: #181818;
+  color: #eeeeee;
+}
+
+/* Cards / panels */
+.card,
+[class*="card"],
+[class*="Card"],
+[class*="panel"],
+[class*="Panel"],
+[class*="modal"],
+[class*="Modal"] {
+  background-color: #1f1f1f;
+  color: #eeeeee;
+  border-color: #262626;
+}
+
+input,
+textarea,
+select {
+  background-color: #1f1f1f !important;
+  color: #eeeeee !important;
+  border: 1px solid #323232 !important;
+  border-radius: 4px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #5e5d59 !important;
+}
+
+button {
+  border-radius: 4px;
+}
+
+a {
+  color: #2b7fff;
+}
+
+:focus-visible {
+  outline: 2px solid #2b7fff;
+  outline-offset: 2px;
+}
+
+/* Typography helpers */
+.font-serif,
+.heading-display {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+
+.font-mono {
+  font-family: 'Fira Code', ui-monospace, monospace;
+}
+
+.eyebrow {
   font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #a4a19b;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn-ghost,
+.btn-outline,
+.btn-outline-light {
+  background: transparent;
+  color: #eeeeee;
+  border-color: #eeeeee;
+}
+
+.btn-ghost:hover,
+.btn-outline:hover {
+  background: #262626;
+}
+
+.btn-navy,
+.btn-primary {
+  background: #eeeeee;
+  color: #111111;
+  border-color: #eeeeee;
+}
+
+/* Scrollbar dark */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #181818;
+}
+::-webkit-scrollbar-thumb {
+  background: #323232;
+  border-radius: 4px;
 }

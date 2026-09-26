@@ -51,7 +51,7 @@ const TYPE_CONFIG = {
   manual: {
     label: 'Manual',
     short: 'MANUAL',
-    color: '#cbd5e1',
+    color: '#5e5d59',
     icon: Wallet,
   },
 };
@@ -438,7 +438,7 @@ function CollapsibleGroup({
   total,
   onEdit,
   onRemove,
-  accent = '#2dd4bf',
+  accent = '#2b7fff',
   readOnly = false,
 }) {
   const [open, setOpen] = useState(true);

@@ -7,7 +7,7 @@ const TypeIcon = ({ type, symbol }) => {
     stable: 'attach_money', patrimony: 'home_work',
   };
   return (
-    <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#22d3ee' }}>
+    <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#2b7fff' }}>
       {icons[type] || 'account_balance'}
     </span>
   );

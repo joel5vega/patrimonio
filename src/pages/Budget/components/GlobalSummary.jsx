@@ -3,29 +3,29 @@ import Bar from '../../../ui/Bar';
 
 export default function GlobalSummary({ totalSpentM, totalBudget, totalSpentW, overallPct, globalHistory, onSelectMonth }) {
   return (
-    <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-3">
-      <div className="flex justify-between text-xs text-white/50">
+    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-3">
+      <div className="flex justify-between text-xs text-[#eeeeee]/50">
         <span>Gastado este mes</span>
         <span>
-          <span className={overallPct > 100 ? 'text-rose-400 font-bold' : 'text-white/70'}>
+          <span className={overallPct > 100 ? 'text-rose-400 font-bold' : 'text-[#eeeeee]/70'}>
             Bs {totalSpentM.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
           </span>
           {totalBudget > 0 && (
-            <span className="text-white/30"> / Bs {totalBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
+            <span className="text-[#eeeeee]/30"> / Bs {totalBudget.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
           )}
         </span>
       </div>
 
       <Bar pct={overallPct} color="bg-teal-500" warn={overallPct > 100} />
 
-      <div className="flex justify-between text-[10px] text-white/30">
+      <div className="flex justify-between text-[10px] text-[#eeeeee]/30">
         <span>Semana: Bs {totalSpentW.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
         {totalBudget > 0 && <span>{overallPct.toFixed(0)}% del presupuesto total</span>}
       </div>
 
       {totalBudget > 0 && (
         <div className="pt-2 border-t border-white/5">
-          <p className="text-[10px] text-white/30 font-bold uppercase tracking-wide mb-2">
+          <p className="text-[10px] text-[#eeeeee]/30 font-bold uppercase tracking-wide mb-2">
             Cumplimiento global — toca para ver detalle
           </p>
           <div className="flex gap-2">
@@ -40,7 +40,7 @@ export default function GlobalSummary({ totalSpentM, totalBudget, totalSpentW, o
                 <span style={{ fontSize: '1rem', filter: h.total === 0 ? 'grayscale(1) opacity(0.3)' : undefined }}>
                   {h.total === 0 ? '○' : h.allGood ? '✅' : h.passed > 0 ? '⚠️' : '❌'}
                 </span>
-                <span className="text-[8px] text-white/30">{h.label}</span>
+                <span className="text-[8px] text-[#eeeeee]/30">{h.label}</span>
                 {h.total > 0 && (
                   <span className="text-[8px] font-mono font-bold" style={{ color: h.allGood ? '#10b981' : h.passed > 0 ? '#eab308' : '#f43f5e' }}>
                     {h.passed}/{h.total}

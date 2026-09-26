@@ -1,16 +1,16 @@
 export const ROLE_COLORS = {
-  core: '#3b82f6',
-  growth: '#10b981',
-  defensive: '#facc15',
-  liquidity: '#06b6d4',
-  yield: '#14b8a6',
-  speculative: '#f43f5e',
-  trading: '#a855f7',
-  reserve: '#94a3b8',
-  patrimony: '#f97316',
+  core: '#2b7fff',
+  growth: '#5a9fff',
+  defensive: '#a4a19b',
+  liquidity: '#eeeeee',
+  yield: '#2b7fff',
+  speculative: '#e05a68',
+  trading: '#5a9fff',
+  reserve: '#5e5d59',
+  patrimony: '#eeeeee',
 };
 
-export const  SECTOR_LABELS = {
+export const SECTOR_LABELS = {
   tecnologia: 'Tecnología',
   salud: 'Salud',
   defensa: 'Defensa',
@@ -40,31 +40,31 @@ export const  SECTOR_LABELS = {
 };
 
 export const SECTOR_COLORS = [
-  '#22d3ee',
-  '#60a5fa',
-  '#34d399',
-  '#facc15',
-  '#fb7185',
-  '#a78bfa',
-  '#fb923c',
-  '#2dd4bf',
-  '#f472b6',
-  '#94a3b8',
+  '#2b7fff',
+  '#5a9fff',
+  '#a4a19b',
+  '#eeeeee',
+  '#5e5d59',
+  '#1a365d',
+  '#323232',
+  '#e05a68',
+  '#c9a227',
+  '#4b4b4b',
 ];
 
 export const labelSector = (sector) =>
   SECTOR_LABELS[sector] || String(sector).replaceAll('_', ' ');
 
 export const SOURCE_COLORS = {
-  binance: '#f97316',
-  admirals: '#3b82f6',
-  quantfury: '#a855f7',
-  manual: '#14b8a6',
+  binance: '#c9a227',
+  admirals: '#2b7fff',
+  quantfury: '#5a9fff',
+  manual: '#a4a19b',
 };
 
 export const STATUS_COLORS = {
-  good: '#10b981',
-  warning: '#facc15',
-  critical: '#f43f5e',
-  info: '#60a5fa',
+  good: '#2b7fff',
+  warning: '#c9a227',
+  critical: '#e05a68',
+  info: '#2b7fff',
 };

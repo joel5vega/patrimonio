@@ -6,7 +6,7 @@ import { formatUSD, getRoleLabel, toNumber } from '../utils/portfolioFormatters'
 function PortfolioAssetCard({ asset = {}, bobRate = null }) {
   const classification = asset.classification || {};
   const role = classification.role || 'unclassified';
-  const roleColor = ROLE_COLORS[role] || '#94a3b8';
+  const roleColor = ROLE_COLORS[role] || '#a4a19b';
   const pnl = asset.pnl;
   const positive = toNumber(pnl) >= 0;
   const icon = asset.type === 'crypto'

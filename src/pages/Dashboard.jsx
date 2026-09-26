@@ -159,7 +159,7 @@ const AnimatedNumber = ({ value, prefix = '', decimals = 2, className = '' }) =>
 };
 
 // ── Sparkline ─────────────────────────────────────────────
-const Sparkline = ({ data = [], color = '#14b8a6', height = 36 }) => {
+const Sparkline = ({ data = [], color = '#2b7fff', height = 36 }) => {
   if (data.length < 2) return null;
   const W = 80;
   const max = Math.max(...data), min = Math.min(...data);
@@ -193,7 +193,7 @@ const StatCard = ({ label, value, prefix = '$', color, icon: Icon, delay = 0 }) 
 };
 
 // ── QuickMetric ───────────────────────────────────────────
-const QuickMetric = ({ label, value, sub, color = '#14b8a6' }) => (
+const QuickMetric = ({ label, value, sub, color = '#2b7fff' }) => (
   <div className="db-quick-metric">
     <p className="db-quick-label">{label}</p>
     <p className="db-quick-value" style={{ color }}>{value}</p>
@@ -224,7 +224,7 @@ const TransactionItem = ({ type, concept, title, dateLabel, amount, currency }) 
 // ── MarkdownCard ──────────────────────────────────────────
 const MarkdownCard = ({ type, title, subtitle, markdown }) => {
   const [expanded, setExpanded] = useState(false);
-  const config = { idea: { label: 'Idea', Icon: FileText, color: '#22d3ee' } };
+  const config = { idea: { label: 'Idea', Icon: FileText, color: '#2b7fff' } };
   const { label, Icon, color } = config[type] || config.idea;
   if (!markdown) return null;
   return (
@@ -392,7 +392,7 @@ const Dashboard = () => {
       {/* Stats grid */}
       <div ref={metricsRef} className="db-stats-grid">
         <StatCard label="Crypto" value={totalCryptoUSD}    color="#f97316" icon={Activity} delay={0}   />
-        <StatCard label="ETFs"   value={totalInversionUSD} color="#3b82f6" icon={PieChart} delay={80}  />
+        <StatCard label="ETFs"   value={totalInversionUSD} color="#2b7fff" icon={PieChart} delay={80}  />
         <StatCard label="Manual" value={totalManualUSD ?? 0} color="#10b981" icon={Target} delay={160} />
       </div>
 
@@ -508,8 +508,8 @@ const Dashboard = () => {
         <SectionHeader title="Accesos Rápidos" />
         <div className="db-shortcuts">
           {[
-            { label: 'Manual', icon: PiggyBank,  path: '/manual',  color: '#3b82f6' },
-            { label: 'Riesgo',  icon: Activity,  path: '/risk',     color: '#14b8a6' },
+            { label: 'Manual', icon: PiggyBank,  path: '/manual',  color: '#2b7fff' },
+            { label: 'Riesgo',  icon: Activity,  path: '/risk',     color: '#2b7fff' },
             { label: 'Presupuesto', icon: Wallet, path: '/budget',   color: '#f97316' },
              { label: 'Trading',   icon: TrendingUp , path: '/trading-history',  color: '#ffa75bfa' },
           ].map(({ label, icon: Icon, path, color }) => (

@@ -56,7 +56,7 @@ export default function BinanceExposure({
 
       {/* 4 stat cards: Spot / BUY / SELL / Exposición */}
       <div className="portfolio-stats-grid four">
-        <StatCard label="Spot"       value={fmt(totalCryptoUSD)} tone="text-white"      />
+        <StatCard label="Spot"       value={fmt(totalCryptoUSD)} tone="text-[#eeeeee]"      />
         <StatCard label="Ord. BUY"   value={fmt(reservedBUY)}    tone="text-yellow-400" />
         <StatCard label="Ord. SELL"  value={fmt(pendingSELL)}    tone="text-blue-400"   />
         <StatCard label="Exposición" value={fmt(grossExposure)}  tone="text-emerald-400"/>
@@ -64,9 +64,9 @@ export default function BinanceExposure({
 
       {/* HHI + Top 3 */}
       <div className="portfolio-stats-grid two" style={{ marginTop: '0.75rem' }}>
-        <StatCard label="HHI"        value={hhi.toFixed(4)}     tone="text-white" />
+        <StatCard label="HHI"        value={hhi.toFixed(4)}     tone="text-[#eeeeee]" />
         <StatCard label="Top 3 conc." value={`${top3Pct.toFixed(1)}%`}
-          tone={top3Pct >= 80 ? 'text-rose-400' : 'text-white'} />
+          tone={top3Pct >= 80 ? 'text-rose-400' : 'text-[#eeeeee]'} />
       </div>
     </div>
   );

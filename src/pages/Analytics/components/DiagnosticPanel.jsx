@@ -3,7 +3,7 @@ import { Lightbulb } from 'lucide-react';
 
 export default function DiagnosticPanel({ insights }) {
   return (
-    <div className="bg-brand-card rounded-2xl border border-white/5 p-4 space-y-3 analytics-card">
+    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-3 analytics-card">
       <div className="flex items-center gap-2">
         <Lightbulb size={14} className="text-yellow-400" />
         <h3 className="font-bold text-sm">Diagnóstico financiero</h3>

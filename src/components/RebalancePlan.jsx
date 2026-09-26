@@ -26,7 +26,7 @@ export default function RebalancePlan({ actions = [], cash, onExecute }) {
           <span className="material-symbols-outlined" style={{ color: 'var(--color-primary)', fontSize: 20 }}>
             rebase_edit
           </span>
-          <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#fff' }}>Plan de Rebalanceo</h3>
+          <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#1f1f1f' }}>Plan de Rebalanceo</h3>
         </div>
         <button onClick={onExecute} className="q-badge q-badge--primary"
           style={{ cursor: 'pointer', border: '1px solid rgba(0,209,192,.20)', letterSpacing: '0.1em' }}>
@@ -55,8 +55,8 @@ export default function RebalancePlan({ actions = [], cash, onExecute }) {
                 {a.action}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fff' }}>{a.name}</p>
-                <p style={{ fontSize: '0.65rem', color: '#475569', marginTop: 2 }}>{a.reason}</p>
+                <p style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1f1f1f' }}>{a.name}</p>
+                <p style={{ fontSize: '0.65rem', color: '#5e5d59', marginTop: 2 }}>{a.reason}</p>
               </div>
               <p className="q-mono" style={{ fontSize: '0.82rem', fontWeight: 700, color: s.color, flexShrink: 0 }}>
                 {a.amount}
@@ -73,7 +73,7 @@ export default function RebalancePlan({ actions = [], cash, onExecute }) {
             borderTop: '1px solid rgba(255,255,255,.06)',
             marginTop: 4,
           }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#475569' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#5e5d59' }}>
               Caja disponible
             </span>
             <span className="q-mono" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'rgba(255,255,255,.55)' }}>

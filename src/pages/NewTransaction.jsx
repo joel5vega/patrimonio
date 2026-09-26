@@ -45,19 +45,19 @@ const NewTransaction = () => {
       
       {/* Modal Full Screen */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full h-full max-w-md bg-brand-dark rounded-2xl p-6 space-y-5 overflow-y-auto">
+        <div className="w-full h-full max-w-md bg-[#181818] rounded-lg p-6 space-y-5 overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between">
             <button 
               onClick={closeModal} 
-              className="bg-brand-card p-2 rounded-xl border border-white/10"
+              className="bg-[#1f1f1f] p-2 rounded-xl border border-[#262626]"
             >
               <ArrowLeft size={20} />
             </button>
             <h1 className="text-xl font-bold">New Transacción</h1>
             <button 
               onClick={closeModal}
-              className="bg-brand-card p-2 rounded-xl border border-white/10"
+              className="bg-[#1f1f1f] p-2 rounded-xl border border-[#262626]"
             >
               <X size={20} />
             </button>
@@ -66,7 +66,7 @@ const NewTransaction = () => {
           <form onSubmit={handleSubmit} className="space-y-4 flex-1">
             {/* Type selector */}
             <div>
-              <label className="text-xs font-bold text-white/40 uppercase mb-2 block">Tipo</label>
+              <label className="text-xs font-bold text-[#eeeeee]/40 uppercase mb-2 block">Tipo</label>
               <div className="grid grid-cols-2 gap-2">
                 {TYPES.map((t) => (
                   <button
@@ -75,8 +75,8 @@ const NewTransaction = () => {
                     onClick={() => setForm({ ...form, type: t })}
                     className={`py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
                       form.type === t 
-                        ? 'bg-brand-teal text-black border-brand-teal' 
-                        : 'bg-brand-card text-white/50 border-white/10'
+                        ? 'bg-[#2b7fff] text-[#eeeeee] border-[#2b7fff]' 
+                        : 'bg-[#1f1f1f] text-[#eeeeee]/50 border-[#262626]'
                     }`}
                   >
                     {t}
@@ -100,7 +100,7 @@ const NewTransaction = () => {
               { label: 'Nota', name: 'note', placeholder: 'Opcional...' },
             ].map(({ label, name, placeholder, type = 'text', step, ref }) => (
               <div key={name}>
-                <label className="text-xs font-bold text-white/40 uppercase mb-1.5 block">{label}</label>
+                <label className="text-xs font-bold text-[#eeeeee]/40 uppercase mb-1.5 block">{label}</label>
                 <input
                   ref={ref}
                   type={type}
@@ -109,20 +109,20 @@ const NewTransaction = () => {
                   step={step}
                   onChange={handleChange}
                   placeholder={placeholder}
-                  className="w-full bg-brand-card border border-white/10 rounded-2xl py-3 px-4 text-sm focus:border-brand-teal outline-none transition-colors"
+                  className="w-full bg-[#1f1f1f] border border-[#262626] rounded-lg py-3 px-4 text-sm focus:border-[#2b7fff] outline-none transition-colors"
                 />
               </div>
             ))}
 
             {/* Currency display */}
             <div className="pt-2 text-right">
-              <span className="text-sm text-white/50">BOB</span>
+              <span className="text-sm text-[#eeeeee]/50">BOB</span>
             </div>
 
             <button
               type="submit"
               disabled={!form.asset || !form.quantity || !form.price}
-              className="w-full bg-brand-teal text-black py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-transform mt-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#2b7fff] text-[#eeeeee] py-3.5 rounded-lg font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-transform mt-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Check size={20} strokeWidth={3} />
               Guardar Transacción
