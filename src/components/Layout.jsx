@@ -12,7 +12,6 @@ const navItems = [
   { to: '/history',      icon: <TrendingUp size={20} />,label: 'Historial'  },
   { to: '/transactions', icon: <Repeat size={20} />,   label: 'Movimientos' },
   { to: '/analytics',    icon: <BarChart2 size={20} />, label: 'Analytics'  },
-  { to: '/budget',       icon: <Wallet size={20} />,   label: 'Presupuesto' },
   // Riesgo, Manual y Trading History se lanzan desde tarjetas en el
   // Dashboard (ver QuickLinks), no viven en la barra principal.
 ];

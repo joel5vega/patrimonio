@@ -5,6 +5,7 @@ import {
   ArrowUpRight, ArrowDownRight, FileText, BarChart2,
   ChevronDown, ChevronUp, Calendar, History,
   Wallet, PieChart, Zap, Target, BookOpen, 
+  PiggyBank, 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -507,9 +508,9 @@ const Dashboard = () => {
         <SectionHeader title="Accesos Rápidos" />
         <div className="db-shortcuts">
           {[
-            { label: 'Portafolio', icon: PieChart,  path: '/portfolio',  color: '#3b82f6' },
-            { label: 'Historial',  icon: Activity,  path: '/wealth',     color: '#14b8a6' },
-            { label: 'Análisis',   icon: BarChart2, path: '/analytics',  color: '#a78bfa' },
+            { label: 'Manual', icon: PiggyBank,  path: '/manual',  color: '#3b82f6' },
+            { label: 'Riesgo',  icon: Activity,  path: '/risk',     color: '#14b8a6' },
+            { label: 'Presupuesto', icon: Wallet, path: '/budget',   color: '#f97316' },
              { label: 'Trading',   icon: TrendingUp , path: '/trading-history',  color: '#ffa75bfa' },
           ].map(({ label, icon: Icon, path, color }) => (
             <button key={path} className="db-shortcut" onClick={() => navigate(path)}>
