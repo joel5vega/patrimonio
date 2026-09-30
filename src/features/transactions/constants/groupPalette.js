@@ -20,10 +20,10 @@ export const GROUP_TEXT = {
 };
 
 export const GROUP_HEX = {
-  hogar: '#2b7fff',
-  estilo_vida: '#a4a19b',
-  bienestar: '#5a9fff',
-  fe: '#c9a227',
+  hogar: '#672ea3',
+  estilo_vida: '#a7b902',
+  bienestar: '#fdfdfd',
+  fe: '#c21b34',
   finanzas: '#eeeeee',
   ingresos: '#2b7fff',
   otros: '#5e5d59',
