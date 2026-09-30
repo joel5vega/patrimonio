@@ -397,3 +397,55 @@
   .categoryDetailRow { grid-template-columns: 1fr auto auto; }
   .categoryDetailBar { display: none; }
 }
+
+
+/* Line chart + collapse */
+.collapseBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #323232;
+  border-radius: 4px;
+  background: #181818;
+  color: #a4a19b;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.collapseBtn:hover {
+  color: #eeeeee;
+  border-color: #a4a19b;
+}
+
+.lineChartWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.lineChartSvg {
+  display: block;
+  width: 100%;
+  min-width: 320px;
+  height: auto;
+}
+
+.trendTooltip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid #262626;
+  border-radius: 6px;
+  background: #181818;
+  font-size: 0.68rem;
+  color: #a4a19b;
+}
+.trendTooltipMonth {
+  color: #eeeeee;
+  font-weight: 600;
+  min-width: 3rem;
+}

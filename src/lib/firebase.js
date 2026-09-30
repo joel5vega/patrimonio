@@ -451,44 +451,83 @@ export const getAllTransactionsForExport = async (
 
   return result;
 };
+const normalizeNumber = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
 
-export const addTransaction = async (uid, tx) => {
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : null;
+};
+
+const buildInvestmentFxMetadata = (tx) => {
+  const isUSDInvestment =
+    tx.category === 'inversion' &&
+    tx.currency === 'USD';
+
+  if (!isUSDInvestment) {
+    return {};
+  }
+
+  return {
+    originalAmountBOB: normalizeNumber(
+      tx.originalAmountBOB
+    ),
+
+    originalCurrency:
+      tx.originalCurrency || 'BOB',
+
+    exchangeRateBOBPerUSD:
+      normalizeNumber(
+        tx.exchangeRateBOBPerUSD
+      ),
+
+    exchangeRateSource:
+      tx.exchangeRateSource || 'effective',
+
+    exchangeRateDate:
+      tx.exchangeRateDate || tx.date,
+
+    targetCurrency:
+      tx.targetCurrency || 'USD',
+  };
+};
+
+export const addTransaction = async (uid, tx = {}) => {
+  if (!uid) {
+    throw new Error('Falta el UID del usuario.');
+  }
+
   const payload = {
     title: tx.title || tx.concept || '',
     concept: tx.concept || tx.title || '',
+
     amount: Number(tx.amount) || 0,
+
     currency: tx.currency || 'BOB',
+
     type: tx.type || 'expense',
+
     category: tx.category || 'other',
-    parentCategory: tx.parentCategory || 'otros',
-    date: tx.date,
+
+    parentCategory:
+      tx.parentCategory || 'otros',
+
+    date: tx.date || null,
+
     note: tx.note || '',
+
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
+
+    ...buildInvestmentFxMetadata(tx),
   };
 
-  if (
-    tx.category === 'inversion' &&
-    tx.currency === 'USD'
-  ) {
-    payload.originalAmountBOB =
-      Number(tx.originalAmountBOB) || 0;
-
-    payload.originalCurrency =
-      tx.originalCurrency || 'BOB';
-
-    payload.exchangeRateBOBPerUSD =
-      Number(tx.exchangeRateBOBPerUSD) || 0;
-
-    payload.exchangeRateSource =
-      tx.exchangeRateSource || 'effective';
-
-    payload.exchangeRateDate =
-      tx.exchangeRateDate || tx.date;
-
-    payload.targetCurrency =
-      tx.targetCurrency || 'USD';
-  }
+  console.log(
+    'Payload enviado a Firestore:',
+    payload
+  );
 
   return addDoc(
     transactionCollection(uid),
@@ -499,8 +538,16 @@ export const addTransaction = async (uid, tx) => {
 export const updateTransaction = async (
   uid,
   id,
-  updates
+  updates = {}
 ) => {
+  if (!uid) {
+    throw new Error('Falta el UID del usuario.');
+  }
+
+  if (!id) {
+    throw new Error('Falta el ID de la transacción.');
+  }
+
   const reference = doc(
     db,
     'users',
@@ -509,47 +556,67 @@ export const updateTransaction = async (
     id
   );
 
-  const payload = {
-    ...(updates.title !== undefined && {
-      title: updates.title,
-    }),
+  const currentSnapshot = await getDoc(reference);
 
-    ...(updates.concept !== undefined && {
-      concept: updates.concept,
-    }),
+  if (!currentSnapshot.exists()) {
+    throw new Error(
+      'La transacción que intentas actualizar no existe.'
+    );
+  }
 
-    ...(updates.amount !== undefined && {
-      amount: Number(updates.amount) || 0,
-    }),
+  const current = currentSnapshot.data();
 
-    ...(updates.currency !== undefined && {
-      currency: updates.currency,
-    }),
-
-    ...(updates.type !== undefined && {
-      type: updates.type,
-    }),
-
-    ...(updates.category !== undefined && {
-      category: updates.category,
-    }),
-
-    ...(updates.parentCategory !== undefined && {
-      parentCategory: updates.parentCategory,
-    }),
-
-    ...(updates.date !== undefined && {
-      date: updates.date,
-    }),
-
-    ...(updates.note !== undefined && {
-      note: updates.note,
-    }),
-
-    updatedAt: serverTimestamp(),
+  const merged = {
+    ...current,
+    ...updates,
   };
 
-  await updateDoc(reference, payload);
+  const payload = {
+    title:
+      merged.title ||
+      merged.concept ||
+      '',
+
+    concept:
+      merged.concept ||
+      merged.title ||
+      '',
+
+    amount:
+      Number(merged.amount) || 0,
+
+    currency:
+      merged.currency || 'BOB',
+
+    type:
+      merged.type || 'expense',
+
+    category:
+      merged.category || 'other',
+
+    parentCategory:
+      merged.parentCategory || 'otros',
+
+    date:
+      merged.date || null,
+
+    note:
+      merged.note || '',
+
+    updatedAt: serverTimestamp(),
+
+    ...buildInvestmentFxMetadata(merged),
+  };
+
+  console.log(
+    'Payload actualizado en Firestore:',
+    payload
+  );
+
+  await updateDoc(
+    reference,
+    payload
+  );
 };
 
 export const removeTransaction = (uid, id) =>
