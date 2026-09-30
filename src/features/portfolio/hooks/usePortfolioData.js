@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { usePortfolioFilters } from "./usePortfolioFilters";
+import { INVESTOR_PROFILES, DEFAULT_INVESTOR_PROFILE } from "../constants/portfolioRules";
 
 const EMPTY_PLAN = {
   monthly: [],
@@ -342,6 +343,7 @@ export function usePortfolioData({
   todayPortfolioAnalysis = null,
   todayPortfolioV3 = null,
   manualAssets = [],
+  investorProfile = DEFAULT_INVESTOR_PROFILE,
 } = {}) {
   const analysis = todayPortfolioAnalysis ?? null;
 
@@ -481,12 +483,19 @@ export function usePortfolioData({
     portfolioV3?.portfolio?.bySubClass ??
     {};
 
-  const targets =
+  const backendTargets =
     allocationAnalysis.targets ??
     analysis?.aiReport?.targets ??
     portfolioV3?.activeTargets ??
     portfolioV3?.targets ??
     {};
+
+  // Profile selector overrides targets when profile has defined targets
+  const profileKey = investorProfile || DEFAULT_INVESTOR_PROFILE;
+  const profileTargets = INVESTOR_PROFILES[profileKey]?.targets ?? null;
+  const targets = profileTargets && typeof profileTargets === "object"
+    ? profileTargets
+    : backendTargets;
 
   const sourceRows =
     Array.isArray(allocationAnalysis.roleRows)
@@ -495,40 +504,68 @@ export function usePortfolioData({
         ? allocationAnalysis.rows
         : [];
 
+  function statusFromDiff(diff) {
+    const abs = Math.abs(safeNumber(diff, 0));
+    if (abs >= 5) return "critical";
+    if (abs >= 1) return "warning";
+    return "ok";
+  }
+
   const allocationRows = sourceRows.length
     ? sourceRows.map((row) => {
         const role = row.role ?? row.key;
+        const currentPct = safeNumber(row.currentPct ?? row.current);
+        const targetPct = safeNumber(
+          targets[role] ?? row.targetPct ?? row.target,
+          null,
+        );
+        const differencePct =
+          targetPct === null || targetPct === undefined
+            ? null
+            : currentPct - targetPct;
 
         return {
           ...row,
           key: role,
           role,
           label: row.label ?? role,
-          current: safeNumber(row.current ?? row.currentPct),
-          currentPct: safeNumber(row.currentPct ?? row.current),
-          currentUSD: safeNumber(byRoleUSD[role]),
-          target: safeNumber(row.target ?? row.targetPct ?? targets[role], null),
-          targetPct: safeNumber(row.targetPct ?? row.target ?? targets[role], null),
-          difference: safeNumber(row.difference ?? row.differencePct, null),
-          differencePct: safeNumber(row.differencePct ?? row.difference, null),
+          current: currentPct,
+          currentPct,
+          currentUSD: safeNumber(
+            row.currentUSD ?? byRoleUSD[role],
+          ),
+          target: targetPct,
+          targetPct,
+          difference: differencePct,
+          differencePct,
+          status: differencePct === null ? "unknown" : statusFromDiff(differencePct),
           assets: assets.filter((asset) => asset.role === role),
         };
       })
-    : Object.entries(byRole).map(([role, value]) => ({
-        key: role,
-        role,
-        label: role,
-        current: safeNumber(value),
-        currentPct: safeNumber(value),
-        currentUSD: safeNumber(byRoleUSD[role]),
-        target: safeNumber(targets[role], null),
-        targetPct: safeNumber(targets[role], null),
-        difference: null,
-        differencePct: null,
-        status: "unknown",
-        action: null,
-        assets: assets.filter((asset) => asset.role === role),
-      }));
+    : Object.entries(byRole).map(([role, value]) => {
+        const currentPct = safeNumber(value);
+        const targetPct = safeNumber(targets[role], null);
+        const differencePct =
+          targetPct === null || targetPct === undefined
+            ? null
+            : currentPct - targetPct;
+
+        return {
+          key: role,
+          role,
+          label: role,
+          current: currentPct,
+          currentPct,
+          currentUSD: safeNumber(byRoleUSD[role]),
+          target: targetPct,
+          targetPct,
+          difference: differencePct,
+          differencePct,
+          status: differencePct === null ? "unknown" : statusFromDiff(differencePct),
+          action: null,
+          assets: assets.filter((asset) => asset.role === role),
+        };
+      });
 
   const sectorAnalysis =
     analysis?.aiReport?.sectorAnalysis ??

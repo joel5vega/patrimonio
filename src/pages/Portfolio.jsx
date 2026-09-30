@@ -39,6 +39,7 @@ export default function Portfolio() {
     todayPortfolioAnalysis,
     todayPortfolioV3,
     manualAssets,
+    investorProfile,
   });
 
   const exporter = usePortfolioExport(
