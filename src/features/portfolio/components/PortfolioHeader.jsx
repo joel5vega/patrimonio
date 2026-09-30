@@ -63,7 +63,7 @@ export default function PortfolioHeader({
 
           {refreshingQuotes
             ? 'Actualizando…'
-            : 'Update'}
+            : 'Sync'}
         </button>
 
         <button
@@ -72,7 +72,7 @@ export default function PortfolioHeader({
           onClick={onCopy}
         >
           <FileJson size={14} />
-          {copied ? 'Copiado' : 'JSON'}
+          {copied ? 'Copied' : 'JSON'}
         </button>
 
         <button
@@ -81,7 +81,6 @@ export default function PortfolioHeader({
           onClick={onDownload}
         >
           <Download size={14} />
-          Descargar
         </button>
       </div>
     </header>

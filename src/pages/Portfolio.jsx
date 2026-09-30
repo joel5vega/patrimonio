@@ -13,11 +13,16 @@ import PortfolioDecisionSupport from '../features/portfolio/components/Portfolio
 import PortfolioAssets from '../features/portfolio/components/PortfolioAssets';
 import PortfolioSecondaryDetails from '../features/portfolio/components/PortfolioSecondaryDetails';
 import PortfolioSectorMap from '../features/portfolio/components/PortfolioSectorMap';
-import { refreshBinanceSnapshot } from '../lib/binanceSnapshotClient';
 import PortfolioPerformance from '../features/portfolio/components/PortfolioPerformance';
 
+import { refreshBinanceSnapshot } from '../lib/binanceSnapshotClient';
+import { refreshBybitSnapshot } from '../lib/bybitSnapshotClient';
+
 import '../features/portfolio/styles/portfolio.css';
-// import '../features/portfolio/styles/PortfolioPerformance.css';
+
+// Flag: activa Bybit solo cuando esté configurado en backend
+const HAS_BYBIT =
+  import.meta.env.VITE_HAS_BYBIT === 'true';
 
 export default function Portfolio() {
   const {
@@ -27,12 +32,11 @@ export default function Portfolio() {
     refreshMarketQuotes,
     refreshAll,
     manualAssets,
-    cryptoAssets
+    cryptoAssets,
   } = useApp();
 
   const [investorProfile, setInvestorProfile] =
     useState('moderado');
-
 
   const portfolio = usePortfolioData({
     loading,
@@ -55,6 +59,9 @@ export default function Portfolio() {
     loading,
     refreshMarketQuotes,
     refreshBinanceSnapshot,
+    refreshBybitSnapshot: HAS_BYBIT
+      ? refreshBybitSnapshot
+      : undefined,
     refreshAll,
   });
 
@@ -82,9 +89,14 @@ export default function Portfolio() {
         quoteMessage={quoteMessage}
         quoteError={quoteError}
       />
-<PortfolioPerformance historicalContext={portfolio.historicalContext} />
+
+      <PortfolioPerformance
+        historicalContext={portfolio.historicalContext}
+      />
+
       <PortfolioHeatmap
-        assets={portfolio.heatmapAssets}
+        assets={portfolio.assets}
+        futuresAssets={portfolio.futuresAssets}
         bobRate={portfolio.bobRate}
       />
 

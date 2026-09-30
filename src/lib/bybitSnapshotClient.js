@@ -1,4 +1,4 @@
-// src/lib/binanceSnapshotClient.js
+// src/lib/bybitSnapshotClient.js
 import {
   getFunctions,
   httpsCallable,
@@ -8,31 +8,31 @@ import { app } from './firebase';
 
 // Debe coincidir con:
 // region: "asia-east1"
-// en functions/triggers/binanceSnapshotOnDemand.js
+// en functions/triggers/bybitSnapshotOnDemand.js
 const functions = getFunctions(app, 'asia-east1');
 
-const refreshBinanceSnapshotCallable = httpsCallable(
+const refreshBybitSnapshotCallable = httpsCallable(
   functions,
-  'refreshBinanceSnapshotOnDemand',
+  'refreshBybitSnapshotOnDemand',
 );
 
-export async function refreshBinanceSnapshot() {
-  console.log('[Binance client] Iniciando callable');
+export async function refreshBybitSnapshot() {
+  console.log('[Bybit client] Iniciando callable');
 
   try {
-    const result = await refreshBinanceSnapshotCallable({
+    const result = await refreshBybitSnapshotCallable({
       slot: 'manual',
     });
 
     console.log(
-      '[Binance client] Respuesta recibida',
+      '[Bybit client] Respuesta recibida',
       result.data,
     );
 
     return result.data;
   } catch (error) {
     console.error(
-      '[Binance client] Error callable',
+      '[Bybit client] Error callable',
       {
         code: error?.code,
         message: error?.message,

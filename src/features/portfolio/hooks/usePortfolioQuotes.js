@@ -4,13 +4,25 @@ import {
   useState,
 } from "react";
 
+function normalizeResult(result, fallbackMessage) {
+  if (result?.ok === false) {
+    throw new Error(
+      result?.error ||
+        result?.message ||
+        fallbackMessage,
+    );
+  }
+
+  return result ?? null;
+}
+
 export function usePortfolioQuotes({
   refreshMarketQuotes,
   refreshBinanceSnapshot,
+  refreshBybitSnapshot,
   refreshAll,
 } = {}) {
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -18,10 +30,12 @@ export function usePortfolioQuotes({
     async ({
       force = false,
       includeBinance = false,
+      includeBybit = false,
     } = {}) => {
       if (refreshing) {
         const nextMessage =
           "Ya se está ejecutando una actualización.";
+
         setMessage(nextMessage);
 
         return {
@@ -37,9 +51,18 @@ export function usePortfolioQuotes({
         includeBinance &&
         typeof refreshBinanceSnapshot === "function";
 
-      if (!canRefreshMarket && !canRefreshBinance) {
+      const canRefreshBybit =
+        includeBybit &&
+        typeof refreshBybitSnapshot === "function";
+
+      if (
+        !canRefreshMarket &&
+        !canRefreshBinance &&
+        !canRefreshBybit
+      ) {
         const nextError =
           "No hay ninguna función de actualización disponible.";
+
         setError(nextError);
 
         return {
@@ -54,45 +77,56 @@ export function usePortfolioQuotes({
 
       try {
         const tasks = [];
+        const sources = [];
 
+        // 1. Quantfury / market quotes
         if (canRefreshMarket) {
+          sources.push("cotizaciones");
+
           tasks.push(
             Promise.resolve(
               refreshMarketQuotes({ force }),
-            ).then((result) => {
-              if (result?.ok === false) {
-                throw new Error(
-                  result.message ||
-                    "Falló la actualización de cotizaciones.",
-                );
-              }
-
-              return {
-                source: "quantfury",
+            ).then((result) => ({
+              source: "quantfury",
+              result: normalizeResult(
                 result,
-              };
-            }),
+                "Falló la actualización de cotizaciones.",
+              ),
+            })),
           );
         }
 
+        // 2. Binance
         if (canRefreshBinance) {
+          sources.push("Binance");
+
           tasks.push(
             Promise.resolve(
               refreshBinanceSnapshot(),
-            ).then((result) => {
-              if (result?.ok === false) {
-                throw new Error(
-                  result.error ||
-                    result.message ||
-                    "Falló el snapshot de Binance.",
-                );
-              }
-
-              return {
-                source: "binance",
+            ).then((result) => ({
+              source: "binance",
+              result: normalizeResult(
                 result,
-              };
-            }),
+                "Falló el snapshot de Binance.",
+              ),
+            })),
+          );
+        }
+
+        // 3. Bybit
+        if (canRefreshBybit) {
+          sources.push("Bybit");
+
+          tasks.push(
+            Promise.resolve(
+              refreshBybitSnapshot(),
+            ).then((result) => ({
+              source: "bybit",
+              result: normalizeResult(
+                result,
+                "Falló el snapshot de Bybit.",
+              ),
+            })),
           );
         }
 
@@ -102,9 +136,10 @@ export function usePortfolioQuotes({
           await refreshAll();
         }
 
-        const nextMessage = includeBinance
-          ? "Binance y cotizaciones actualizados."
-          : "Cotizaciones actualizadas.";
+        const nextMessage =
+          sources.length > 0
+            ? `${sources.join(" y ")} actualizados.`
+            : "Datos actualizados.";
 
         setMessage(nextMessage);
 
@@ -112,6 +147,7 @@ export function usePortfolioQuotes({
           ok: true,
           force,
           includeBinance,
+          includeBybit,
           results,
         };
       } catch (refreshError) {
@@ -132,6 +168,7 @@ export function usePortfolioQuotes({
     [
       refreshAll,
       refreshBinanceSnapshot,
+      refreshBybitSnapshot,
       refreshMarketQuotes,
       refreshing,
     ],
@@ -142,6 +179,7 @@ export function usePortfolioQuotes({
       refreshQuotes({
         force: true,
         includeBinance: true,
+        includeBybit: true,
       }),
     [refreshQuotes],
   );
@@ -151,6 +189,7 @@ export function usePortfolioQuotes({
       refreshQuotes({
         force: true,
         includeBinance: false,
+        includeBybit: false,
       }),
     [refreshQuotes],
   );

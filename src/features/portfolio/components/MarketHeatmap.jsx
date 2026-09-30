@@ -1,3 +1,4 @@
+// src/features/portfolio/components/MarketHeatmap.jsx
 import React, {
   useCallback,
   useEffect,
@@ -45,6 +46,8 @@ import {
 } from 'animejs';
 
 import '../styles/MarketHeatmap.css';
+
+// ─── Formatters ─────────────────────────────────────────────
 
 const fmt = (value, digits = 0) => {
   if (value === null || value === undefined) {
@@ -96,6 +99,8 @@ function firstFiniteNumber(...values) {
 
   return null;
 }
+
+// ─── Getters de assets ──────────────────────────────────────
 
 function getRole(asset = {}) {
   return (
@@ -248,8 +253,7 @@ function getPerformance(asset = {}) {
       : null;
 
   const costBasisUSD =
-    getCostBasisUSD(asset) ??
-    calculatedCostBasis;
+    getCostBasisUSD(asset) ?? calculatedCostBasis;
 
   const calculatedMarketValue =
     quantity !== null &&
@@ -259,38 +263,29 @@ function getPerformance(asset = {}) {
       : null;
 
   const marketValueUSD =
-    getMarketValueUSD(asset) ??
-    calculatedMarketValue;
+    getMarketValueUSD(asset) ?? calculatedMarketValue;
 
   const pnlUSD =
     explicitPnlUSD ??
-    (
-      costBasisUSD !== null &&
-      marketValueUSD !== null
-        ? marketValueUSD - costBasisUSD
-        : null
-    );
+    (costBasisUSD !== null && marketValueUSD !== null
+      ? marketValueUSD - costBasisUSD
+      : null);
 
   const pnlPct =
     explicitPnlPct ??
-    (
-      pnlUSD !== null &&
-      costBasisUSD !== null &&
-      costBasisUSD > 0
-        ? (pnlUSD / costBasisUSD) * 100
-        : null
-    );
+    (pnlUSD !== null &&
+    costBasisUSD !== null &&
+    costBasisUSD > 0
+      ? (pnlUSD / costBasisUSD) * 100
+      : null);
 
   const dailyChangePct = getDailyChangePct(asset);
-
   const quantityDifference = getQuantityDifference(asset);
 
   const isPartial =
     getEntryPriceConfidence(asset) === 'partial' ||
-    (
-      quantityDifference !== null &&
-      Math.abs(quantityDifference) > 1e-8
-    );
+    (quantityDifference !== null &&
+      Math.abs(quantityDifference) > 1e-8);
 
   return {
     quantity,
@@ -306,58 +301,22 @@ function getPerformance(asset = {}) {
   };
 }
 
+// ─── Meta de roles ──────────────────────────────────────────
+
 const ROLE_META = {
-  core: {
-    color: '#2b7fff',
-    Icon: Landmark,
-    label: 'Core',
-  },
-  growth: {
-    color: '#10b981',
-    Icon: TrendingUp,
-    label: 'Growth',
-  },
-  defensive: {
-    color: '#facc15',
-    Icon: ShieldCheck,
-    label: 'Defense',
-  },
-  liquidity: {
-    color: '#2b7fff',
-    Icon: Droplets,
-    label: 'Liq',
-  },
-  yield: {
-    color: '#2b7fff',
-    Icon: Zap,
-    label: 'Yield',
-  },
-  speculative: {
-    color: '#f43f5e',
-    Icon: Dices,
-    label: 'Spec',
-  },
-  trading: {
-    color: '#a855f7',
-    Icon: RefreshCw,
-    label: 'Trade',
-  },
-  reserve: {
-    color: '#a4a19b',
-    Icon: Briefcase,
-    label: 'Reserve',
-  },
-  patrimony: {
-    color: '#f97316',
-    Icon: Building2,
-    label: 'Patrimony',
-  },
-  unclassified: {
-    color: '#a4a19b',
-    Icon: Briefcase,
-    label: 'Other',
-  },
+  core: { color: '#2b7fff', Icon: Landmark, label: 'Core' },
+  growth: { color: '#10b981', Icon: TrendingUp, label: 'Growth' },
+  defensive: { color: '#facc15', Icon: ShieldCheck, label: 'Defense' },
+  liquidity: { color: '#2b7fff', Icon: Droplets, label: 'Liq' },
+  yield: { color: '#2b7fff', Icon: Zap, label: 'Yield' },
+  speculative: { color: '#f43f5e', Icon: Dices, label: 'Spec' },
+  trading: { color: '#a855f7', Icon: RefreshCw, label: 'Trade' },
+  reserve: { color: '#a4a19b', Icon: Briefcase, label: 'Reserve' },
+  patrimony: { color: '#f97316', Icon: Building2, label: 'Patrimony' },
+  unclassified: { color: '#a4a19b', Icon: Briefcase, label: 'Other' },
 };
+
+// ─── Iconos por símbolo ────────────────────────────────────
 
 const SI_SLUGS = {
   BTC: 'bitcoin',
@@ -376,8 +335,6 @@ const SI_SLUGS = {
   USDT: 'tether',
   USDC: 'usdcoin',
   DAI: 'dai',
-
-
 };
 
 const SI_COLORS = {
@@ -608,10 +565,7 @@ function resolveIconLucide(asset = {}) {
   };
 }
 
-function AssetIcon({
-  asset,
-  size = 16,
-}) {
+function AssetIcon({ asset, size = 16 }) {
   const symbol = String(asset.symbol || '')
     .toUpperCase()
     .split('/')[0];
@@ -653,28 +607,15 @@ function AssetIcon({
   );
 }
 
+// ─── Colores de tile ────────────────────────────────────────
+
 function tileBg(pnlPct, asset) {
   if (pnlPct !== null) {
-    if (pnlPct >= 5) {
-      return 'rgba(5,150,105,0.82)';
-    }
-
-    if (pnlPct >= 2) {
-      return 'rgba(16,185,129,0.60)';
-    }
-
-    if (pnlPct >= 0) {
-      return 'rgba(16,185,129,0.32)';
-    }
-
-    if (pnlPct >= -2) {
-      return 'rgba(244,63,94,0.32)';
-    }
-
-    if (pnlPct >= -5) {
-      return 'rgba(244,63,94,0.58)';
-    }
-
+    if (pnlPct >= 5) return 'rgba(5,150,105,0.82)';
+    if (pnlPct >= 2) return 'rgba(16,185,129,0.60)';
+    if (pnlPct >= 0) return 'rgba(16,185,129,0.32)';
+    if (pnlPct >= -2) return 'rgba(244,63,94,0.32)';
+    if (pnlPct >= -5) return 'rgba(244,63,94,0.58)';
     return 'rgba(225,29,72,0.80)';
   }
 
@@ -686,22 +627,15 @@ function tileBg(pnlPct, asset) {
 
   const role = getRole(asset);
 
-  if (role === 'trading') {
-    return 'rgba(168,85,247,0.15)';
-  }
-
-  if (role === 'speculative') {
-    return 'rgba(244,63,94,0.15)';
-  }
+  if (role === 'trading') return 'rgba(168,85,247,0.15)';
+  if (role === 'speculative') return 'rgba(244,63,94,0.15)';
 
   return 'rgba(30,41,59,0.70)';
 }
 
-function TooltipPortal({
-  asset,
-  anchorRect,
-  performance,
-}) {
+// ─── Tooltip ────────────────────────────────────────────────
+
+function TooltipPortal({ asset, anchorRect, performance }) {
   const tooltipRef = useRef(null);
   const [position, setPosition] = useState(null);
 
@@ -715,12 +649,16 @@ function TooltipPortal({
 
     const gap = 10;
     const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-    let top =
-      anchorRect.top - tooltipRect.height - gap;
+    let top = anchorRect.top - tooltipRect.height - gap;
 
     if (top < 8) {
       top = anchorRect.bottom + gap;
+    }
+
+    if (top + tooltipRect.height > viewportHeight - 8) {
+      top = viewportHeight - tooltipRect.height - 8;
     }
 
     let left =
@@ -760,20 +698,12 @@ function TooltipPortal({
         left: position.left,
         opacity: 1,
       }
-    : {
-        top: -9999,
-        left: -9999,
-        opacity: 0,
-      };
+    : { top: -9999, left: -9999, opacity: 0 };
 
   const pnlLabel = fmtPct(performance.pnlPct);
 
   return ReactDOM.createPortal(
-    <div
-      ref={tooltipRef}
-      className="hm-tooltip"
-      style={style}
-    >
+    <div ref={tooltipRef} className="hm-tooltip" style={style}>
       <div className="hm-tooltip__head">
         <div
           className="hm-tooltip__icon-wrap"
@@ -782,23 +712,17 @@ function TooltipPortal({
             border: `1px solid ${color}40`,
           }}
         >
-          <AssetIcon
-            asset={asset}
-            size={16}
-          />
+          <AssetIcon asset={asset} size={16} />
         </div>
 
         <div>
-          <div className="hm-tooltip__name">
-            {asset.name}
-          </div>
+          <div className="hm-tooltip__name">{asset.name}</div>
 
-          {asset.symbol &&
-            asset.symbol !== asset.name && (
-              <div className="hm-tooltip__symbol">
-                {asset.symbol}
-              </div>
-            )}
+          {asset.symbol && asset.symbol !== asset.name && (
+            <div className="hm-tooltip__symbol">
+              {asset.symbol}
+            </div>
+          )}
         </div>
       </div>
 
@@ -806,14 +730,10 @@ function TooltipPortal({
 
       <div className="hm-tooltip__rows">
         <div className="hm-tooltip__row">
-          <span className="hm-tooltip__lbl">
-            Valor
-          </span>
-
+          <span className="hm-tooltip__lbl">Valor</span>
           <span className="hm-tooltip__val">
             {fmt(
-              performance.marketValueUSD ??
-                asset.valueUSD,
+              performance.marketValueUSD ?? asset.valueUSD,
               2,
             )}
           </span>
@@ -822,10 +742,7 @@ function TooltipPortal({
         {asset.weightPct !== null &&
           asset.weightPct !== undefined && (
             <div className="hm-tooltip__row">
-              <span className="hm-tooltip__lbl">
-                Peso global
-              </span>
-
+              <span className="hm-tooltip__lbl">Peso global</span>
               <span className="hm-tooltip__val">
                 {Number(asset.weightPct).toFixed(1)}%
               </span>
@@ -834,27 +751,18 @@ function TooltipPortal({
 
         {performance.quantity !== null && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              Cantidad
-            </span>
-
+            <span className="hm-tooltip__lbl">Cantidad</span>
             <span className="hm-tooltip__val">
-              {performance.quantity.toLocaleString(
-                'en-US',
-                {
-                  maximumFractionDigits: 8,
-                },
-              )}
+              {performance.quantity.toLocaleString('en-US', {
+                maximumFractionDigits: 8,
+              })}
             </span>
           </div>
         )}
 
         {performance.entryPrice !== null && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              Entrada
-            </span>
-
+            <span className="hm-tooltip__lbl">Entrada</span>
             <span className="hm-tooltip__val">
               {fmt(performance.entryPrice, 2)}
             </span>
@@ -863,10 +771,7 @@ function TooltipPortal({
 
         {performance.marketPrice !== null && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              Actual
-            </span>
-
+            <span className="hm-tooltip__lbl">Actual</span>
             <span className="hm-tooltip__val">
               {fmt(performance.marketPrice, 2)}
             </span>
@@ -875,10 +780,7 @@ function TooltipPortal({
 
         {performance.costBasisUSD !== null && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              Costo
-            </span>
-
+            <span className="hm-tooltip__lbl">Costo</span>
             <span className="hm-tooltip__val">
               {fmt(performance.costBasisUSD, 2)}
             </span>
@@ -887,15 +789,10 @@ function TooltipPortal({
 
         {performance.pnlUSD !== null && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              P&L USD
-            </span>
-
+            <span className="hm-tooltip__lbl">P&L USD</span>
             <span
               className={`hm-tooltip__pnl ${
-                performance.pnlUSD >= 0
-                  ? 'up'
-                  : 'down'
+                performance.pnlUSD >= 0 ? 'up' : 'down'
               }`}
             >
               {fmt(performance.pnlUSD, 2)}
@@ -905,15 +802,10 @@ function TooltipPortal({
 
         {pnlLabel && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              P&L %
-            </span>
-
+            <span className="hm-tooltip__lbl">P&L %</span>
             <span
               className={`hm-tooltip__pnl ${
-                performance.pnlPct >= 0
-                  ? 'up'
-                  : 'down'
+                performance.pnlPct >= 0 ? 'up' : 'down'
               }`}
             >
               {pnlLabel}
@@ -923,10 +815,7 @@ function TooltipPortal({
 
         {performance.dailyChangePct !== null && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              Hoy
-            </span>
-
+            <span className="hm-tooltip__lbl">Hoy</span>
             <span
               className={`hm-tooltip__pnl ${
                 performance.dailyChangePct >= 0
@@ -941,10 +830,7 @@ function TooltipPortal({
 
         {performance.isPartial && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              Entrada
-            </span>
-
+            <span className="hm-tooltip__lbl">Entrada</span>
             <span
               className="hm-tooltip__val"
               style={{ color: '#facc15' }}
@@ -956,10 +842,7 @@ function TooltipPortal({
 
         {isDeFi && aprPct !== null && (
           <div className="hm-tooltip__row">
-            <span className="hm-tooltip__lbl">
-              APR
-            </span>
-
+            <span className="hm-tooltip__lbl">APR</span>
             <span
               className="hm-tooltip__val"
               style={{ color: '#2b7fff' }}
@@ -991,17 +874,11 @@ function TooltipPortal({
               <roleMeta.Icon
                 size={10}
                 color={roleMeta.color}
-                style={{
-                  marginRight: 5,
-                  flexShrink: 0,
-                }}
+                style={{ marginRight: 5, flexShrink: 0 }}
               />
-
               <span
                 className="hm-tooltip__role"
-                style={{
-                  color: roleMeta.color,
-                }}
+                style={{ color: roleMeta.color }}
               >
                 {roleMeta.label}
               </span>
@@ -1009,25 +886,13 @@ function TooltipPortal({
           )}
 
           {roleMeta && sector && (
-            <span
-              style={{
-                margin: '0 4px',
-                opacity: 0.3,
-              }}
-            >
+            <span style={{ margin: '0 4px', opacity: 0.3 }}>
               |
             </span>
           )}
 
           {sector && (
-            <span
-              className="hm-tooltip__sector"
-              style={{
-                fontSize: '0.55rem',
-                opacity: 0.7,
-                textTransform: 'uppercase',
-              }}
-            >
+            <span className="hm-tooltip__sector">
               {sector.replace(/_/g, ' ')}
             </span>
           )}
@@ -1038,11 +903,9 @@ function TooltipPortal({
   );
 }
 
-function HeatTile({
-  asset,
-  roleColor,
-  isSmallBlock,
-}) {
+// ─── HeatTile ───────────────────────────────────────────────
+
+function HeatTile({ asset, roleColor, isSmallBlock }) {
   const [hover, setHover] = useState(false);
   const [anchorRect, setAnchorRect] = useState(null);
   const tileRef = useRef(null);
@@ -1054,9 +917,7 @@ function HeatTile({
 
   const onMouseEnter = useCallback(() => {
     if (tileRef.current) {
-      setAnchorRect(
-        tileRef.current.getBoundingClientRect(),
-      );
+      setAnchorRect(tileRef.current.getBoundingClientRect());
     }
 
     setHover(true);
@@ -1072,30 +933,23 @@ function HeatTile({
   const background = tileBg(pnlPct, asset);
 
   const ticker =
-    String(asset.symbol || '')
-      .split('/')[0] ||
+    String(asset.symbol || '').split('/')[0] ||
     asset.name?.slice(0, 5).toUpperCase() ||
     '?';
 
-  const valueUSD = firstFiniteNumber(
-    performance.marketValueUSD,
-    asset.valueUSD,
-  ) ?? 0;
+  const valueUSD =
+    firstFiniteNumber(
+      performance.marketValueUSD,
+      asset.valueUSD,
+    ) ?? 0;
 
-  const isMini =
-    isSmallBlock ||
-    valueUSD < 500;
+  const isMini = isSmallBlock || valueUSD < 500;
 
   return (
     <div
       ref={tileRef}
-      className={`hm-tile ${
-        isMini
-          ? 'hm-tile--mini'
-          : ''
-      }`}
+      className={`hm-tile ${isMini ? 'hm-tile--mini' : ''}`}
       style={{
-        flex: `${Math.max(valueUSD, 1)} 1 auto`,
         background,
         border: '1px solid rgba(255,255,255,0.06)',
         boxShadow: hover
@@ -1115,23 +969,16 @@ function HeatTile({
 
       <div className="hm-tile__inner">
         <div className="hm-tile__icon-wrap">
-          <AssetIcon
-            asset={asset}
-            size={isMini ? 12 : 17}
-          />
+          <AssetIcon asset={asset} size={isMini ? 12 : 17} />
         </div>
 
-        <span className="hm-tile__ticker">
-          {ticker}
-        </span>
+        <span className="hm-tile__ticker">{ticker}</span>
 
         {pctLabel && (
           <span
             className="hm-tile__change"
             style={{
-              color: pnlPct >= 0
-                ? '#d1fae5'
-                : '#ffe4e6',
+              color: pnlPct >= 0 ? '#d1fae5' : '#ffe4e6',
             }}
           >
             {pctLabel}
@@ -1150,18 +997,19 @@ function HeatTile({
   );
 }
 
+// ─── RoleBlock ──────────────────────────────────────────────
+
 function RoleBlock({
   role,
   assets,
   roleTotalValueUSD,
   totalValueUSD,
+  equalWidth = false,
 }) {
   const contentRef = useRef(null);
 
   useEffect(() => {
-    if (!contentRef.current) {
-      return;
-    }
+    if (!contentRef.current) return;
 
     animate(
       contentRef.current.querySelectorAll('.hm-tile'),
@@ -1175,8 +1023,7 @@ function RoleBlock({
     );
   }, []);
 
-  const meta = ROLE_META[role] ??
-    ROLE_META.unclassified;
+  const meta = ROLE_META[role] ?? ROLE_META.unclassified;
 
   const roleGlobalPct =
     totalValueUSD > 0
@@ -1185,20 +1032,24 @@ function RoleBlock({
 
   const sortedAssets = [...assets].sort(
     (left, right) =>
-      (right.valueUSD || 0) -
-      (left.valueUSD || 0),
+      (right.valueUSD || 0) - (left.valueUSD || 0),
   );
 
-  const isSmallBlock =
-    roleGlobalPct < 12;
+  const isSmallBlock = roleGlobalPct < 12;
 
   const Icon = meta.Icon;
+
+  // Modo normal: proporcional al peso
+  // Modo equalWidth: todos iguales (para fila de roles chicos)
+  const flexValue = equalWidth
+    ? 1
+    : Math.max(roleGlobalPct, 1);
 
   return (
     <div
       className="hm-group"
       style={{
-        flex: `${Math.max(roleGlobalPct, 1)} 0 0`,
+        flex: `${flexValue} 1 0`,
         '--role-color': meta.color,
         border: `2px solid ${meta.color}88`,
         boxShadow: `0 4px 20px -2px ${meta.color}15`,
@@ -1223,12 +1074,9 @@ function RoleBlock({
             strokeWidth={2.5}
             color={meta.color}
           />
-
           <span
             className="hm-group__title"
-            style={{
-              color: meta.color,
-            }}
+            style={{ color: meta.color }}
           >
             {meta.label.toUpperCase().slice(0, 7)}
           </span>
@@ -1236,19 +1084,13 @@ function RoleBlock({
 
         <span
           className="hm-group__pct"
-          style={{
-            color: meta.color,
-            opacity: 0.8,
-          }}
+          style={{ color: meta.color, opacity: 0.8 }}
         >
           {roleGlobalPct.toFixed(1)}%
         </span>
       </div>
 
-      <div
-        className="hm-group__content"
-        ref={contentRef}
-      >
+      <div className="hm-group__content" ref={contentRef}>
         {sortedAssets.map((asset) => (
           <HeatTile
             key={asset.id || asset.symbol || asset.name}
@@ -1262,20 +1104,345 @@ function RoleBlock({
   );
 }
 
+// ─── Helpers de futuros ─────────────────────────────────────
+
+function getPositionSide(asset = {}) {
+  return (
+    asset.positionSide ??
+    asset.sourceMeta?.positionSide ??
+    null
+  );
+}
+
+function getNotionalUSD(asset = {}) {
+  return firstFiniteNumber(
+    asset.notionalUSD,
+    asset.sourceMeta?.notionalUSD,
+    asset.marketValueUSD,
+    asset.valueUSD,
+  );
+}
+
+function getLeverage(asset = {}) {
+  return firstFiniteNumber(
+    asset.leverage,
+    asset.sourceMeta?.leverage,
+  );
+}
+
+function getLiquidationDistancePct(asset = {}) {
+  return firstFiniteNumber(
+    asset.liquidationDistancePct,
+    asset.sourceMeta?.liquidationDistancePct,
+  );
+}
+
+/**
+ * isFuturesAsset — versión corregida *
+ * Solo retorna true si:
+ * 1. type === 'futures' (Binance USD-M / Bybit linear)
+ * 2. positionSide es LONG o SHORT (nunca spot/stablecoins)
+ * 3. groupKey === 'binance_usdm' o 'bybit' con notional > 0
+ *
+ * NO usa `source === 'binance'` porque Binance tiene spot + futuros.
+ */
+function isFuturesAsset(asset = {}) {
+  // 1. Verificación directa por type
+  if (asset.type === 'futures') {
+    return true;
+  }
+
+  // 2. Verificación por positionSide
+  const positionSide = getPositionSide(asset);
+
+  if (positionSide === 'LONG' || positionSide === 'SHORT') {
+    return true;
+  }
+
+  // 3. Verificación por groupKey de derivados reales
+  const groupKey = String(asset.groupKey ?? '').toLowerCase();
+  const source = String(asset.source ?? '').toLowerCase();
+
+  const isDerivativesGroup =
+    groupKey === 'binance_usdm' ||
+    groupKey === 'bybit' ||
+    source === 'bybit';
+
+  if (isDerivativesGroup) {
+    const notionalUSD = getNotionalUSD(asset);
+
+    if (notionalUSD !== null && notionalUSD > 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getExchangeLabel(asset = {}) {
+  const source = String(
+    asset.source ?? asset.groupKey ?? '',
+  ).toLowerCase();
+
+  if (source.includes('bybit')) return 'Bybit';
+  if (source.includes('binance')) return 'Binance';
+
+  return source.toUpperCase() || 'EX';
+}
+
+// ─── FuturesTile ────────────────────────────────────────────
+
+function FuturesTile({ asset }) {
+  const [hover, setHover] = useState(false);
+  const [anchorRect, setAnchorRect] = useState(null);
+  const tileRef = useRef(null);
+
+  const positionSide = getPositionSide(asset) || 'LONG';
+  const isShort = positionSide === 'SHORT';
+
+  const notionalUSD = getNotionalUSD(asset);
+  const pnlUSD = getUnrealizedPnlUSD(asset);
+  const pnlPct = getUnrealizedPnlPct(asset);
+  const leverage = getLeverage(asset);
+  const liquidationDistancePct =
+    getLiquidationDistancePct(asset);
+
+  const isPositivePnl = pnlUSD !== null && pnlUSD >= 0;
+
+  const bg = isPositivePnl
+    ? 'rgba(16,185,129,0.22)'
+    : pnlUSD !== null
+      ? 'rgba(244,63,94,0.22)'
+      : 'rgba(168,85,247,0.18)';
+
+  const sideColor = isShort ? '#f43f5e' : '#10b981';
+  const sideLabel = isShort ? 'SHORT' : 'LONG';
+
+  const onMouseEnter = useCallback(() => {
+    if (tileRef.current) {
+      setAnchorRect(tileRef.current.getBoundingClientRect());
+    }
+
+    setHover(true);
+  }, []);
+
+  const onMouseLeave = useCallback(() => {
+    setHover(false);
+    setAnchorRect(null);
+  }, []);
+
+  const rawTicker =
+    String(asset.symbol || asset.name || '')
+      .replace(/USDT$|USD$/, '')
+      .slice(0, 8) || '?';
+
+  const exchangeLabel = getExchangeLabel(asset);
+
+  return (
+    <div
+      ref={tileRef}
+      className="hm-futures-tile"
+      style={{
+        background: bg,
+        border: `1px solid ${sideColor}55`,
+      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <div className="hm-futures-tile__top">
+        <div className="hm-futures-tile__icon-wrap">
+          <AssetIcon asset={asset} size={14} />
+        </div>
+
+        <div className="hm-futures-tile__symbol-group">
+          <span className="hm-futures-tile__symbol">
+            {rawTicker}
+          </span>
+          <span className="hm-futures-tile__exchange">
+            {exchangeLabel}
+          </span>
+        </div>
+
+        <span
+          className="hm-futures-tile__side"
+          style={{ color: sideColor }}
+        >
+          {sideLabel}
+        </span>
+      </div>
+
+      <div className="hm-futures-tile__metrics">
+        {notionalUSD !== null && (
+          <div className="hm-futures-tile__row">
+            <span className="hm-futures-tile__lbl">
+              Notional
+            </span>
+            <span className="hm-futures-tile__val">
+              {fmt(notionalUSD, 2)}
+            </span>
+          </div>
+        )}
+
+        {pnlUSD !== null && (
+          <div className="hm-futures-tile__row">
+            <span className="hm-futures-tile__lbl">P&L</span>
+            <span
+              className="hm-futures-tile__val"
+              style={{
+                color: isPositivePnl ? '#10b981' : '#f43f5e',
+              }}
+            >
+              {fmt(pnlUSD, 2)}
+              {pnlPct !== null && ` (${fmtPct(pnlPct)})`}
+            </span>
+          </div>
+        )}
+
+        {leverage !== null && leverage > 1 && (
+          <div className="hm-futures-tile__row">
+            <span className="hm-futures-tile__lbl">Lev</span>
+            <span className="hm-futures-tile__val">
+              {leverage}x
+            </span>
+          </div>
+        )}
+
+        {liquidationDistancePct !== null && (
+          <div className="hm-futures-tile__row">
+            <span className="hm-futures-tile__lbl">
+              Liq. dist.
+            </span>
+            <span
+              className="hm-futures-tile__val"
+              style={{
+                color:
+                  liquidationDistancePct < 10
+                    ? '#f43f5e'
+                    : liquidationDistancePct < 20
+                      ? '#facc15'
+                      : '#10b981',
+              }}
+            >
+              {liquidationDistancePct.toFixed(2)}%
+            </span>
+          </div>
+        )}
+      </div>
+
+      {hover && anchorRect && (
+        <TooltipPortal
+          asset={asset}
+          anchorRect={anchorRect}
+          performance={{
+            quantity: getQuantity(asset),
+            entryPrice: getEntryPrice(asset),
+            marketPrice: getMarketPrice(asset),
+            costBasisUSD: getCostBasisUSD(asset),
+            marketValueUSD: notionalUSD,
+            pnlUSD,
+            pnlPct,
+            dailyChangePct: null,
+            quantityDifference: null,
+            isPartial: false,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── FuturesBlock ───────────────────────────────────────────
+
+function FuturesBlock({ assets }) {
+  if (!assets.length) return null;
+
+  const totalNotional = assets.reduce(
+    (sum, asset) => sum + (getNotionalUSD(asset) ?? 0),
+    0,
+  );
+
+  const totalPnl = assets.reduce(
+    (sum, asset) => sum + (getUnrealizedPnlUSD(asset) ?? 0),
+    0,
+  );
+
+  const shortCount = assets.filter(
+    (asset) => getPositionSide(asset) === 'SHORT',
+  ).length;
+
+  const longCount = assets.length - shortCount;
+
+  return (
+    <div className="hm-futures">
+      <div className="hm-futures__head">
+        <span className="hm-futures__title">
+          Futuros · Derivados
+        </span>
+
+        <div className="hm-futures__stats">
+          {longCount > 0 && (
+            <span className="hm-futures__stat hm-futures__stat--long">
+              {longCount} LONG
+            </span>
+          )}
+
+          {shortCount > 0 && (
+            <span className="hm-futures__stat hm-futures__stat--short">
+              {shortCount} SHORT
+            </span>
+          )}
+
+          <span className="hm-futures__stat">
+            Notional {fmt(totalNotional, 2)}
+          </span>
+
+          <span
+            className={`hm-futures__stat ${
+              totalPnl >= 0
+                ? 'hm-futures__stat--up'
+                : 'hm-futures__stat--down'
+            }`}
+          >
+            P&L {fmt(totalPnl, 2)}
+          </span>
+        </div>
+      </div>
+
+      <div className="hm-futures__grid">
+        {assets.map((asset) => (
+          <FuturesTile
+            key={
+              asset.id ||
+              `${asset.source || asset.groupKey}-${asset.symbol}-${asset.positionSide ?? ''}`
+            }
+            asset={asset}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Componente principal ───────────────────────────────────
+
 export default function MarketHeatmap({
   assets = [],
+  futuresAssets = [],
 }) {
   const gridRef = useRef(null);
 
   const investableAssets = useMemo(
     () =>
       assets.filter((asset) => {
+        if (isFuturesAsset(asset)) return false;
+
         const role = getRole(asset);
-        const valueUSD = firstFiniteNumber(
-          asset.marketValueUSD,
-          asset.market_value_usd,
-          asset.valueUSD,
-        ) ?? 0;
+        const valueUSD =
+          firstFiniteNumber(
+            asset.marketValueUSD,
+            asset.market_value_usd,
+            asset.valueUSD,
+          ) ?? 0;
 
         return (
           role !== 'reserve' &&
@@ -1288,9 +1455,7 @@ export default function MarketHeatmap({
   );
 
   useEffect(() => {
-    if (!gridRef.current) {
-      return;
-    }
+    if (!gridRef.current) return;
 
     animate(
       gridRef.current.querySelectorAll('.hm-group'),
@@ -1305,44 +1470,38 @@ export default function MarketHeatmap({
     );
   }, [investableAssets.length]);
 
-  if (!investableAssets.length) {
+  if (!investableAssets.length && !futuresAssets.length) {
     return null;
   }
 
   const totalValueUSD = investableAssets.reduce(
     (sum, asset) =>
       sum +
-      (
-        firstFiniteNumber(
-          asset.marketValueUSD,
-          asset.market_value_usd,
-          asset.valueUSD,
-        ) ?? 0
-      ),
+      (firstFiniteNumber(
+        asset.marketValueUSD,
+        asset.market_value_usd,
+        asset.valueUSD,
+      ) ?? 0),
     0,
   );
 
-  if (totalValueUSD <= 0) {
-    return null;
-  }
+  const enrichedAssets = investableAssets.map((asset) => {
+    const valueUSD =
+      firstFiniteNumber(
+        asset.marketValueUSD,
+        asset.market_value_usd,
+        asset.valueUSD,
+      ) ?? 0;
 
-  const enrichedAssets = investableAssets.map(
-    (asset) => {
-      const valueUSD =
-        firstFiniteNumber(
-          asset.marketValueUSD,
-          asset.market_value_usd,
-          asset.valueUSD,
-        ) ?? 0;
-
-      return {
-        ...asset,
-        valueUSD,
-        weightPct:
-          (valueUSD / totalValueUSD) * 100,
-      };
-    },
-  );
+    return {
+      ...asset,
+      valueUSD,
+      weightPct:
+        totalValueUSD > 0
+          ? (valueUSD / totalValueUSD) * 100
+          : 0,
+    };
+  });
 
   const byRole = {};
 
@@ -1350,10 +1509,7 @@ export default function MarketHeatmap({
     const role = getRole(asset);
 
     if (!byRole[role]) {
-      byRole[role] = {
-        assets: [],
-        total: 0,
-      };
+      byRole[role] = { assets: [], total: 0 };
     }
 
     byRole[role].assets.push(asset);
@@ -1361,14 +1517,33 @@ export default function MarketHeatmap({
   }
 
   const sortedRoles = Object.entries(byRole)
-    .sort(
-      ([, left], [, right]) =>
-        right.total - left.total,
-    )
-    .map(([key, data]) => ({
-      key,
-      ...data,
-    }));
+    .sort(([, left], [, right]) => right.total - left.total)
+    .map(([key, data]) => ({ key, ...data }));
+
+  // ═══════════════════════════════════════════════════════════
+  // Distribución: roles grandes en 3 filas balanceadas,
+  // roles chicos (< 5%) en una fila dedicada al final
+  // ═══════════════════════════════════════════════════════════
+
+  const SMALL_ROLE_THRESHOLD_PCT = 5;
+
+  const bigRoles = sortedRoles.filter((role) => {
+    const pct =
+      totalValueUSD > 0
+        ? (role.total / totalValueUSD) * 100
+        : 0;
+
+    return pct >= SMALL_ROLE_THRESHOLD_PCT;
+  });
+
+  const smallRoles = sortedRoles.filter((role) => {
+    const pct =
+      totalValueUSD > 0
+        ? (role.total / totalValueUSD) * 100
+        : 0;
+
+    return pct < SMALL_ROLE_THRESHOLD_PCT;
+  });
 
   const rows = [
     { total: 0, roles: [] },
@@ -1376,12 +1551,10 @@ export default function MarketHeatmap({
     { total: 0, roles: [] },
   ];
 
-  for (const role of sortedRoles) {
+  for (const role of bigRoles) {
     const targetRow = rows.reduce(
       (smallest, current) =>
-        current.total < smallest.total
-          ? current
-          : smallest,
+        current.total < smallest.total ? current : smallest,
       rows[0],
     );
 
@@ -1389,37 +1562,42 @@ export default function MarketHeatmap({
     targetRow.total += role.total;
   }
 
-  for (const row of rows) {
-    row.roles.sort(
-      (left, right) =>
-        right.total - left.total,
-    );
+  // Fila dedicada para roles chicos (van al final)
+  if (smallRoles.length > 0) {
+    rows.push({
+      total: smallRoles.reduce(
+        (sum, role) => sum + role.total,
+        0,
+      ),
+      roles: smallRoles,
+      isSmallRolesRow: true,
+    });
   }
 
-  rows.sort(
-    (left, right) =>
-      right.total - left.total,
-  );
+  for (const row of rows) {
+    row.roles.sort((left, right) => right.total - left.total);
+  }
+
+  rows.sort((left, right) => {
+    // La fila de roles chicos va al final
+    if (left.isSmallRolesRow && !right.isSmallRolesRow) return 1;
+    if (right.isSmallRolesRow && !left.isSmallRolesRow) return -1;
+    return right.total - left.total;
+  });
+
+  // ── Performance stats ──
 
   const performanceStats = enrichedAssets.reduce(
     (stats, asset) => {
       const pnlPct = getPerformance(asset).pnlPct;
 
-      if (pnlPct === null) {
-        stats.noData += 1;
-      } else if (pnlPct >= 0) {
-        stats.up += 1;
-      } else {
-        stats.down += 1;
-      }
+      if (pnlPct === null) stats.noData += 1;
+      else if (pnlPct >= 0) stats.up += 1;
+      else stats.down += 1;
 
       return stats;
     },
-    {
-      up: 0,
-      down: 0,
-      noData: 0,
-    },
+    { up: 0, down: 0, noData: 0 },
   );
 
   return (
@@ -1450,23 +1628,12 @@ export default function MarketHeatmap({
         </div>
       </div>
 
-      <div
-        className="hm-grid"
-        ref={gridRef}
-      >
+      <div className="hm-grid" ref={gridRef}>
         {rows.map((row, index) => {
-          if (row.total <= 0) {
-            return null;
-          }
+          if (row.total <= 0) return null;
 
           return (
-            <div
-              key={`row-${index}`}
-              className="hm-row"
-              style={{
-                flex: `${row.total} 0 0`,
-              }}
-            >
+            <div key={`row-${index}`} className="hm-row">
               {row.roles.map((role) => (
                 <RoleBlock
                   key={role.key}
@@ -1474,12 +1641,17 @@ export default function MarketHeatmap({
                   assets={role.assets}
                   roleTotalValueUSD={role.total}
                   totalValueUSD={totalValueUSD}
+                  equalWidth={row.isSmallRolesRow === true}
                 />
               ))}
             </div>
           );
         })}
       </div>
+
+      {futuresAssets.length > 0 && (
+        <FuturesBlock assets={futuresAssets} />
+      )}
     </div>
   );
 }

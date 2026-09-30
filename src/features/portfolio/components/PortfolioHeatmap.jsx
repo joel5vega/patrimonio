@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo,useEffect } from 'react';
 import MarketHeatmap from './MarketHeatmap';
 
 function numberOrNull(value) {
@@ -21,56 +21,80 @@ function calculatePnlPct(asset) {
   return ((currentPrice - entryPrice) / entryPrice) * 100;
 }
 
-export default function PortfolioHeatmap({ assets = [], bobRate }) {
+function normalizeAsset(asset) {
+  const classification = asset.classification || {};
+  const sourceMeta = asset.sourceMeta || {};
+  const pnlPct = calculatePnlPct(asset);
+
+  return {
+    ...asset,
+
+    id: asset.id || `${asset.source || 'manual'}-${asset.symbol}`,
+    symbol: asset.symbol || asset.name || 'N/A',
+    name: asset.name || asset.symbol || 'Activo sin nombre',
+
+    valueUSD: Number(asset.valueUSD || 0),
+    weightPct: Number(asset.weightPct || 0),
+
+    role: asset.role || classification.role || 'unclassified',
+    sector: classification.sector || 'sin_sector',
+    assetClass: classification.assetClass || 'sin_clase',
+    riskLevel: Number(classification.riskLevel || 0),
+
+    source: asset.source || asset.groupKey || 'manual',
+    type: asset.type || 'other',
+
+    quantity: numberOrNull(sourceMeta.quantity),
+    marketPrice: numberOrNull(
+      sourceMeta.marketPrice ?? sourceMeta.priceUSD,
+    ),
+    entryPrice: numberOrNull(sourceMeta.entryPrice),
+
+    pnlUSD: numberOrNull(sourceMeta.unrealizedPnlUSD),
+    pnlPct,
+
+    isNeutral:
+      asset.type === 'stablecoin' ||
+      classification.assetClass === 'efectivo' ||
+      pnlPct === null,
+
+    strategy: asset.strategy || {},
+  };
+}
+
+export default function PortfolioHeatmap({
+  assets = [],
+  futuresAssets = [],
+  bobRate,
+}) {
+  
   const normalizedAssets = useMemo(() => {
     return assets
       .filter((asset) => Number(asset?.valueUSD) > 0)
-      .map((asset) => {
-        const classification = asset.classification || {};
-        const sourceMeta = asset.sourceMeta || {};
-        const pnlPct = calculatePnlPct(asset);
-
-        return {
-          ...asset,
-
-          id: asset.id || `${asset.source || 'manual'}-${asset.symbol}`,
-          symbol: asset.symbol || asset.name || 'N/A',
-          name: asset.name || asset.symbol || 'Activo sin nombre',
-
-          valueUSD: Number(asset.valueUSD || 0),
-          weightPct: Number(asset.weightPct || 0),
-
-          role: asset.role || classification.role || 'unclassified',
-          sector: classification.sector || 'sin_sector',
-          assetClass: classification.assetClass || 'sin_clase',
-          riskLevel: Number(classification.riskLevel || 0),
-
-          source: asset.source || asset.groupKey || 'manual',
-          type: asset.type || 'other',
-
-          quantity: numberOrNull(sourceMeta.quantity),
-          marketPrice: numberOrNull(
-            sourceMeta.marketPrice ?? sourceMeta.priceUSD,
-          ),
-          entryPrice: numberOrNull(sourceMeta.entryPrice),
-
-          pnlUSD: numberOrNull(sourceMeta.unrealizedPnlUSD),
-          pnlPct,
-
-          isNeutral:
-            asset.type === 'stablecoin' ||
-            classification.assetClass === 'efectivo' ||
-            pnlPct === null,
-
-          strategy: asset.strategy || {},
-        };
-      });
+      .map(normalizeAsset);
   }, [assets]);
-  // console.log('normalizedAssets', assets);
 
+  const normalizedFutures = useMemo(() => {
+    return futuresAssets
+      .filter((asset) => {
+        const notional =
+          Number(asset.notionalUSD) ||
+          Number(asset.sourceMeta?.notionalUSD) ||
+          Number(asset.valueUSD);
+
+        return Number.isFinite(notional) && notional > 0;
+      })
+      .map(normalizeAsset);
+  }, [futuresAssets]);
+useEffect(() => {
+  console.log('PortfolioHeatmap recibió:', assets.length);
+  console.log('USDT antes del filtro:', assets.find(a => a.symbol === 'USDT'));
+  console.log('XRP antes del filtro:', assets.find(a => a.symbol === 'XRP'));
+}, [assets]);
   return (
     <MarketHeatmap
       assets={normalizedAssets}
+      futuresAssets={normalizedFutures}
       bobRate={bobRate}
     />
   );
