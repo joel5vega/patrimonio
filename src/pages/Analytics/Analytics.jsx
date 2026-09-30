@@ -82,6 +82,7 @@ export default function Analytics() {
           totalExp={d.totalExp}
           activeGroup={d.activeGroup}
           setActiveGroup={d.setActiveGroup}
+          expenses={d.expenses}
         />
 
         <TopExpenses expenses={d.expenses} />

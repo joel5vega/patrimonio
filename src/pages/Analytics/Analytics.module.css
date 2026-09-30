@@ -449,3 +449,118 @@
   font-weight: 600;
   min-width: 3rem;
 }
+
+
+/* Category → transaction drill-down */
+.categoryBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.categoryDetailRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(48px, 1fr) 36px auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.categoryDetailRow:hover {
+  background: #181818;
+}
+.categoryDetailRowOpen {
+  background: #181818;
+}
+.categoryDetailLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #eeeeee;
+}
+.categoryChevron {
+  flex-shrink: 0;
+  color: #5e5d59;
+}
+.categoryTxCount {
+  margin-left: 4px;
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: #5e5d59;
+}
+.txList {
+  margin: 0 0 8px 8px;
+  padding: 8px 10px;
+  border-left: 2px solid #323232;
+  background: #181818;
+  border-radius: 0 6px 6px 0;
+}
+.txListHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 88px 88px;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #5e5d59;
+}
+.txListHead span:nth-child(2),
+.txListHead span:nth-child(3) {
+  text-align: right;
+}
+.txRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 88px 88px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid #262626;
+  font-size: 0.72rem;
+}
+.txConcept {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #eeeeee;
+  font-weight: 500;
+}
+.txDate {
+  text-align: right;
+  color: #a4a19b;
+  font-size: 0.68rem;
+}
+.txAmount {
+  text-align: right;
+  font-family: 'Fira Code', ui-monospace, monospace;
+  font-weight: 600;
+  color: #e05a68;
+  font-size: 0.72rem;
+}
+.txEmpty {
+  margin: 0;
+  padding: 6px 0;
+  color: #5e5d59;
+  font-size: 0.72rem;
+}
+@media (max-width: 480px) {
+  .categoryDetailRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .categoryDetailBar { display: none; }
+  .txListHead,
+  .txRow {
+    grid-template-columns: minmax(0, 1fr) 72px 72px;
+  }
+}
