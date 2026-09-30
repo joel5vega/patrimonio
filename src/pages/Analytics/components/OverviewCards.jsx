@@ -1,91 +1,89 @@
-// src/pages/Analytics/components/OverviewCards.jsx
-import { Target, ArrowUpRight } from 'lucide-react';
-import DeltaBadge from '../../../ui/DeltaBadge';
-import Sparkline from '../../../ui/Sparkline';
+import styles from '../Analytics.module.css';
 
-export function SummaryCards({ totalInc, prevTotalInc, totalExp, prevTotalExp, balance }) {
-  const prevBalance = prevTotalInc - prevTotalExp;
-  const rows = [
-    { label: 'Ingresos', value: totalInc, prev: prevTotalInc, color: 'text-emerald-400', invert: false },
-    { label: 'Gastos', value: totalExp, prev: prevTotalExp, color: 'text-rose-400', invert: true },
-    { label: 'Balance', value: Math.abs(balance), prev: Math.abs(prevBalance), color: balance >= 0 ? 'text-teal-400' : 'text-rose-400', invert: false },
-  ];
+function money(value) {
+  return `Bs ${Number(value || 0).toLocaleString('es-BO', { maximumFractionDigits: 0 })}`;
+}
+
+function Delta({ current, previous, invert = false }) {
+  if (previous == null || !Number.isFinite(Number(previous))) return null;
+  if (Number(previous) === 0) return <span className={styles.deltaNeutral}>sin base</span>;
+
+  const change = ((Number(current) - Number(previous)) / Math.abs(Number(previous))) * 100;
+  const positive = invert ? change < 0 : change > 0;
+  const negative = invert ? change > 0 : change < 0;
+  const cls = positive ? styles.deltaPositive : negative ? styles.deltaNegative : styles.deltaNeutral;
 
   return (
-    <div className="grid grid-cols-3 gap-3 analytics-card">
-      {rows.map(({ label, value, prev, color, invert }) => (
-        <div key={label} className="bg-[#1f1f1f] rounded-lg p-3 border border-white/5">
-          <p className="text-10px text-[#eeeeee]/40 mb-1">{label}</p>
-          <p className={`text-sm font-bold ${color}`}>
-            Bs {value.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
-          </p>
-          <div className="mt-1"><DeltaBadge current={value} previous={prev} invert={invert} /></div>
+    <span className={cls}>
+      {change > 0 ? '↑' : change < 0 ? '↓' : '→'} {Math.abs(change).toFixed(0)}%
+    </span>
+  );
+}
+
+function Card({ label, value, hint, previous, invert = false, tone = 'neutral' }) {
+  return (
+    <div className={styles.metricCell}>
+      <p className={styles.metricLabel}>{label}</p>
+      <p className={`${styles.metricValue} ${styles[`tone_${tone}`]}`}>
+        {typeof value === 'number' ? money(value) : value}
+      </p>
+      {hint && <p className={styles.kpiHint}>{hint}</p>}
+      {previous != null && (
+        <div className={styles.metricDelta}>
+          <Delta current={value} previous={previous} invert={invert} />
+          <span className={styles.deltaLabel}>vs anterior</span>
         </div>
-      ))}
+      )}
     </div>
   );
 }
 
-export function KpiCards({ savingsRate, monthlyTrend, avgMonthlyExp, projectedExp, currentMonthInc, period, daysLeft, dailyBudget, now }) {
+export default function OverviewCards({ current, previous }) {
+  const balanceTone = current.netCashflow >= 0 ? 'income' : 'expense';
+
   return (
-    <div className="grid grid-cols-2 gap-3 analytics-card">
-      <div className="bg-[#1f1f1f] rounded-lg p-4 border border-white/5">
-        <div className="flex justify-between items-start mb-2">
-          <p className="text-10px text-[#eeeeee]/40">Tasa de ahorro</p>
-          <Target size={14} className="text-[#eeeeee]/20" />
-        </div>
-        <p className={`text-xl font-bold ${savingsRate >= 20 ? 'text-emerald-400' : savingsRate >= 10 ? 'text-yellow-400' : 'text-rose-400'}`}>
-          {savingsRate.toFixed(1)}%
-        </p>
-        <p className="text-10px text-[#eeeeee]/30 mt-1">Meta: 20%</p>
-        <div className="mt-2 h-1.5 bg-[#1f1f1f]/5 rounded overflow-hidden">
-          <div
-            className={`h-full rounded transition-all duration-700 ${savingsRate >= 20 ? 'bg-emerald-500' : savingsRate >= 10 ? 'bg-yellow-500' : 'bg-rose-500'}`}
-            style={{ width: `${Math.min(Math.max(savingsRate, 0), 100)}%` }}
-          />
+    <section className={styles.card}>
+      <div className={styles.sectionHeader}>
+        <div>
+          <h2 className={styles.sectionTitle}>Resumen del período</h2>
+          <p className={styles.sectionHint}>Flujos registrados, sin transferencias internas</p>
         </div>
       </div>
 
-      <div className="bg-[#1f1f1f] rounded-lg p-4 border border-white/5">
-        <div className="flex justify-between items-start mb-2">
-          <p className="text-10px text-[#eeeeee]/40">Prom. mes</p>
-          <Sparkline data={monthlyTrend.map((m) => m.exp)} color="#2b7fff" />
-        </div>
-        <p className="text-xl font-bold text-[#eeeeee]/80">
-          Bs {avgMonthlyExp.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
-        </p>
-        <p className="text-10px text-[#eeeeee]/30 mt-1">últimos 3 meses</p>
+      <div className={styles.metricGrid}>
+        <Card
+          label="Ingresos"
+          value={current.income}
+          previous={previous?.income}
+          tone="income"
+        />
+        <Card
+          label="Consumo"
+          value={current.expenses}
+          previous={previous?.expenses}
+          invert
+          tone="expense"
+        />
+        <Card
+          label="Inversión"
+          value={current.investments}
+          previous={previous?.investments}
+          tone="investment"
+        />
+        <Card
+          label="Flujo neto"
+          value={current.netCashflow}
+          previous={previous?.netCashflow}
+          tone={balanceTone}
+          hint="Ingresos − consumo − inversión"
+        />
+        <Card
+          label="Tasa de ahorro"
+          value={current.savingsRate == null ? '—' : `${current.savingsRate.toFixed(1)}%`}
+          tone={current.savingsRate >= 20 ? 'income' : 'neutral'}
+          hint="Ingresos no destinados a consumo"
+        />
       </div>
-
-      {projectedExp !== null && (
-        <div className="bg-[#1f1f1f] rounded-lg p-4 border border-white/5">
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-10px text-[#eeeeee]/40">Proyección mes</p>
-            <ArrowUpRight size={14} className="text-[#eeeeee]/20" />
-          </div>
-          <p className={`text-xl font-bold ${projectedExp > currentMonthInc ? 'text-rose-400' : 'text-[#eeeeee]/80'}`}>
-            Bs {projectedExp.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
-          </p>
-          <p className="text-10px text-[#eeeeee]/30 mt-1">Ritmo actual (día {now.getDate()})</p>
-        </div>
-      )}
-
-      {period === '1m' && (
-        <div className="bg-[#1f1f1f] rounded-lg p-4 border border-white/5">
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-10px text-[#eeeeee]/40">Disponible</p>
-            <span className="text-10px text-[#eeeeee]/30">{daysLeft} días restantes</span>
-          </div>
-          <p className={`text-xl font-bold ${dailyBudget > 0 ? 'text-teal-400' : 'text-rose-400'}`}>
-            Bs {Math.max(dailyBudget, 0).toLocaleString('es-BO', { maximumFractionDigits: 0 })}
-          </p>
-          <p className="text-10px text-[#eeeeee]/30 mt-1">
-            {currentMonthInc > 0
-              ? `Ingreso: Bs ${currentMonthInc.toLocaleString('es-BO', { maximumFractionDigits: 0 })}`
-              : 'Sin ingresos registrados'}
-          </p>
-        </div>
-      )}
-    </div>
+    </section>
   );
 }

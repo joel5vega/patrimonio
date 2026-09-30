@@ -1,96 +1,122 @@
-// src/pages/Analytics/components/CategoryBreakdown.jsx
+import { useMemo } from 'react';
 import { TX_GROUPS } from '../../../hooks/useTransactions';
-import { GROUP_COLORS, GROUP_HEX } from '../../../features/transactions/constants/groupPalette';
-import Bar from '../../../ui/Bar';
-import DonutChart from './DonutChart';
-import CategoryRow from './CategoryRow';
+import { GROUP_HEX } from '../../../features/transactions/constants/groupPalette';
+import styles from '../Analytics.module.css';
+
+const money = (v) =>
+  `Bs ${Number(v || 0).toLocaleString('es-BO', { maximumFractionDigits: 0 })}`;
+
+function labelFor(key) {
+  return TX_GROUPS?.find((group) => group.value === key)?.label || key;
+}
 
 export default function CategoryBreakdown({
-  viewMode, byGroup, totalExp, expenses, activeGroup, setActiveGroup,
-  byCategory, maxGroup, prevByGroup, filteredByCategory,
+  byGroup,
+  byCategory,
+  totalExp,
+  activeGroup,
+  setActiveGroup,
 }) {
-  if (viewMode === 'groups') {
-    return (
-      <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-4 analytics-card">
-        <div className="flex justify-between items-center">
-          <h3 className="font-bold text-sm">Distribución por grupo</h3>
-          {activeGroup && (
-            <button
-              type="button"
-              onClick={() => setActiveGroup(null)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.65rem', fontWeight: 700,
-                color: GROUP_HEX[activeGroup] || '#1f1f1f',
-                background: `${GROUP_HEX[activeGroup] || '#1f1f1f'}18`,
-                border: `1px solid ${GROUP_HEX[activeGroup] || '#1f1f1f'}33`,
-                borderRadius: '999px', padding: '0.2rem 0.6rem', cursor: 'pointer',
-              }}
-            >
-              {TX_GROUPS?.find((g) => g.value === activeGroup)?.label}
-            </button>
-          )}
+  const visibleGroups = useMemo(() => {
+    if (byGroup.length <= 6) return byGroup;
+    const top = byGroup.slice(0, 5);
+    const rest = byGroup.slice(5).reduce(
+      (acc, item) => ({ key: 'otros_agrupados', total: acc.total + item.total, count: acc.count + item.count }),
+      { key: 'otros_agrupados', total: 0, count: 0 },
+    );
+    return [...top, rest];
+  }, [byGroup]);
+
+  const topTotal = visibleGroups.reduce((s, item) => s + item.total, 0) || 1;
+  const gradient = useMemo(() => {
+    let cursor = 0;
+    return visibleGroups
+      .map((item) => {
+        const next = cursor + (item.total / topTotal) * 360;
+        const color = item.key === 'otros_agrupados'
+          ? 'rgba(255,255,255,0.18)'
+          : GROUP_HEX[item.key] || '#5e5d59';
+        const part = `${color} ${cursor}deg ${next}deg`;
+        cursor = next;
+        return part;
+      })
+      .join(', ');
+  }, [visibleGroups, topTotal]);
+
+  const activeCategories = activeGroup
+    ? byCategory.filter((item) => item.parent === activeGroup)
+    : [];
+
+  return (
+    <section className={styles.card}>
+      <div className={styles.sectionHeader}>
+        <div>
+          <h2 className={styles.sectionTitle}>Estructura del gasto</h2>
+          <p className={styles.sectionHint}>Top 5 grupos + resto · pulsa un grupo para ver categorías</p>
         </div>
-
-        {byGroup.length === 0 ? (
-          <p className="text-[#eeeeee]/30 text-sm text-center py-4">Sin datos registrados en este período</p>
-        ) : (
-          <DonutChart byGroup={byGroup} totalExp={totalExp} expenses={expenses} onGroupClick={setActiveGroup} activeGroup={activeGroup} />
-        )}
-
-        {byGroup.length > 0 && (
-          <div className="space-y-3 pt-2 border-t border-white/5">
-            {byGroup.map(({ key, total }) => (
-              <CategoryRow key={key} groupKey={key} total={total} totalExp={totalExp} categories={byCategory} maxGroup={maxGroup} prevTotal={prevByGroup[key] ?? null} />
-            ))}
-          </div>
-        )}
-
-        {activeGroup && filteredByCategory.length === 0 && (
-          <div className="space-y-3 pt-2 border-t border-white/5">
-            <p className="text-10px text-[#eeeeee]/40 font-bold uppercase tracking-wide">
-              Categorías en {TX_GROUPS?.find((g) => g.value === activeGroup)?.label}
-            </p>
-            {filteredByCategory.map(({ key, total, label, emoji }) => (
-              <div key={key} className="space-y-1">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold flex items-center gap-1.5">{emoji} {label}</span>
-                  <span className="text-[#eeeeee]/50">Bs {total.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
-                  <span className="text-[#eeeeee]/30 ml-1">
-                    {((total / byGroup.find((g) => g.key === activeGroup)?.total) * 100).toFixed(0)}%
-                  </span>
-                </div>
-                <Bar pct={(total / filteredByCategory[0]?.total) * 100} color={GROUP_COLORS[activeGroup] || 'bg-[#1f1f1f]/20'} />
-              </div>
-            ))}
-          </div>
+        {activeGroup && (
+          <button className={styles.clearButton} onClick={() => setActiveGroup(null)}>
+            Ver todo
+          </button>
         )}
       </div>
-    );
-  }
 
-  // viewMode === 'categories' — vista plana
-  return (
-    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-3 analytics-card">
-      <h3 className="font-bold text-sm">Detalle por categoría</h3>
-      {byCategory.length === 0 ? (
-        <p className="text-[#eeeeee]/30 text-sm text-center py-4">Sin gastos registrados</p>
+      {byGroup.length === 0 ? (
+        <div className={styles.emptyState}>Sin gastos de consumo registrados.</div>
       ) : (
-        <div className="space-y-3">
-          {byCategory.map(({ key, total, label, emoji, parent }) => (
-            <div key={key} className="space-y-1">
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-semibold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded flex-shrink-0" style={{ background: GROUP_HEX[parent] || 'rgba(255,255,255,0.2)' }} />
-                  {emoji} {label}
-                </span>
-                <span className="text-[#eeeeee]/50">Bs {total.toLocaleString('es-BO', { maximumFractionDigits: 0 })}</span>
-                <span className="text-[#eeeeee]/30 ml-1">{((total / totalExp) * 100).toFixed(0)}%</span>
-              </div>
-              <Bar pct={(total / byCategory[0]?.total) * 100} color={GROUP_COLORS[parent] || 'bg-[#1f1f1f]/20'} />
+        <div className={styles.categoryLayout}>
+          <div className={styles.donut} style={{ background: `conic-gradient(${gradient})` }}>
+            <div className={styles.donutHole}>
+              <span>Gasto</span>
+              <strong>{money(totalExp)}</strong>
             </div>
-          ))}
+          </div>
+
+          <div className={styles.groupList}>
+            {visibleGroups.map((item) => {
+              const active = activeGroup === item.key;
+              const pct = totalExp > 0 ? (item.total / totalExp) * 100 : 0;
+              return (
+                <button
+                  key={item.key}
+                  className={`${styles.groupItem} ${active ? styles.groupItemActive : ''}`}
+                  onClick={() => item.key !== 'otros_agrupados' && setActiveGroup(active ? null : item.key)}
+                  disabled={item.key === 'otros_agrupados'}
+                >
+                  <span
+                    className={styles.groupDot}
+                    style={{ background: item.key === 'otros_agrupados' ? 'rgba(255,255,255,.25)' : GROUP_HEX[item.key] || '#5e5d59' }}
+                  />
+                  <span className={styles.groupName}>{item.key === 'otros_agrupados' ? 'Otros' : labelFor(item.key)}</span>
+                  <span className={styles.groupPct}>{pct.toFixed(0)}%</span>
+                  <strong>{money(item.total)}</strong>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
-    </div>
+
+      {activeGroup && activeCategories.length > 0 && (
+        <div className={styles.categoryDetails}>
+          <p className={styles.subsectionLabel}>{labelFor(activeGroup)}</p>
+          {activeCategories.map((item) => {
+            const pct = byGroup.find((g) => g.key === activeGroup)?.total
+              ? (item.total / byGroup.find((g) => g.key === activeGroup).total) * 100
+              : 0;
+            return (
+              <div key={item.key} className={styles.categoryDetailRow}>
+                <span>{item.emoji} {item.label}</span>
+                <div className={styles.categoryDetailBar}>
+                  <div style={{ width: `${pct}%`, background: GROUP_HEX[activeGroup] || '#5e5d59' }} />
+                </div>
+                <small>{pct.toFixed(0)}%</small>
+                <strong>{money(item.total)}</strong>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }

@@ -4,7 +4,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Portfolio from './pages/Portfolio';
 import Transactions from './pages/Transactions';
-import Analytics from './pages/Analytics';
+import Analytics from './pages/Analytics/Analytics';
 import WealthHistory from './pages/WealthHistory';
 import ManualAssets from './pages/ManualAssets';
 import NewTransaction from './pages/NewTransaction';

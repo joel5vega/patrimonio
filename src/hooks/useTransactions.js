@@ -114,6 +114,24 @@ export const enrichTransaction = (transaction) => {
     category,
     parentCategory:
       transaction.parentCategory || categoryDefinition?.parent || 'otros',
+    // Preservamos type original.
+    type:
+      transaction.type || 'expense',
+
+    // Normalización de datos FX.
+    originalAmountBOB:
+      transaction.originalAmountBOB != null
+        ? Number(
+            transaction.originalAmountBOB
+          )
+        : null,
+
+    exchangeRateBOBPerUSD:
+      transaction.exchangeRateBOBPerUSD != null
+        ? Number(
+            transaction.exchangeRateBOBPerUSD
+          )
+        : null,
   };
 };
 
@@ -153,7 +171,7 @@ export function useTransactions({
     const page = await getTransactionsPage(user.uid, {
       from,
       to,
-      cursor: null,
+      cursor: cursorRef.current,
       pageSize: PAGE_SIZE,
     });
 
@@ -251,18 +269,155 @@ export function useTransactions({
     }
   }, [enabled, loadRange, user?.uid, from, to, hasMore, loadingMore]);
 
-  const addTransaction = useCallback(async (transaction) => {
-    if (!user?.uid) return;
-    await addTransactionInFirestore(user.uid, enrichTransaction(transaction));
-    await loadFirstPage();
-  }, [user?.uid, loadFirstPage]);
+const normalizeNumber = (value) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
+    return null;
+  }
 
-  const updateTransaction = useCallback(async (id, updates) => {
-    if (!user?.uid) return;
-    const normalized = enrichTransaction(updates);
-    await updateTransactionInFirestore(user.uid, id, normalized);
-    setTransactions((current) => current.map((item) => item.id === id ? { ...item, ...normalized, id } : item));
-  }, [user?.uid]);
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : null;
+};
+
+const buildInvestmentFxMetadata = (tx) => {
+  const isUSDInvestment =
+    tx.category === 'inversion' &&
+    tx.currency === 'USD';
+
+  if (!isUSDInvestment) {
+    return {};
+  }
+
+  return {
+    originalAmountBOB: normalizeNumber(
+      tx.originalAmountBOB
+    ),
+
+    originalCurrency:
+      tx.originalCurrency || 'BOB',
+
+    exchangeRateBOBPerUSD:
+      normalizeNumber(
+        tx.exchangeRateBOBPerUSD
+      ),
+
+    exchangeRateSource:
+      tx.exchangeRateSource || 'effective',
+
+    exchangeRateDate:
+      tx.exchangeRateDate || tx.date,
+
+    targetCurrency:
+      tx.targetCurrency || 'USD',
+  };
+};
+const addTransaction = async (uid, tx) => {
+  const payload = {
+    title: tx.title || tx.concept || '',
+    concept: tx.concept || tx.title || '',
+
+    amount: Number(tx.amount) || 0,
+
+    currency: tx.currency || 'BOB',
+
+    type: tx.type || 'expense',
+
+    category: tx.category || 'other',
+
+    parentCategory:
+      tx.parentCategory || 'otros',
+
+    date: tx.date,
+
+    note: tx.note || '',
+
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+
+    ...buildInvestmentFxMetadata(tx),
+  };
+
+  return addDoc(
+    transactionCollection(uid),
+    payload
+  );
+};
+const updateTransaction = async (
+  uid,
+  id,
+  updates
+) => {
+  const reference = doc(
+    db,
+    'users',
+    uid,
+    'transactions',
+    id
+  );
+
+  const currentSnapshot =
+    await getDoc(reference);
+
+  if (!currentSnapshot.exists()) {
+    throw new Error(
+      'La transacción no existe.'
+    );
+  }
+
+  const current =
+    currentSnapshot.data();
+
+  const merged = {
+    ...current,
+    ...updates,
+  };
+
+  const payload = {
+    title:
+      merged.title ||
+      merged.concept ||
+      '',
+
+    concept:
+      merged.concept ||
+      merged.title ||
+      '',
+
+    amount:
+      Number(merged.amount) || 0,
+
+    currency:
+      merged.currency || 'BOB',
+
+    type:
+      merged.type || 'expense',
+
+    category:
+      merged.category || 'other',
+
+    parentCategory:
+      merged.parentCategory || 'otros',
+
+    date: merged.date,
+
+    note: merged.note || '',
+
+    ...buildInvestmentFxMetadata(merged),
+
+    updatedAt: serverTimestamp(),
+  };
+
+  await updateDoc(
+    reference,
+    payload
+  );
+};
 
   const removeTransaction = useCallback(async (id) => {
     if (!user?.uid) return;

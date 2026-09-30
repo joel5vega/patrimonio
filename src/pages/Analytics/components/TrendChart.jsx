@@ -1,40 +1,52 @@
-// src/pages/Analytics/components/TrendChart.jsx
-export default function TrendChart({ monthlyTrend }) {
-  const maxVal = Math.max(...monthlyTrend.map((x) => Math.max(x.exp, x.inc)), 1);
+import styles from '../Analytics.module.css';
+
+const money = (v) =>
+  `Bs ${Number(v || 0).toLocaleString('es-BO', { maximumFractionDigits: 0 })}`;
+
+export default function TrendChart({ trend }) {
+  const max = Math.max(...trend.map((m) => Math.max(m.income, m.expenses, m.investments)), 1);
 
   return (
-    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 analytics-card">
-      <h3 className="font-bold text-sm mb-4">Tendencia Semestral</h3>
-      <div className="flex items-end gap-2 h-20">
-        {monthlyTrend.map((m, i) => {
-          const isLast = i === monthlyTrend.length - 1;
-          return (
-            <div key={m.label} className="flex-1 flex flex-col items-center gap-1">
-              <div className="w-full flex gap-0.5 items-end h-16">
+    <section className={styles.card}>
+      <div className={styles.sectionHeader}>
+        <div>
+          <h2 className={styles.sectionTitle}>Evolución mensual</h2>
+          <p className={styles.sectionHint}>Últimos 12 meses · ingresos, consumo e inversión</p>
+        </div>
+      </div>
+
+      <div className={styles.trendLegend}>
+        <span><i className={styles.legendIncome} />Ingresos</span>
+        <span><i className={styles.legendExpense} />Consumo</span>
+        <span><i className={styles.legendInvestment} />Inversión</span>
+      </div>
+
+      <div className={styles.trendScroll}>
+        <div className={styles.trendChart}>
+          {trend.map((month) => (
+            <div className={styles.monthColumn} key={month.key} title={`${month.label}: ${money(month.income)}`}>
+              <div className={styles.monthBars}>
                 <div
-                  className={`flex-1 rounded-t transition-all duration-500 ${isLast ? 'bg-rose-500' : 'bg-rose-500/40'}`}
-                  style={{ height: `${(m.exp / maxVal) * 100}%` }}
+                  className={styles.barIncome}
+                  style={{ height: `${(month.income / max) * 100}%` }}
                 />
                 <div
-                  className={`flex-1 rounded-t transition-all duration-500 ${isLast ? 'bg-emerald-500' : 'bg-emerald-500/30'}`}
-                  style={{ height: `${(m.inc / maxVal) * 100}%` }}
+                  className={styles.barExpense}
+                  style={{ height: `${(month.expenses / max) * 100}%` }}
+                />
+                <div
+                  className={styles.barInvestment}
+                  style={{ height: `${(month.investments / max) * 100}%` }}
                 />
               </div>
-              <span className="text-9px text-[#eeeeee]/30 capitalize">{m.label}</span>
+              <span>{month.label}</span>
+              <small className={month.netCashflow >= 0 ? styles.netPositive : styles.netNegative}>
+                {month.netCashflow >= 0 ? '+' : '−'}{Math.abs(month.netCashflow).toLocaleString('es-BO', { maximumFractionDigits: 0 })}
+              </small>
             </div>
-          );
-        })}
-      </div>
-      <div className="flex gap-3 mt-2">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded bg-rose-500" />
-          <span className="text-10px text-[#eeeeee]/40">Gastos</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded bg-emerald-500" />
-          <span className="text-10px text-[#eeeeee]/40">Ingresos</span>
+          ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

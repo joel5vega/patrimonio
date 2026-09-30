@@ -1,113 +1,97 @@
-// src/pages/Analytics/Analytics.jsx
-import { useRef } from 'react';
-import { PieChart, BarChart2 } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { fmtDate } from './dateHelpers';
 import { useAnalyticsData } from './useAnalyticsData';
 import PeriodControls from './components/PeriodControls';
-import ComparisonBanner from './components/ComparisonBanner';
-import { SummaryCards, KpiCards } from './components/OverviewCards';
+import OverviewCards from './components/OverviewCards';
+import DestinationPanel from './components/DestinationPanel';
 import TrendChart from './components/TrendChart';
-import DiagnosticPanel from './components/DiagnosticPanel';
+import BehaviorPanel from './components/BehaviorPanel';
 import CategoryBreakdown from './components/CategoryBreakdown';
 import TopExpenses from './components/TopExpenses';
+import DiagnosticPanel from './components/DiagnosticPanel';
+import styles from './Analytics.module.css';
 
 export default function Analytics() {
   const d = useAnalyticsData();
-  const cardsRef = useRef(null);
 
   if (d.authLoading) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-[#eeeeee]/40 text-sm animate-pulse">Verificando sesión...</p>
-      </div>
-    );
+    return <div className={styles.centerMsg}>Verificando sesión…</div>;
   }
+
   if (!d.user) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-rose-400 text-sm">No hay una sesión activa.</p>
-      </div>
-    );
+    return <div className={`${styles.centerMsg} ${styles.errorMsg}`}>No hay una sesión activa.</div>;
   }
+
   if (d.loading) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-[#eeeeee]/40 text-sm animate-pulse">Cargando análisis...</p>
-      </div>
-    );
+    return <div className={styles.centerMsg}>Cargando análisis…</div>;
   }
+
   if (d.error) {
     return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-rose-400 text-sm">{d.error}</p>
+      <div className={`${styles.centerMsg} ${styles.errorMsg}`}>
+        {String(d.error?.message || d.error)}
       </div>
     );
   }
 
-  const showPeriodLabel = d.period === 'custom' || d.customStart || d.customEnd;
-  const periodLabelText = d.period === 'custom' && d.customStart && d.customEnd
-    ? `${fmtDate(d.customStart)} → ${fmtDate(d.customEnd)}`
-    : d.periodLabel;
+  const hasCustomRange =
+    d.period === 'custom' && d.customStart && d.customEnd;
 
   return (
-    <div className="space-y-5 pb-24">
-      {/* Header */}
-      <div className="flex justify-between items-center pt-2">
+    <main className={styles.page}>
+      <header className={styles.header}>
         <div>
-          <h1 className="text-2xl font-bold">Análisis Financiero</h1>
-          {showPeriodLabel && <p className="text-11px text-[#2b7fff] mt-0.5">{periodLabelText}</p>}
+          <h1 className={styles.title}>Análisis financiero</h1>
+          <p className={styles.subtitle}>
+            {hasCustomRange
+              ? `${fmtDate(d.customStart)} → ${fmtDate(d.customEnd)}`
+              : `Período: ${d.periodLabel}`}
+          </p>
         </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => d.setViewMode('groups')}
-            className={`p-2 rounded-xl text-sm transition-colors ${d.viewMode === 'groups' ? 'bg-[#2b7fff] text-[#eeeeee]' : 'bg-[#1f1f1f] text-[#eeeeee]/40'}`}
-          >
-            <PieChart size={16} />
-          </button>
-          <button
-            onClick={() => d.setViewMode('categories')}
-            className={`p-2 rounded-xl text-sm transition-colors ${d.viewMode === 'categories' ? 'bg-[#2b7fff] text-[#eeeeee]' : 'bg-[#1f1f1f] text-[#eeeeee]/40'}`}
-          >
-            <BarChart2 size={16} />
-          </button>
+
+        <div className={styles.headerBadge}>
+          <span>Movimientos</span>
+          <strong>{d.current.transactionCount.toLocaleString('es-BO')}</strong>
         </div>
-      </div>
+      </header>
 
-      <PeriodControls
-        period={d.period} setPeriod={d.setPeriod}
-        customStart={d.customStart} customEnd={d.customEnd}
-        setCustomStart={d.setCustomStart} setCustomEnd={d.setCustomEnd}
-      />
-
-      <ComparisonBanner
-        period={d.period} prevRange={d.prevRange}
-        prevTotalExp={d.prevTotalExp} prevTotalInc={d.prevTotalInc}
-        totalExp={d.totalExp} totalInc={d.totalInc}
-      />
-
-      <div ref={cardsRef} className="space-y-5">
-        <SummaryCards totalInc={d.totalInc} prevTotalInc={d.prevTotalInc} totalExp={d.totalExp} prevTotalExp={d.prevTotalExp} balance={d.balance} />
-
-        <KpiCards
-          savingsRate={d.savingsRate} monthlyTrend={d.monthlyTrend} avgMonthlyExp={d.avgMonthlyExp}
-          projectedExp={d.projectedExp} currentMonthInc={d.currentMonthInc} period={d.period}
-          daysLeft={d.daysLeft} dailyBudget={d.dailyBudget} now={d.now}
+      <div className={styles.stack}>
+        <PeriodControls
+          period={d.period}
+          setPeriod={d.setPeriod}
+          customStart={d.customStart}
+          customEnd={d.customEnd}
+          setCustomStart={d.setCustomStart}
+          setCustomEnd={d.setCustomEnd}
         />
 
-        <TrendChart monthlyTrend={d.monthlyTrend} />
+        <OverviewCards current={d.current} previous={d.previous} />
 
-        <DiagnosticPanel insights={d.insights} />
+        <DestinationPanel current={d.current} />
+
+        <TrendChart trend={d.trend} />
+
+        <BehaviorPanel
+          behavior={d.behavior}
+          concentration={d.concentration}
+        />
 
         <CategoryBreakdown
-          viewMode={d.viewMode}
-          byGroup={d.byGroup} totalExp={d.totalExp} expenses={d.expenses}
-          activeGroup={d.activeGroup} setActiveGroup={d.setActiveGroup}
-          byCategory={d.byCategory} maxGroup={d.maxGroup}
-          prevByGroup={d.prevByGroup} filteredByCategory={d.filteredByCategory}
+          byGroup={d.byGroup}
+          byCategory={d.byCategory}
+          totalExp={d.totalExp}
+          activeGroup={d.activeGroup}
+          setActiveGroup={d.setActiveGroup}
         />
 
         <TopExpenses expenses={d.expenses} />
+
+        <DiagnosticPanel
+          signals={d.signals}
+          unknownCount={d.unknownCount}
+          transferCount={d.transferCount}
+        />
       </div>
-    </div>
+    </main>
   );
 }

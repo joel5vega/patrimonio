@@ -1,19 +1,50 @@
-// src/pages/Analytics/components/DiagnosticPanel.jsx
-import { Lightbulb } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import styles from '../Analytics.module.css';
 
-export default function DiagnosticPanel({ insights }) {
+const ICONS = {
+  warning: AlertTriangle,
+  positive: CheckCircle2,
+  neutral: Info,
+};
+
+export default function DiagnosticPanel({ signals, unknownCount, transferCount }) {
   return (
-    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-3 analytics-card">
-      <div className="flex items-center gap-2">
-        <Lightbulb size={14} className="text-yellow-400" />
-        <h3 className="font-bold text-sm">Diagnóstico financiero</h3>
-      </div>
-      {insights.map((tip, i) => (
-        <div key={i} className="flex items-start gap-2 text-xs">
-          <span className="text-base leading-none">{tip.icon}</span>
-          <p className={`${tip.color} leading-snug`}>{tip.msg}</p>
+    <section className={styles.card}>
+      <div className={styles.sectionHeader}>
+        <div>
+          <h2 className={styles.sectionTitle}>Señales del período</h2>
+          <p className={styles.sectionHint}>Observaciones calculadas a partir de los movimientos registrados</p>
         </div>
-      ))}
-    </div>
+      </div>
+
+      <div className={styles.signalList}>
+        {(signals || []).map((signal, index) => {
+          const Icon = ICONS[signal.type] || Info;
+          return (
+            <div className={`${styles.signal} ${styles[`signal_${signal.type}`]}`} key={`${signal.title}-${index}`}>
+              <Icon size={15} />
+              <div>
+                <strong>{signal.title}</strong>
+                <p>{signal.text}</p>
+              </div>
+            </div>
+          );
+        })}
+
+        {!signals?.length && (
+          <div className={styles.emptyState}>No hay señales relevantes para este período.</div>
+        )}
+
+        {(unknownCount > 0 || transferCount > 0) && (
+          <div className={styles.dataQuality}>
+            <strong>Calidad del dato</strong>
+            <span>
+              {transferCount} transferencias excluidas
+              {unknownCount > 0 ? ` · ${unknownCount} movimientos sin clasificación` : ''}
+            </span>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

@@ -1,34 +1,46 @@
-// src/pages/Analytics/components/TopExpenses.jsx
 import { TX_CATEGORIES } from '../../../hooks/useTransactions';
 import { fmtDate } from '../dateHelpers';
+import styles from '../Analytics.module.css';
+
+const money = (v) =>
+  `Bs ${Number(v || 0).toLocaleString('es-BO', { maximumFractionDigits: 0 })}`;
 
 export default function TopExpenses({ expenses }) {
+  const top = [...expenses].sort((a, b) => b.__amount - a.__amount).slice(0, 5);
+  const total = expenses.reduce((s, tx) => s + tx.__amount, 0);
+
   return (
-    <div className="bg-[#1f1f1f] rounded-lg border border-white/5 p-4 space-y-2 analytics-card">
-      <h3 className="font-bold text-sm mb-3">Mayores egresos del período</h3>
-      {expenses.length === 0 ? (
-        <p className="text-[#eeeeee]/30 text-sm text-center py-3">Sin registro de gastos</p>
+    <section className={styles.card}>
+      <div className={styles.sectionHeader}>
+        <div>
+          <h2 className={styles.sectionTitle}>Movimientos relevantes</h2>
+          <p className={styles.sectionHint}>Mayores egresos de consumo del período</p>
+        </div>
+      </div>
+
+      {top.length === 0 ? (
+        <div className={styles.emptyState}>Sin gastos de consumo.</div>
       ) : (
-        <div className="space-y-2">
-          {[...expenses].sort((a, b) => b.amount - a.amount).slice(0, 5).map((tx) => {
-            const meta = TX_CATEGORIES.find((c) => c.value === tx.category);
+        <div className={styles.topList}>
+          {top.map((tx) => {
+            const meta = TX_CATEGORIES.find((item) => item.value === tx.category);
+            const pct = total > 0 ? (tx.__amount / total) * 100 : 0;
             return (
-              <div key={tx.id} className="flex justify-between items-center text-xs py-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{meta?.emoji}</span>
-                  <div>
-                    <p className="font-semibold text-[#eeeeee]/90">{tx.concept || tx.title || 'Gasto'}</p>
-                    <p className="text-10px text-[#eeeeee]/30">{fmtDate(tx.date)}</p>
-                  </div>
+              <div className={styles.topRow} key={tx.id || `${tx.date}-${tx.__amount}-${tx.concept}`}>
+                <div className={styles.topIcon}>{meta?.emoji || '•'}</div>
+                <div className={styles.topInfo}>
+                  <strong>{tx.concept || tx.title || 'Gasto'}</strong>
+                  <span>{fmtDate(tx.date)}{meta?.label ? ` · ${meta.label}` : ''}</span>
                 </div>
-                <span className="text-rose-400 font-bold">
-                  Bs {tx.amount.toLocaleString('es-BO', { maximumFractionDigits: 0 })}
-                </span>
+                <div className={styles.topAmount}>
+                  <strong>{money(tx.__amount)}</strong>
+                  <span>{pct.toFixed(1)}%</span>
+                </div>
               </div>
             );
           })}
         </div>
       )}
-    </div>
+    </section>
   );
 }
