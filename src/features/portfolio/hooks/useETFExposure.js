@@ -53,9 +53,13 @@ export function useETFExposure(assets = []) {
       }));
 
       try {
-        const response = await fetch(
-          '/data/etf-exposure.json',
+        // ✅ FIX: usar BASE_URL en vez de "/" hardcodeado
+        const baseUrl = import.meta.env.BASE_URL || '/';
+        const url = `${baseUrl}data/etf-exposure.json`.replace(
+          /\/+/g,
+          '/',
         );
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error(
