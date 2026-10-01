@@ -40,7 +40,7 @@
   /* Performance */
   --perf-up: var(--color-voltage-blue);
   --perf-down: var(--color-danger);
-  --perf-gap: 0.5rem;
+  --perf-gap: 0.1rem;
   --perf-radius: var(--radius-cards);
   --perf-cols: 3;
 
@@ -1107,21 +1107,21 @@
 .perf-strip {
   display: grid;
   grid-template-columns: repeat(var(--perf-cols, 3), minmax(0, 1fr));
-  gap: var(--perf-gap, 0.5rem);
+  gap: var(--perf-gap, 0.6rem);
 }
 
 .perf-cell {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.55rem 0.7rem;
+  flex-direction: row;
+  gap: 0.5rem;
+  padding: 0.1rem 0.7rem;
   border-radius: var(--perf-radius, 0.65rem);
   background: var(--color-carbon-canvas);
   border: 1px solid var(--p-border-soft);
 }
 
 .perf-cell__label {
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
