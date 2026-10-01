@@ -1555,7 +1555,7 @@ export default function MarketHeatmap({
     <div className="hm-container">
       <div className="hm-header">
         <span className="hm-title">
-          Mapa de calor · Portafolio
+          Portafolio
         </span>
 
         <div className="hm-counts">
