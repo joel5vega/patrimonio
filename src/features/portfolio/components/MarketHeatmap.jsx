@@ -45,6 +45,8 @@ import {
   stagger,
 } from 'animejs';
 
+import { useETFExposure } from '../hooks/useETFExposure';
+
 import '../styles/MarketHeatmap.css';
 
 // ─── Formatters ─────────────────────────────────────────────
@@ -391,131 +393,31 @@ const SYMBOL_LUCIDE = {
 };
 
 const SECTOR_META = {
-  diversificado_eeuu: {
-    Icon: BarChart2,
-    color: '#10b981',
-    bg: 'rgba(16,185,129,0.18)',
-  },
-  diversificado_global: {
-    Icon: Globe2,
-    color: '#2b7fff',
-    bg: 'rgba(6,182,212,0.18)',
-  },
-  emergentes: {
-    Icon: Globe2,
-    color: '#2b7fff',
-    bg: 'rgba(59,130,246,0.15)',
-  },
-  tecnologia: {
-    Icon: Cpu,
-    color: '#5a9fff',
-    bg: 'rgba(96,165,250,0.18)',
-  },
-  salud: {
-    Icon: HeartPulse,
-    color: '#fb7185',
-    bg: 'rgba(251,113,133,0.18)',
-  },
-  defensa: {
-    Icon: Shield,
-    color: '#a4a19b',
-    bg: 'rgba(100,116,139,0.18)',
-  },
-  finanzas: {
-    Icon: Landmark,
-    color: '#2b7fff',
-    bg: 'rgba(59,130,246,0.18)',
-  },
-  energia: {
-    Icon: Droplet,
-    color: '#f59e0b',
-    bg: 'rgba(245,158,11,0.18)',
-  },
-  energia_renovable: {
-    Icon: Sun,
-    color: '#84cc16',
-    bg: 'rgba(132,204,22,0.18)',
-  },
-  consumo_basico: {
-    Icon: ShoppingCart,
-    color: '#2b7fff',
-    bg: 'rgba(20,184,166,0.18)',
-  },
-  consumo_discrecional: {
-    Icon: ShoppingBag,
-    color: '#8b5cf6',
-    bg: 'rgba(139,92,246,0.18)',
-  },
-  materiales: {
-    Icon: Box,
-    color: '#d946ef',
-    bg: 'rgba(217,70,239,0.18)',
-  },
-  telecomunicaciones: {
-    Icon: Signal,
-    color: '#2b7fff',
-    bg: 'rgba(59,130,246,0.18)',
-  },
-  inmobiliario_cotizado: {
-    Icon: Building2,
-    color: '#f97316',
-    bg: 'rgba(249,115,22,0.18)',
-  },
-  metales_preciosos: {
-    Icon: Gem,
-    color: '#eab308',
-    bg: 'rgba(234,179,8,0.18)',
-  },
-  bonos_gobierno: {
-    Icon: Lock,
-    color: '#facc15',
-    bg: 'rgba(250,204,21,0.12)',
-  },
-  bonos_inflacion: {
-    Icon: Shield,
-    color: '#facc15',
-    bg: 'rgba(250,204,21,0.12)',
-  },
-  efectivo_global: {
-    Icon: DollarSign,
-    color: '#2b7fff',
-    bg: 'rgba(6,182,212,0.12)',
-  },
-  stablecoin_yield: {
-    Icon: Zap,
-    color: '#2b7fff',
-    bg: 'rgba(20,184,166,0.18)',
-  },
-  crypto_l1: {
-    Icon: Layers,
-    color: '#a855f7',
-    bg: 'rgba(168,85,247,0.18)',
-  },
-  crypto_l2: {
-    Icon: Layers,
-    color: '#d946ef',
-    bg: 'rgba(217,70,239,0.18)',
-  },
-  crypto_defi: {
-    Icon: Zap,
-    color: '#2b7fff',
-    bg: 'rgba(20,184,166,0.18)',
-  },
-  crypto_pagos: {
-    Icon: CreditCard,
-    color: '#2b7fff',
-    bg: 'rgba(59,130,246,0.18)',
-  },
-  crypto_meme: {
-    Icon: Flame,
-    color: '#f43f5e',
-    bg: 'rgba(244,63,94,0.18)',
-  },
-  crypto_stablecoin: {
-    Icon: DollarSign,
-    color: '#2b7fff',
-    bg: 'rgba(34,211,238,0.18)',
-  },
+  diversificado_eeuu: { Icon: BarChart2, color: '#10b981', bg: 'rgba(16,185,129,0.18)' },
+  diversificado_global: { Icon: Globe2, color: '#2b7fff', bg: 'rgba(6,182,212,0.18)' },
+  emergentes: { Icon: Globe2, color: '#2b7fff', bg: 'rgba(59,130,246,0.15)' },
+  tecnologia: { Icon: Cpu, color: '#5a9fff', bg: 'rgba(96,165,250,0.18)' },
+  salud: { Icon: HeartPulse, color: '#fb7185', bg: 'rgba(251,113,133,0.18)' },
+  defensa: { Icon: Shield, color: '#a4a19b', bg: 'rgba(100,116,139,0.18)' },
+  finanzas: { Icon: Landmark, color: '#2b7fff', bg: 'rgba(59,130,246,0.18)' },
+  energia: { Icon: Droplet, color: '#f59e0b', bg: 'rgba(245,158,11,0.18)' },
+  energia_renovable: { Icon: Sun, color: '#84cc16', bg: 'rgba(132,204,22,0.18)' },
+  consumo_basico: { Icon: ShoppingCart, color: '#2b7fff', bg: 'rgba(20,184,166,0.18)' },
+  consumo_discrecional: { Icon: ShoppingBag, color: '#8b5cf6', bg: 'rgba(139,92,246,0.18)' },
+  materiales: { Icon: Box, color: '#d946ef', bg: 'rgba(217,70,239,0.18)' },
+  telecomunicaciones: { Icon: Signal, color: '#2b7fff', bg: 'rgba(59,130,246,0.18)' },
+  inmobiliario_cotizado: { Icon: Building2, color: '#f97316', bg: 'rgba(249,115,22,0.18)' },
+  metales_preciosos: { Icon: Gem, color: '#eab308', bg: 'rgba(234,179,8,0.18)' },
+  bonos_gobierno: { Icon: Lock, color: '#facc15', bg: 'rgba(250,204,21,0.12)' },
+  bonos_inflacion: { Icon: Shield, color: '#facc15', bg: 'rgba(250,204,21,0.12)' },
+  efectivo_global: { Icon: DollarSign, color: '#2b7fff', bg: 'rgba(6,182,212,0.12)' },
+  stablecoin_yield: { Icon: Zap, color: '#2b7fff', bg: 'rgba(20,184,166,0.18)' },
+  crypto_l1: { Icon: Layers, color: '#a855f7', bg: 'rgba(168,85,247,0.18)' },
+  crypto_l2: { Icon: Layers, color: '#d946ef', bg: 'rgba(217,70,239,0.18)' },
+  crypto_defi: { Icon: Zap, color: '#2b7fff', bg: 'rgba(20,184,166,0.18)' },
+  crypto_pagos: { Icon: CreditCard, color: '#2b7fff', bg: 'rgba(59,130,246,0.18)' },
+  crypto_meme: { Icon: Flame, color: '#f43f5e', bg: 'rgba(244,63,94,0.18)' },
+  crypto_stablecoin: { Icon: DollarSign, color: '#2b7fff', bg: 'rgba(34,211,238,0.18)' },
 };
 
 const TYPE_LUCIDE = {
@@ -635,7 +537,12 @@ function tileBg(pnlPct, asset) {
 
 // ─── Tooltip ────────────────────────────────────────────────
 
-function TooltipPortal({ asset, anchorRect, performance }) {
+function TooltipPortal({
+  asset,
+  anchorRect,
+  performance,
+  etfData = null,
+}) {
   const tooltipRef = useRef(null);
   const [position, setPosition] = useState(null);
 
@@ -691,6 +598,20 @@ function TooltipPortal({ asset, anchorRect, performance }) {
   const isDeFi = asset.classification?.isDeFi;
   const aprPct = asset.classification?.aprPct;
   const { color } = resolveIconLucide(asset);
+
+  const symbol = String(asset.symbol || '').toUpperCase();
+  const etfInfo = etfData?.[symbol];
+  const topHoldings =
+    Array.isArray(etfInfo?.holdings) && etfInfo.holdings.length > 0
+      ? etfInfo.holdings.slice(0, 5)
+      : [];
+  const topHoldingsWeight = topHoldings.reduce(
+    (sum, h) => sum + (Number(h.weightPct) || 0),
+    0,
+  );
+  const expenseRatio = Number(etfInfo?.expenseRatio);
+  const hasExpense =
+    Number.isFinite(expenseRatio) && expenseRatio > 0;
 
   const style = position
     ? {
@@ -860,6 +781,44 @@ function TooltipPortal({ asset, anchorRect, performance }) {
         )}
       </div>
 
+      {topHoldings.length > 0 && (
+        <>
+          <div className="hm-tooltip__div" />
+
+          <div className="hm-tooltip__etf">
+            <span className="hm-tooltip__etf-title">
+              Top holdings
+              <span className="hm-tooltip__etf-weight">
+                {topHoldingsWeight.toFixed(1)}%
+              </span>
+            </span>
+
+            <div className="hm-tooltip__etf-list">
+              {topHoldings.map((holding) => (
+                <div
+                  key={holding.symbol}
+                  className="hm-tooltip__etf-row"
+                >
+                  <span className="hm-tooltip__etf-symbol">
+                    {holding.symbol}
+                  </span>
+                  <span className="hm-tooltip__etf-pct">
+                    {Number(holding.weightPct).toFixed(1)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {hasExpense && (
+              <div className="hm-tooltip__etf-expense">
+                <span>Expense ratio</span>
+                <span>{expenseRatio.toFixed(2)}%</span>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       {(roleMeta || sector) && (
         <div
           className="hm-tooltip__footer"
@@ -905,7 +864,12 @@ function TooltipPortal({ asset, anchorRect, performance }) {
 
 // ─── HeatTile ───────────────────────────────────────────────
 
-function HeatTile({ asset, roleColor, isSmallBlock }) {
+function HeatTile({
+  asset,
+  roleColor,
+  isSmallBlock,
+  etfData = null,
+}) {
   const [hover, setHover] = useState(false);
   const [anchorRect, setAnchorRect] = useState(null);
   const tileRef = useRef(null);
@@ -991,6 +955,7 @@ function HeatTile({ asset, roleColor, isSmallBlock }) {
           asset={asset}
           anchorRect={anchorRect}
           performance={performance}
+          etfData={etfData}
         />
       )}
     </div>
@@ -1005,6 +970,7 @@ function RoleBlock({
   roleTotalValueUSD,
   totalValueUSD,
   equalWidth = false,
+  etfData = null,
 }) {
   const contentRef = useRef(null);
 
@@ -1039,8 +1005,6 @@ function RoleBlock({
 
   const Icon = meta.Icon;
 
-  // Modo normal: proporcional al peso
-  // Modo equalWidth: todos iguales (para fila de roles chicos)
   const flexValue = equalWidth
     ? 1
     : Math.max(roleGlobalPct, 1);
@@ -1097,6 +1061,7 @@ function RoleBlock({
             asset={asset}
             roleColor={meta.color}
             isSmallBlock={isSmallBlock}
+            etfData={etfData}
           />
         ))}
       </div>
@@ -1137,29 +1102,17 @@ function getLiquidationDistancePct(asset = {}) {
   );
 }
 
-/**
- * isFuturesAsset — versión corregida *
- * Solo retorna true si:
- * 1. type === 'futures' (Binance USD-M / Bybit linear)
- * 2. positionSide es LONG o SHORT (nunca spot/stablecoins)
- * 3. groupKey === 'binance_usdm' o 'bybit' con notional > 0
- *
- * NO usa `source === 'binance'` porque Binance tiene spot + futuros.
- */
 function isFuturesAsset(asset = {}) {
-  // 1. Verificación directa por type
   if (asset.type === 'futures') {
     return true;
   }
 
-  // 2. Verificación por positionSide
   const positionSide = getPositionSide(asset);
 
   if (positionSide === 'LONG' || positionSide === 'SHORT') {
     return true;
   }
 
-  // 3. Verificación por groupKey de derivados reales
   const groupKey = String(asset.groupKey ?? '').toLowerCase();
   const source = String(asset.source ?? '').toLowerCase();
 
@@ -1431,6 +1384,9 @@ export default function MarketHeatmap({
 }) {
   const gridRef = useRef(null);
 
+  // ← NUEVO: carga datos de ETFs (VOO, VXUS, BND, VTI, etc.)
+  const { data: etfData } = useETFExposure(assets);
+
   const investableAssets = useMemo(
     () =>
       assets.filter((asset) => {
@@ -1520,10 +1476,7 @@ export default function MarketHeatmap({
     .sort(([, left], [, right]) => right.total - left.total)
     .map(([key, data]) => ({ key, ...data }));
 
-  // ═══════════════════════════════════════════════════════════
-  // Distribución: roles grandes en 3 filas balanceadas,
-  // roles chicos (< 5%) en una fila dedicada al final
-  // ═══════════════════════════════════════════════════════════
+  // ── Distribución: roles grandes en 3 filas balanceadas ──
 
   const SMALL_ROLE_THRESHOLD_PCT = 5;
 
@@ -1562,7 +1515,6 @@ export default function MarketHeatmap({
     targetRow.total += role.total;
   }
 
-  // Fila dedicada para roles chicos (van al final)
   if (smallRoles.length > 0) {
     rows.push({
       total: smallRoles.reduce(
@@ -1579,7 +1531,6 @@ export default function MarketHeatmap({
   }
 
   rows.sort((left, right) => {
-    // La fila de roles chicos va al final
     if (left.isSmallRolesRow && !right.isSmallRolesRow) return 1;
     if (right.isSmallRolesRow && !left.isSmallRolesRow) return -1;
     return right.total - left.total;
@@ -1642,6 +1593,7 @@ export default function MarketHeatmap({
                   roleTotalValueUSD={role.total}
                   totalValueUSD={totalValueUSD}
                   equalWidth={row.isSmallRolesRow === true}
+                  etfData={etfData}
                 />
               ))}
             </div>

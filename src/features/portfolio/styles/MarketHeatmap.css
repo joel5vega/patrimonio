@@ -688,3 +688,80 @@
     font-size: 9px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Tooltip: Top holdings de ETFs
+   ═══════════════════════════════════════════════════════════ */
+
+.hm-tooltip__etf {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-slate-elevated, #262626);
+}
+
+.hm-tooltip__etf-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-smoke, #5e5d59);
+}
+
+.hm-tooltip__etf-weight {
+  font-family: var(--font-fira-code, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-fog, #a4a19b);
+}
+
+.hm-tooltip__etf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hm-tooltip__etf-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.hm-tooltip__etf-symbol {
+  font-family: var(--font-fira-code, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-fog, #a4a19b);
+  letter-spacing: 0.04em;
+}
+
+.hm-tooltip__etf-pct {
+  font-family: var(--font-fira-code, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-bone, #eeeeee);
+}
+
+.hm-tooltip__etf-expense {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--color-slate-elevated, #262626);
+  font-size: 9px;
+  color: var(--color-smoke, #5e5d59);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hm-tooltip__etf-expense > span:last-child {
+  font-family: var(--font-fira-code, ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--color-fog, #a4a19b);
+  font-weight: 600;
+}

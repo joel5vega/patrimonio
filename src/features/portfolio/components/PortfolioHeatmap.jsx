@@ -86,11 +86,7 @@ export default function PortfolioHeatmap({
       })
       .map(normalizeAsset);
   }, [futuresAssets]);
-useEffect(() => {
-  console.log('PortfolioHeatmap recibió:', assets.length);
-  console.log('USDT antes del filtro:', assets.find(a => a.symbol === 'USDT'));
-  console.log('XRP antes del filtro:', assets.find(a => a.symbol === 'XRP'));
-}, [assets]);
+
   return (
     <MarketHeatmap
       assets={normalizedAssets}
