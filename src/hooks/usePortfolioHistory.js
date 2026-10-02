@@ -34,7 +34,7 @@ export function usePortfolioHistory(chartHistory = []) {
         (d.manual_AirTM    ?? 0) +
         (d.manual_SAFI     ?? 0) +
         (d.manual_Ahorro   ?? 0);
-
+      const bybitUSD = d.bybitUSD ?? 0;   
       const investable = (d.role_core        ?? 0) +
                          (d.role_growth      ?? 0) +
                          (d.role_defensive   ?? 0) +
@@ -48,6 +48,7 @@ export function usePortfolioHistory(chartHistory = []) {
         totalUSD:        d.totalPortfolioUSD,
         cryptoUSD:       d.cryptoUSD       ?? 0,
         inversionUSD:    d.inversionUSD    ?? 0,
+        bybitUSD:        bybitUSD,
         manualUSD,
         investableUSD:   investable > 0 ? investable : null, // null si no hay role_* guardados
         // roles (en USD absoluto)
@@ -126,6 +127,7 @@ export function usePortfolioHistory(chartHistory = []) {
     // (estimación: diferencia entre primer y último snapshot por fuente)
     const growthBySource = {
       crypto:    Number((last.cryptoUSD    - first.cryptoUSD).toFixed(2)),
+      bybit:     Number((last.bybitUSD     - first.bybitUSD).toFixed(2)),
       inversion: Number((last.inversionUSD - first.inversionUSD).toFixed(2)),
       manual:    Number((last.manualUSD    - first.manualUSD).toFixed(2)),
     };

@@ -1,4 +1,5 @@
-import { useMemo,useEffect } from 'react';
+// src/features/portfolio/components/PortfolioHeatmap.jsx
+import { useMemo } from 'react';
 import MarketHeatmap from './MarketHeatmap';
 
 function numberOrNull(value) {
@@ -25,6 +26,7 @@ function normalizeAsset(asset) {
   const classification = asset.classification || {};
   const sourceMeta = asset.sourceMeta || {};
   const pnlPct = calculatePnlPct(asset);
+  const isFutures = asset.type === 'futures';
 
   return {
     ...asset,
@@ -43,6 +45,20 @@ function normalizeAsset(asset) {
 
     source: asset.source || asset.groupKey || 'manual',
     type: asset.type || 'other',
+
+    // 🧹 Defensa: si NO es un futuro explícito, limpiar cualquier
+    // residuo de positionSide / notional / leverage que pudiera haber
+    // quedado pegado desde merges anteriores en usePortfolioData.
+    ...(isFutures
+      ? {}
+      : {
+          positionSide: null,
+          notionalUSD: null,
+          leverage: null,
+          liquidationPrice: null,
+          liquidationDistancePct: null,
+          marginMode: null,
+        }),
 
     quantity: numberOrNull(sourceMeta.quantity),
     marketPrice: numberOrNull(
@@ -67,7 +83,6 @@ export default function PortfolioHeatmap({
   futuresAssets = [],
   bobRate,
 }) {
-  
   const normalizedAssets = useMemo(() => {
     return assets
       .filter((asset) => Number(asset?.valueUSD) > 0)

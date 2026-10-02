@@ -75,10 +75,13 @@ export default function MarketHeatmap({ assets = [], futuresAssets = [] }) {
   const viewportHeight = useViewportHeight();
   const height = stageHeight(width, viewportHeight);
 
-  const { enriched, total } = useMemo(
-    () => enrichAssets(assets.filter(isInvestable)),
-    [assets],
-  );
+  const { enriched, total } = useMemo(() => {
+  const filtered = assets.filter(isInvestable);
+
+  
+
+  return enrichAssets(filtered);
+}, [assets]);
   const roles = useMemo(() => groupByRole(enriched), [enriched]);
   const stats = useMemo(() => countPerformance(enriched), [enriched]);
   const layout = useTreemapLayout(roles, width, height);

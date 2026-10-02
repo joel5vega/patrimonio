@@ -15,6 +15,7 @@ export const VIEW_MODES = [
 export const FIXED_TYPES = [
   { key: 'total', label: 'Total financiero', field: 'totalPortfolioUSD', color: '#2b7fff', icon: 'wallet' },
   { key: 'crypto', label: 'Crypto', field: 'cryptoUSD', color: '#f97316', icon: 'coins' },
+    { key: "bybit",  label: "Bybit",      field: "bybitUSD", color: "#fbbf24" ,icon:'coins' },
   { key: 'etfs', label: 'ETFs', field: 'inversionUSD', color: '#2b7fff', icon: 'chart' },
 ];
 

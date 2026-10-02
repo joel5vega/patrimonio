@@ -321,7 +321,28 @@ const cryptoAssets = useMemo(() => {
     0,
   );
 }, [binanceSnap]);
+// ── Bybit: derivado del análisis backend (no del snapshot crudo) ──
+const bybitAssets = useMemo(() => {
+  const analyzed = todayPortfolioAnalysis?.portfolioV3?.assets ?? [];
+  return analyzed
+    .filter((a) => a.source === "bybit" || a.groupKey === "bybit")
+    .map((asset, index) => ({
+      ...asset,
+      id: asset.id ?? `bybit-${asset.asset ?? asset.symbol}-${index}`,
+      name: asset.name ?? asset.asset ?? asset.symbol ?? "Bybit",
+      symbol: asset.symbol ?? asset.asset ?? "—",
+      type: asset.type ?? "stablecoin",
+      source: "bybit",
+      groupKey: "bybit",
+      valueUSD: Number(asset.valueUSD ?? asset.marketValueUSD ?? 0),
+      sourceMeta: asset.sourceMeta ?? {},
+    }));
+}, [todayPortfolioAnalysis]);
 
+const totalBybitUSD = useMemo(
+  () => bybitAssets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0),
+  [bybitAssets],
+);
   const inversionSnap = latestInversionSnap;
   const tradeSnap = latestTradeSnap;
 
@@ -1065,6 +1086,8 @@ const refreshMarketQuotes = useCallback(
     history,
     chartHistory,
     cryptoAssets,
+    bybitAssets,
+    totalBybitUSD,
     inversionPositions,
     manualAssets: manualCtx.manualAssets ?? [],
     stableAssets,

@@ -708,7 +708,31 @@ export function usePortfolioData({
     null,
   );
 
+// ─── Exposición por fuente (para PortfolioSecondaryDetails) ─────────────
+const exposureBySource = useMemo(() => {
+  const map = {};
 
+  // Solo activos investables (no reserves ni patrimony)
+  const investable = assets.filter(
+    (asset) =>
+      asset.role !== "reserve" &&
+      asset.role !== "patrimony" &&
+      asset.classification?.isInvestable !== false,
+  );
+
+  for (const asset of investable) {
+    const source = asset.source ?? asset.groupKey ?? "unknown";
+    const value = safeNumber(asset.valueUSD ?? 0);
+    if (value > 0) {
+      map[source] = (map[source] ?? 0) + value;
+    }
+  }
+
+  // Redondear a 2 decimales para evitar floats largos en UI
+  return Object.fromEntries(
+    Object.entries(map).map(([k, v]) => [k, Number(v.toFixed(2))]),
+  );
+}, [assets]);
 //   useEffect(() => {
 //   console.log('usePortfolioData.assets:', assets.length);
 //   console.log('hasUSDT:', assets.some(a => a.symbol === 'USDT'));
@@ -783,5 +807,6 @@ export function usePortfolioData({
     patrimony: assets.filter(
       (asset) => asset.role === "patrimony",
     ),
+    exposureBySource,
   };
 }

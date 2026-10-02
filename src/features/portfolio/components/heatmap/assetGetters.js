@@ -1,3 +1,4 @@
+// src/features/portfolio/components/heatmap/assetGetters.js
 import { firstFiniteNumber } from './format';
 
 // ─── Getters de assets ──────────────────────────────────────
@@ -211,12 +212,17 @@ export function getPositionSide(asset = {}) {
   );
 }
 
+/**
+ * Nocional real de un futuro.
+ * NO hace fallback a marketValueUSD / valueUSD porque esos
+ * campos existen también para spot y stablecoins.
+ */
 export function getNotionalUSD(asset = {}) {
   return firstFiniteNumber(
     asset.notionalUSD,
+    asset.notional_usd,
     asset.sourceMeta?.notionalUSD,
-    asset.marketValueUSD,
-    asset.valueUSD,
+    asset.sourceMeta?.notional_usd,
   );
 }
 
@@ -234,34 +240,54 @@ export function getLiquidationDistancePct(asset = {}) {
   );
 }
 
+/**
+ * Detecta si un asset es un futuro/derivado real.
+ *
+ * Reglas (de más estricta a más laxa):
+ *  1. type === "futures"  → sí
+ *  2. positionSide LONG/SHORT  → sí
+ *  3. groupKey de derivados explícitos (binance_usdm, bybit_usdm, ...)
+ *     Y tiene notionalUSD real > 0
+ *
+ * NO se considera "bybit" ni "binance" como derivados por sí solos,
+ * porque esos son también los groupKey de las cuentas spot.
+ */
 export function isFuturesAsset(asset = {}) {
+  // Regla 1: type explícito
   if (asset.type === 'futures') {
     return true;
   }
 
+  // Regla 2: posición con side
   const positionSide = getPositionSide(asset);
-
   if (positionSide === 'LONG' || positionSide === 'SHORT') {
     return true;
   }
 
+  // Regla 3: groupKey de derivados explícitos + notional real
   const groupKey = String(asset.groupKey ?? '').toLowerCase();
   const source = String(asset.source ?? '').toLowerCase();
 
+  const DERIVATIVES_GROUPS = new Set([
+    'binance_usdm',
+    'binanceusdm',
+    'binance_futures',
+    'bybit_usdm',
+    'bybit_derivatives',
+    'bybit_linear',
+    'bybit_inverse',
+  ]);
+
   const isDerivativesGroup =
-    groupKey === 'binance_usdm' ||
-    groupKey === 'bybit' ||
-    source === 'bybit';
+    DERIVATIVES_GROUPS.has(groupKey) ||
+    DERIVATIVES_GROUPS.has(source);
 
-  if (isDerivativesGroup) {
-    const notionalUSD = getNotionalUSD(asset);
-
-    if (notionalUSD !== null && notionalUSD > 0) {
-      return true;
-    }
+  if (!isDerivativesGroup) {
+    return false;
   }
 
-  return false;
+  const notionalUSD = getNotionalUSD(asset);
+  return notionalUSD !== null && notionalUSD > 0;
 }
 
 export function getExchangeLabel(asset = {}) {
@@ -274,4 +300,3 @@ export function getExchangeLabel(asset = {}) {
 
   return source.toUpperCase() || 'EX';
 }
-

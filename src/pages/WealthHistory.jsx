@@ -1,3 +1,4 @@
+// src/components/WealthHistory.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
@@ -38,21 +39,28 @@ export default function WealthHistory() {
     chartHistory = [],
     totalCryptoUSD = 0,
     totalInversionUSD = 0,
+    totalBybitUSD = 0,        // ← NUEVO
     manualAssets = [],
     loading,
-    bobRate
+    bobRate,
   } = useApp();
+
   const bobRateAvailable = hasBobRate(bobRate);
   const headerRef = useRef(null);
   const controlRef = useRef(null);
   const [mode, setMode] = useState("summary");
   const [period, setPeriod] = useState("1M");
   const [hover, setHover] = useState(null);
-  const [visible, setVisible] = useState({ total: true,todo_full:false });
+  const [visible, setVisible] = useState({
+    total: true,
+    todo_full: false,
+  });
+
   const manualTypes = useMemo(
     () => getManualTypes(manualAssets, bobRate),
     [manualAssets, bobRate]
   );
+
   const roles = useMemo(
     () =>
       manualTypes.reduce(
@@ -65,10 +73,15 @@ export default function WealthHistory() {
       ),
     [manualTypes]
   );
-  const ahorroBs = manualTypes.find((item) => item.isAhorroBs)?.valueUSD || 0;
+
+  const ahorroBs =
+    manualTypes.find((item) => item.isAhorroBs)?.valueUSD || 0;
+
+  // ── Total: ahora incluye Bybit explícitamente ──
   const total =
     totalCryptoUSD +
     totalInversionUSD +
+    totalBybitUSD +        // ← NUEVO
     manualTypes
       .filter(
         (item) =>
@@ -76,20 +89,22 @@ export default function WealthHistory() {
           classifyManualField(item.field.replace("manual_", "")) !== "patrimony"
       )
       .reduce((sum, item) => sum + item.valueUSD, 0);
+
   const displayTotal = total + ahorroBs;
   const financialTotalUSD = total;
-const fullNetWorthUSD =
-  financialTotalUSD +
-  roles.patrimony;
+  const fullNetWorthUSD = financialTotalUSD + roles.patrimony;
+
   const types = useMemo(
     () => [SPECIAL_TODO, ...FIXED_TYPES, ...ROLE_TYPES, ...manualTypes],
     [manualTypes]
   );
+
   const values = useMemo(
     () => ({
       todo_full: displayTotal,
       total,
       crypto: totalCryptoUSD,
+      bybit: totalBybitUSD,      // ← NUEVO
       etfs: totalInversionUSD,
       role_trading: roles.trading,
       role_yield: roles.yield,
@@ -97,59 +112,81 @@ const fullNetWorthUSD =
       role_patrimony: roles.patrimony,
       ...Object.fromEntries(
         manualTypes.map((item) => [item.key, item.valueUSD])
-      )
+      ),
     }),
-    [displayTotal, total, totalCryptoUSD, totalInversionUSD, roles, manualTypes]
+    [
+      displayTotal,
+      total,
+      totalCryptoUSD,
+      totalBybitUSD,
+      totalInversionUSD,
+      roles,
+      manualTypes,
+    ]
   );
+
   const seriesMap = useMemo(
     () =>
       buildSeries({
         history: chartHistory,
-        days: PERIODS.find((item) => item.key === period)?.days || 30,
+        days:
+          PERIODS.find((item) => item.key === period)?.days || 30,
         manualTypes,
-        bobRate
+        bobRate,
       }),
     [chartHistory, period, manualTypes, bobRate]
   );
 
-
   const activeSeries = types
     .filter((item) => visible[item.key])
-    .map((item) => ({ ...item, data: seriesMap[item.key] || [] }))
+    .map((item) => ({
+      ...item,
+      data: seriesMap[item.key] || [],
+    }))
     .filter((item) => item.data.length);
+
   const primary = activeSeries[0];
+
+  // ── Composición: Bybit como línea propia ──
   const compositionRows = [
     {
       label: "Crypto",
       key: "crypto",
       valueUSD: totalCryptoUSD,
-      color: "#f97316"
+      color: "#f97316",
+    },
+    {
+      label: "Bybit",              // ← NUEVO
+      key: "bybit",                // ← NUEVO
+      valueUSD: totalBybitUSD,     // ← NUEVO
+      color: "#fbbf24",            // ← NUEVO
     },
     {
       label: "ETFs",
       key: "etfs",
       valueUSD: totalInversionUSD,
-      color: "#2b7fff"
+      color: "#2b7fff",
     },
     {
       label: "Reservas",
       key: "role_reserve",
       valueUSD: roles.reserve,
-      color: "#facc15"
+      color: "#facc15",
     },
     {
       label: "Yield",
       key: "role_yield",
       valueUSD: roles.yield,
-      color: "#a855f7"
+      color: "#a855f7",
     },
     {
       label: "Trading",
       key: "role_trading",
       valueUSD: roles.trading,
-      color: "#ec4899"
-    }
-  ];
+      color: "#ec4899",
+    },
+  ].filter((row) => row.valueUSD > 0);
+
   const previous = useMemo(() => {
     const row = sortHistory(chartHistory).at(-2);
     if (!row) return null;
@@ -160,98 +197,78 @@ const fullNetWorthUSD =
         Number(row.totalPortfolioUSD || 0) - computed.patrimony
       ),
       crypto: row.cryptoUSD || 0,
+      bybit: row.bybitUSD || 0,       // ← NUEVO
       etfs: row.inversionUSD || 0,
       role_reserve: computed.reserve,
       role_yield: computed.yield,
-      role_trading: computed.trading
+      role_trading: computed.trading,
     };
   }, [chartHistory, bobRate]);
+
   const delta = primary
     ? (primary.data.at(-1)?.v || 0) - (primary.data[0]?.v || 0)
     : 0;
-  const liquidity = total ? ((roles.reserve + ahorroBs) / total) * 100 : 0;
+
+  const liquidity = total
+    ? ((roles.reserve + ahorroBs) / total) * 100
+    : 0;
+
   const status =
     liquidity >= 20
-      ? { label: "Liquidez saludable", tone: "good", icon: CheckCircle2 }
+      ? {
+          label: "Liquidez saludable",
+          tone: "good",
+          icon: CheckCircle2,
+        }
       : {
           label: "Liquidez por debajo del objetivo",
           tone: "warning",
-          icon: AlertTriangle
+          icon: AlertTriangle,
         };
+
   const StatusIcon = status.icon;
+
   useEffect(() => {
     if (headerRef.current)
       animate(headerRef.current, {
         opacity: [0, 1],
         translateY: [-10, 0],
-        duration: 450
+        duration: 450,
       });
     if (controlRef.current)
       animate(controlRef.current.querySelectorAll("button"), {
         opacity: [0, 1],
         translateY: [5, 0],
         delay: stagger(25),
-        duration: 250
+        duration: 250,
       });
   }, [loading]);
+
   const toggle = (key) =>
     setVisible((current) => ({ ...current, [key]: !current[key] }));
+
   if (loading)
     return (
       <div className="wh-loading">
         <div className="wh-spinner" />
       </div>
     );
+
   const value =
     hover && primary?.data[hover.index]
       ? primary.data[hover.index].v
       : displayTotal;
+
   return (
     <main className="wh-page">
       <header ref={headerRef} className="wh-header">
         <div>
           <h1 className="wh-title">Patrimonio financiero</h1>
-         
         </div>
         <ViewModeSelector mode={mode} onChange={setMode} />
       </header>
-    
+
       <section className="wh-top-grid">
-         {/* <section className="wh-hero">
-          <div className="wh-hero-glow" />
-          <p className="wh-hero-eyebrow">Total financiero</p>
-          <p className="wh-hero-value">
-            {formatUSD(value)} <span>USD</span>
-          </p>
-          <p className="wh-hero-bs">
-            {bobRateAvailable
-              ? `Bs ${(value * bobRate).toLocaleString("es-BO", { maximumFractionDigits: 0 })}`
-              : "TC no disponible"}
-          </p>
-          {bobRateAvailable && (
-            <p className="wh-hero-rate">
-              TC: Bs {Number(bobRate).toFixed(2)} / USD
-            </p>
-          )}
-          <div className={`wh-hero-delta ${delta >= 0 ? "is-up" : "is-down"}`}>
-            {delta >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-            {formatUSD(delta)} en el período
-          </div>
-          <div className="wh-hero-stats">
-            <div>
-              <small>Crypto</small>
-              <strong>{formatCompact(totalCryptoUSD)}</strong>
-            </div>
-            <div>
-              <small>ETFs</small>
-              <strong>{formatCompact(totalInversionUSD)}</strong>
-            </div>
-            <div>
-              <small>Liquidez</small>
-              <strong>{liquidity.toFixed(1)}%</strong>
-            </div>
-          </div>
-        </section>  */}
         <section className="wh-chart-card">
           <PeriodSelector
             periods={PERIODS}
@@ -259,7 +276,10 @@ const fullNetWorthUSD =
             onChange={setPeriod}
           />
           {mode === "allocation" ? (
-            <WealthHistoryComposition rows={compositionRows} total={total} />
+            <WealthHistoryComposition
+              rows={compositionRows}
+              total={total}
+            />
           ) : (
             <>
               {activeSeries.length ? (
@@ -268,7 +288,8 @@ const fullNetWorthUSD =
                     {activeSeries.map((item) => (
                       <span key={item.key}>
                         <i style={{ background: item.color }} />
-                        {item.label} {formatCompact(item.data.at(-1)?.v)}
+                        {item.label}{" "}
+                        {formatCompact(item.data.at(-1)?.v)}
                       </span>
                     ))}
                   </div>
@@ -287,6 +308,7 @@ const fullNetWorthUSD =
           )}
         </section>
       </section>
+
       <section ref={controlRef}>
         <SeriesControls
           types={types}
@@ -295,6 +317,7 @@ const fullNetWorthUSD =
           onToggle={toggle}
         />
       </section>
+
       <section className="wh-analysis-grid">
         <article className={`wh-analysis-card ${status.tone}`}>
           <StatusIcon size={18} />
@@ -312,7 +335,9 @@ const fullNetWorthUSD =
           <div>
             <p className="wh-section-label">Lectura rápida</p>
             <strong>
-              {compositionRows.sort((a, b) => b.valueUSD - a.valueUSD)[0]
+              {compositionRows
+                .slice()
+                .sort((a, b) => b.valueUSD - a.valueUSD)[0]
                 ?.label || "Sin datos"}{" "}
               lidera la composición
             </strong>
