@@ -10,7 +10,7 @@ import CategoryBreakdown from './components/CategoryBreakdown';
 import TopExpenses from './components/TopExpenses';
 import DiagnosticPanel from './components/DiagnosticPanel';
 import styles from './Analytics.module.css';
-
+import PatrimonioLoader from '../../components/PatrimonioLoader';
 export default function Analytics() {
   const d = useAnalyticsData();
 
@@ -23,7 +23,7 @@ export default function Analytics() {
   }
 
   if (d.loading) {
-    return <div className={styles.centerMsg}>Cargando análisis…</div>;
+    return <div className={styles.centerMsg}><PatrimonioLoader size="md" /></div>;
   }
 
   if (d.error) {

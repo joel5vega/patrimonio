@@ -19,7 +19,7 @@ import { refreshBinanceSnapshot } from '../lib/binanceSnapshotClient';
 import { refreshBybitSnapshot } from '../lib/bybitSnapshotClient';
 
 import '../features/portfolio/styles/portfolio.css';
-
+import PatrimonioLoader from '../components/PatrimonioLoader';
 // Flag: activa Bybit solo cuando esté configurado en backend
 const HAS_BYBIT =
   import.meta.env.VITE_HAS_BYBIT === 'true';
@@ -69,7 +69,7 @@ export default function Portfolio() {
     return (
       <main className="portfolio-page">
         <div className="portfolio-loading">
-          Cargando análisis…
+         <PatrimonioLoader size="md" />
         </div>
       </main>
     );
