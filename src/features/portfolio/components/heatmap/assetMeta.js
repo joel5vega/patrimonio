@@ -225,7 +225,7 @@ export function getDisplayLabel(asset = {}) {
     ['USDT', 'USDC', 'BUSD', 'FDUSD', 'DAI', 'TUSD'].includes(symbol);
 
   if (isStable && (platform === 'binance' || platform === 'bybit')) {
-    return `${symbol || 'USDT'} · ${PLATFORM_LABEL[platform]}`;
+    return `${PLATFORM_LABEL[platform]}`;
   }
 
   if (symbol) return symbol;
