@@ -45,7 +45,7 @@ export default function Portfolio() {
     manualAssets,
     investorProfile,
   });
-
+  
   const exporter = usePortfolioExport(
     portfolio.aiReport,
   );

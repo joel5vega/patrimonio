@@ -2,7 +2,7 @@ import {
   Bitcoin, TrendingUp, BarChart2, Landmark, Layers, RefreshCw, ShieldCheck, Zap,
   Dices, Droplets, Building2, Briefcase, DollarSign, Cpu, HeartPulse, Lock, Shield,
   CreditCard, Flame, Sun, ShoppingBag, ShoppingCart, Droplet, Signal, Globe2, Gem,
-  Box, Smartphone,
+  Box, Smartphone, Wallet, Banknote, CircleDollarSign,
 } from 'lucide-react';
 import { getRole, getSector } from './assetGetters';
 
@@ -12,7 +12,7 @@ export const ROLE_META = {
   core: { color: '#2b7fff', Icon: Landmark, label: 'Core' },
   growth: { color: '#10b981', Icon: TrendingUp, label: 'Growth' },
   defensive: { color: '#facc15', Icon: ShieldCheck, label: 'Defense' },
-  liquidity: { color: '#2b7fff', Icon: Droplets, label: 'Liq' },
+  liquidity: { color: '#38bdf8', Icon: Droplets, label: 'Liq' },
   yield: { color: '#2b7fff', Icon: Zap, label: 'Yield' },
   speculative: { color: '#f43f5e', Icon: Dices, label: 'Spec' },
   trading: { color: '#a855f7', Icon: RefreshCw, label: 'Trade' },
@@ -21,7 +21,7 @@ export const ROLE_META = {
   unclassified: { color: '#a4a19b', Icon: Briefcase, label: 'Other' },
 };
 
-// ─── Iconos por símbolo ────────────────────────────────────
+// ─── Iconos por símbolo (Simple Icons CDN) ─────────────────
 
 export const SI_SLUGS = {
   BTC: 'bitcoin',
@@ -40,6 +40,8 @@ export const SI_SLUGS = {
   USDT: 'tether',
   USDC: 'usdcoin',
   DAI: 'dai',
+  BINANCE: 'binance',
+  BYBIT: 'bybit',
 };
 
 export const SI_COLORS = {
@@ -59,7 +61,13 @@ export const SI_COLORS = {
   USDT: '#26a17b',
   USDC: '#2775ca',
   DAI: '#f5ac37',
+  BINANCE: '#F0B90B',
+  BYBIT: '#F7A600',
+  AIRTM: '#00C2A8',
+  DEEL: '#FF5C35',
 };
+
+// ─── Lucide por símbolo (ETFs, stocks, liquidez) ───────────
 
 const SYMBOL_LUCIDE = {
   VOO: { Icon: BarChart2, color: '#10b981' },
@@ -93,6 +101,11 @@ const SYMBOL_LUCIDE = {
   EMBJ: { Icon: Globe2, color: '#2b7fff' },
   CEG: { Icon: Droplet, color: '#f59e0b' },
   ECL: { Icon: Droplet, color: '#f59e0b' },
+  // Liquidez / plataformas
+  AIRTM: { Icon: Wallet, color: '#00C2A8' },
+  DEEL: { Icon: Banknote, color: '#FF5C35' },
+  BINANCE: { Icon: CircleDollarSign, color: '#F0B90B' },
+  BYBIT: { Icon: Zap, color: '#F7A600' },
 };
 
 export const SECTOR_META = {
@@ -133,18 +146,138 @@ const TYPE_LUCIDE = {
   manual: { Icon: Briefcase, color: '#a4a19b' },
 };
 
-export function resolveIconLucide(asset = {}) {
+const PLATFORM_LABEL = {
+  binance: 'Binance',
+  bybit: 'Bybit',
+  airtm: 'AirTM',
+  deel: 'Deel',
+  quantfury: 'Quantfury',
+  admirals: 'Admirals',
+  manual: 'Manual',
+};
+
+/**
+ * Detecta plataforma.
+ * Orden: source/groupKey ANTES que classification.platform
+ * (Bybit USDT tiene classification.platform erróneo = "binance").
+ */
+export function resolvePlatformKey(asset = {}) {
+  const candidates = [
+    asset.source,
+    asset.groupKey,
+    asset.platform,
+    asset.classification?.platform,
+    asset.sourceMeta?.platform,
+    asset.symbol,
+    asset.name,
+  ];
+
+  for (const raw of candidates) {
+    const s = String(raw || '')
+      .trim()
+      .toLowerCase();
+    if (!s) continue;
+    if (s.includes('binance')) return 'binance';
+    if (s.includes('bybit')) return 'bybit';
+    if (s.includes('airtm') || s.includes('air tm')) return 'airtm';
+    if (s.includes('deel')) return 'deel';
+    if (s.includes('quantfury')) return 'quantfury';
+    if (s.includes('admirals')) return 'admirals';
+  }
+
+  return null;
+}
+
+/**
+ * Label del tile en el heatmap.
+ * - AirTM / Deel → nombre legible
+ * - USDT binance/bybit → "USDT · Binance" / "USDT · Bybit"
+ */
+export function getDisplayLabel(asset = {}) {
   const symbol = String(asset.symbol || '')
+    .trim()
     .toUpperCase()
     .split('/')[0];
+  const name = String(asset.name || '').trim();
+  const nameUpper = name.toUpperCase();
+  const platform = resolvePlatformKey(asset);
+
+  if (
+    symbol === 'AIRTM' ||
+    nameUpper === 'AIRTM' ||
+    nameUpper.includes('AIRTM') ||
+    platform === 'airtm'
+  ) {
+    return 'AirTM';
+  }
+
+  if (
+    symbol === 'DEEL' ||
+    nameUpper === 'DEEL' ||
+    nameUpper.includes('DEEL') ||
+    platform === 'deel'
+  ) {
+    return 'Deel';
+  }
+
+  const isStable =
+    asset.type === 'stablecoin' ||
+    ['USDT', 'USDC', 'BUSD', 'FDUSD', 'DAI', 'TUSD'].includes(symbol);
+
+  if (isStable && (platform === 'binance' || platform === 'bybit')) {
+    return `${symbol || 'USDT'} · ${PLATFORM_LABEL[platform]}`;
+  }
+
+  if (symbol) return symbol;
+  if (name) return name;
+  return '—';
+}
+
+/**
+ * Clave para SI_SLUGS / SYMBOL_LUCIDE.
+ * AirTM/Deel se mapean aunque source sea "manual".
+ */
+export function getIconSymbol(asset = {}) {
+  const symbol = String(asset.symbol || '')
+    .trim()
+    .toUpperCase()
+    .split('/')[0];
+  const name = String(asset.name || '')
+    .trim()
+    .toUpperCase();
+  const platform = resolvePlatformKey(asset);
+
+  if (
+    symbol === 'AIRTM' ||
+    name === 'AIRTM' ||
+    name.includes('AIRTM') ||
+    platform === 'airtm'
+  ) {
+    return 'AIRTM';
+  }
+
+  if (
+    symbol === 'DEEL' ||
+    name === 'DEEL' ||
+    name.includes('DEEL') ||
+    platform === 'deel'
+  ) {
+    return 'DEEL';
+  }
+
+  return symbol || name || '';
+}
+
+export function resolveIconLucide(asset = {}) {
+  const iconSymbol = getIconSymbol(asset);
+
+  if (SYMBOL_LUCIDE[iconSymbol]) {
+    return SYMBOL_LUCIDE[iconSymbol];
+  }
 
   const sector = getSector(asset);
   const role = getRole(asset);
   const type = asset.type;
-
-  if (SYMBOL_LUCIDE[symbol]) {
-    return SYMBOL_LUCIDE[symbol];
-  }
 
   if (sector && SECTOR_META[sector]) {
     return {
@@ -192,7 +325,7 @@ export function tileBg(pnlPct, asset) {
 
   if (role === 'trading') return 'rgba(168,85,247,0.15)';
   if (role === 'speculative') return 'rgba(244,63,94,0.15)';
+  if (role === 'liquidity') return 'rgba(56,189,248,0.18)';
 
   return 'rgba(30,41,59,0.70)';
 }
-

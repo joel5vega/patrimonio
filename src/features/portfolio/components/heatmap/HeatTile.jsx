@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { fmtPct } from './format';
 import { getPerformance } from './assetGetters';
-import { tileBg } from './assetMeta';
+import { tileBg, getDisplayLabel } from './assetMeta';
 import AssetIcon from './AssetIcon';
 import TooltipPortal from './TooltipPortal';
 
@@ -25,10 +25,8 @@ export default function HeatTile({ rect, etfData }) {
   const pctLabel = fmtPct(pnlPct);
   const density = getDensity(w, h);
 
-  const ticker =
-    String(asset.symbol || '').split('/')[0] ||
-    asset.name?.slice(0, 5).toUpperCase() ||
-    '?';
+  // Label legible: USDT · Binance / USDT · Bybit / AirTM / Deel / VOO …
+  const ticker = getDisplayLabel(asset);
 
   const showEnter = useCallback(() => {
     if (tileRef.current) setAnchorRect(tileRef.current.getBoundingClientRect());
@@ -52,7 +50,9 @@ export default function HeatTile({ rect, etfData }) {
           <span className="hm-tile__weight">{asset.weightPct.toFixed(1)}%</span>
         )}
 
-        {(density === 'md' || density === 'lg') && <AssetIcon asset={asset} size={iconSize} />}
+        {(density === 'md' || density === 'lg') && (
+          <AssetIcon asset={asset} size={iconSize} />
+        )}
         {density !== 'dot' && <span className="hm-tile__ticker">{ticker}</span>}
         {pctLabel && density !== 'dot' && density !== 'xs' && (
           <span className="hm-tile__change">{pctLabel}</span>
