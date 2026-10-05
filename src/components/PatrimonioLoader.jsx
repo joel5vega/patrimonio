@@ -28,7 +28,7 @@ const PatrimonioLoader = ({ size = 'md', className = '' }) => {
         />
       ))}
 
-      <style jsx>{`
+      <style>{`
         .patrimonio-loader {
           display: flex;
           align-items: flex-end;

@@ -157,6 +157,63 @@ function getUnrealizedPnlPct(asset) {
 }
 
 function normalizeAsset(asset = {}, index = 0) {
+
+   if (isWallbitCash(asset)) {
+    const cashValue = safeNumber(
+      asset.valueUSD ??
+      asset.marketValueUSD ??
+      asset.quantity ??
+      0,
+    );
+
+    return {
+      ...asset,
+
+      id: asset.id ?? "wallbit-cash",
+      name: asset.name ?? "Wallbit Cash",
+      symbol: asset.symbol ?? "WALLBIT_CASH",
+
+      source: "wallbit",
+      type: "cash",
+      role: "reserve",
+
+      quantity: cashValue,
+      entryPrice: 1,
+      marketPrice: 1,
+
+      costBasisUSD: cashValue,
+      marketValueUSD: cashValue,
+      unrealizedPnlUSD: 0,
+      unrealizedPnlPct: 0,
+      realizedPnlUSD: 0,
+
+      valueUSD: cashValue,
+      pnlUSD: 0,
+      pnlPct: 0,
+      changePct: 0,
+
+      classification: {
+        ...(asset.classification ?? {}),
+        role: "reserve",
+        assetClass: "cash",
+        isInvestable: false,
+      },
+
+      sourceMeta: {
+        ...(asset.sourceMeta ?? {}),
+        platform: "wallbit",
+        balanceType: "cash",
+        quantity: cashValue,
+        entryPrice: 1,
+        marketPrice: 1,
+        costBasisUSD: cashValue,
+        marketValueUSD: cashValue,
+        unrealizedPnlUSD: 0,
+        valuationStatus: "cash_at_par",
+      },
+    };
+  }
+
   const quantity = getQuantity(asset);
   const entryPrice = getEntryPrice(asset);
   const marketPrice = getMarketPrice(asset);
@@ -388,7 +445,26 @@ function futuresDedupeKey(asset = {}) {
     asset.entryPrice ?? "",
   ].join(":");
 }
+function isWallbitCash(asset = {}) {
+  return (
+    asset?.source === "wallbit" &&
+    (
+      asset?.type === "cash" ||
+      asset?.symbol === "WALLBIT_CASH" ||
+      asset?.classification?.assetClass === "cash" ||
+      asset?.role === "reserve"
+    )
+  );
+}
 
+function isReserveAsset(asset = {}) {
+  return (
+    asset?.role === "reserve" ||
+    asset?.type === "cash" ||
+    asset?.classification?.assetClass === "cash" ||
+    asset?.classification?.isInvestable === false
+  );
+}
 // ─── Hook ────────────────────────────────────────────────────
 
 export function usePortfolioData({
@@ -405,6 +481,26 @@ export function usePortfolioData({
     analysis?.portfolioV3 ??
     todayPortfolioV3 ??
     null;
+
+useEffect(() => {
+  console.log(
+    "[Portfolio] todayPortfolioAnalysis:",
+    todayPortfolioAnalysis,
+  );
+
+  console.log(
+    "[Portfolio] portfolioV3:",
+    portfolioV3,
+  );
+
+  console.log(
+    "[Portfolio] portfolioV3.assets:",
+    portfolioV3?.assets,
+  );
+}, [
+  todayPortfolioAnalysis,
+  portfolioV3,
+]);
 
   // 1. Assets normalizados (spot + Quantfury + manuales)
   const assets = useMemo(() => {
@@ -478,6 +574,8 @@ export function usePortfolioData({
     return [...mergedAssets, ...missingManualAssets];
   }, [portfolioV3, manualAssets]);
 
+
+
   // 2. Futuros (portfolioV3 + operationalRisk para SHORTs con valueUSD=0)
   const futuresAssets = useMemo(() => {
     // 2a. Del portfolioV3.assets
@@ -550,6 +648,27 @@ export function usePortfolioData({
 
   // 3. Filtros (aplicados sobre assets, no futuros)
   const filters = usePortfolioFilters(assets);
+  const wallbitCashAssets = assets.filter(
+  isWallbitCash,
+);
+
+const reserveAssets = assets.filter(
+  isReserveAsset,
+);
+
+const heatmapAssets = [
+  ...(filters?.investableAssets ?? []),
+  ...wallbitCashAssets,
+].filter((asset, index, collection) => {
+  const key = `${asset.source}:${asset.symbol}`;
+
+  return (
+    collection.findIndex(
+      (candidate) =>
+        `${candidate.source}:${candidate.symbol}` === key,
+    ) === index
+  );
+});
   const totals = portfolioV3?.totals ?? {};
 
   const summary = {
@@ -608,7 +727,11 @@ export function usePortfolioData({
     : Array.isArray(allocationAnalysis.rows)
       ? allocationAnalysis.rows
       : [];
+  
 
+
+
+      
   function statusFromDiff(diff) {
     const abs = Math.abs(safeNumber(diff, 0));
     if (abs >= 5) return "critical";
@@ -796,14 +919,12 @@ const exposureBySource = useMemo(() => {
     // Assets y derivados
     assets,
     futuresAssets,
-    heatmapAssets: filters?.investableAssets ?? assets,
+    heatmapAssets,
     filteredAssets: filters?.filteredAssets ?? assets,
 
     filters,
 
-    reserves: assets.filter(
-      (asset) => asset.role === "reserve",
-    ),
+    reserves: reserveAssets,
     patrimony: assets.filter(
       (asset) => asset.role === "patrimony",
     ),

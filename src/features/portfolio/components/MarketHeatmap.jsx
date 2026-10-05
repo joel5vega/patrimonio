@@ -25,13 +25,27 @@ const EXCLUDED_ROLES = new Set(['reserve', 'patrimony']);
 
 const valueOf = (asset) =>
   firstFiniteNumber(asset.marketValueUSD, asset.market_value_usd, asset.valueUSD) ?? 0;
+const isPendingInvestmentCash = (asset = {}) => {
+  return (
+    asset.source === "wallbit" &&
+    (
+      asset.type === "cash" ||
+      asset.symbol === "WALLBIT_CASH" ||
+      asset.classification?.assetClass === "cash"
+    )
+  );
+};
 
-const isInvestable = (asset) =>
+const isVisibleInHeatmap = (asset) =>
   !isFuturesAsset(asset) &&
-  !EXCLUDED_ROLES.has(getRole(asset)) &&
-  !asset.locked &&
+  (
+    isPendingInvestmentCash(asset) ||
+    (
+      !EXCLUDED_ROLES.has(getRole(asset)) &&
+      !asset.locked
+    )
+  ) &&
   valueOf(asset) > 1;
-
 // Añade valueUSD y weightPct a cada activo.
 function enrichAssets(assets) {
   const total = assets.reduce((sum, a) => sum + valueOf(a), 0);
@@ -76,7 +90,7 @@ export default function MarketHeatmap({ assets = [], futuresAssets = [] }) {
   const height = stageHeight(width, viewportHeight);
 
   const { enriched, total } = useMemo(() => {
-  const filtered = assets.filter(isInvestable);
+  const filtered = assets.filter(isVisibleInHeatmap);
 
   
 

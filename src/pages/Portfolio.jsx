@@ -20,6 +20,8 @@ import { refreshBybitSnapshot } from '../lib/bybitSnapshotClient';
 
 import '../features/portfolio/styles/portfolio.css';
 import PatrimonioLoader from '../components/PatrimonioLoader';
+import { refreshWallbitSnapshot } from '../lib/wallbitSnapshotClient';
+
 // Flag: activa Bybit solo cuando esté configurado en backend
 const HAS_BYBIT =
   import.meta.env.VITE_HAS_BYBIT === 'true';
@@ -62,6 +64,7 @@ export default function Portfolio() {
     refreshBybitSnapshot: HAS_BYBIT
       ? refreshBybitSnapshot
       : undefined,
+    refreshWallbitSnapshot,
     refreshAll,
   });
 
@@ -95,7 +98,7 @@ export default function Portfolio() {
       />
 
       <PortfolioHeatmap
-        assets={portfolio.assets}
+        assets={portfolio.heatmapAssets}
         futuresAssets={portfolio.futuresAssets}
         bobRate={portfolio.bobRate}
       />

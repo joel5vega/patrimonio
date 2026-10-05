@@ -25,30 +25,73 @@ function calculatePnlPct(asset) {
 function normalizeAsset(asset) {
   const classification = asset.classification || {};
   const sourceMeta = asset.sourceMeta || {};
-  const pnlPct = calculatePnlPct(asset);
-  const isFutures = asset.type === 'futures';
+
+  const isPendingInvestmentCash =
+    asset.source === "wallbit" &&
+    (
+      asset.type === "cash" ||
+      asset.symbol === "WALLBIT_CASH" ||
+      classification.assetClass === "cash"
+    );
+
+  const pnlPct = isPendingInvestmentCash
+    ? 0
+    : calculatePnlPct(asset);
+
+  const isFutures = asset.type === "futures";
 
   return {
     ...asset,
 
-    id: asset.id || `${asset.source || 'manual'}-${asset.symbol}`,
-    symbol: asset.symbol || asset.name || 'N/A',
-    name: asset.name || asset.symbol || 'Activo sin nombre',
+    id:
+      asset.id ||
+      `${asset.source || "manual"}-${asset.symbol}`,
+
+    symbol:
+      isPendingInvestmentCash
+        ? "WALLBIT_CASH"
+        : asset.symbol || asset.name || "N/A",
+
+    name:
+      isPendingInvestmentCash
+        ? "Pendiente de inversión"
+        : asset.name ||
+          asset.symbol ||
+          "Activo sin nombre",
 
     valueUSD: Number(asset.valueUSD || 0),
     weightPct: Number(asset.weightPct || 0),
 
-    role: asset.role || classification.role || 'unclassified',
-    sector: classification.sector || 'sin_sector',
-    assetClass: classification.assetClass || 'sin_clase',
-    riskLevel: Number(classification.riskLevel || 0),
+    role:
+      isPendingInvestmentCash
+        ? "reserve"
+        : asset.role ||
+          classification.role ||
+          "unclassified",
 
-    source: asset.source || asset.groupKey || 'manual',
-    type: asset.type || 'other',
+    sector:
+      classification.sector || "sin_sector",
 
-    // 🧹 Defensa: si NO es un futuro explícito, limpiar cualquier
-    // residuo de positionSide / notional / leverage que pudiera haber
-    // quedado pegado desde merges anteriores en usePortfolioData.
+    assetClass:
+      isPendingInvestmentCash
+        ? "cash"
+        : classification.assetClass ||
+          "sin_clase",
+
+    riskLevel: Number(
+      classification.riskLevel || 0,
+    ),
+
+    source:
+      asset.source ||
+      asset.groupKey ||
+      "manual",
+
+    type:
+      isPendingInvestmentCash
+        ? "cash"
+        : asset.type || "other",
+
     ...(isFutures
       ? {}
       : {
@@ -60,24 +103,40 @@ function normalizeAsset(asset) {
           marginMode: null,
         }),
 
-    quantity: numberOrNull(sourceMeta.quantity),
-    marketPrice: numberOrNull(
-      sourceMeta.marketPrice ?? sourceMeta.priceUSD,
-    ),
-    entryPrice: numberOrNull(sourceMeta.entryPrice),
+    quantity: isPendingInvestmentCash
+      ? Number(asset.valueUSD || 0)
+      : numberOrNull(sourceMeta.quantity),
 
-    pnlUSD: numberOrNull(sourceMeta.unrealizedPnlUSD),
+    marketPrice: isPendingInvestmentCash
+      ? 1
+      : numberOrNull(
+          sourceMeta.marketPrice ??
+          sourceMeta.priceUSD,
+        ),
+
+    entryPrice: isPendingInvestmentCash
+      ? 1
+      : numberOrNull(sourceMeta.entryPrice),
+
+    pnlUSD: isPendingInvestmentCash
+      ? 0
+      : numberOrNull(
+          sourceMeta.unrealizedPnlUSD,
+        ),
+
     pnlPct,
 
+    isPendingInvestmentCash,
+
     isNeutral:
-      asset.type === 'stablecoin' ||
-      classification.assetClass === 'efectivo' ||
+      isPendingInvestmentCash ||
+      asset.type === "stablecoin" ||
+      classification.assetClass === "efectivo" ||
       pnlPct === null,
 
     strategy: asset.strategy || {},
   };
 }
-
 export default function PortfolioHeatmap({
   assets = [],
   futuresAssets = [],

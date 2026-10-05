@@ -1,15 +1,19 @@
 // src/features/portfolio/hooks/usePortfolioQuotes.js
+
 import {
   useCallback,
   useState,
 } from "react";
 
-function normalizeResult(result, fallbackMessage) {
+function normalizeResult(
+  result,
+  fallbackMessage,
+) {
   if (result?.ok === false) {
     throw new Error(
       result?.error ||
-        result?.message ||
-        fallbackMessage,
+      result?.message ||
+      fallbackMessage,
     );
   }
 
@@ -20,17 +24,24 @@ export function usePortfolioQuotes({
   refreshMarketQuotes,
   refreshBinanceSnapshot,
   refreshBybitSnapshot,
+  refreshWallbitSnapshot,
   refreshAll,
 } = {}) {
-  const [refreshing, setRefreshing] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [refreshing, setRefreshing] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   const refreshQuotes = useCallback(
     async ({
       force = false,
       includeBinance = false,
       includeBybit = false,
+      includeWallbit = false,
     } = {}) => {
       if (refreshing) {
         const nextMessage =
@@ -55,10 +66,15 @@ export function usePortfolioQuotes({
         includeBybit &&
         typeof refreshBybitSnapshot === "function";
 
+      const canRefreshWallbit =
+        includeWallbit &&
+        typeof refreshWallbitSnapshot === "function";
+
       if (
         !canRefreshMarket &&
         !canRefreshBinance &&
-        !canRefreshBybit
+        !canRefreshBybit &&
+        !canRefreshWallbit
       ) {
         const nextError =
           "No hay ninguna función de actualización disponible.";
@@ -79,7 +95,6 @@ export function usePortfolioQuotes({
         const tasks = [];
         const sources = [];
 
-        // 1. Quantfury / market quotes
         if (canRefreshMarket) {
           sources.push("cotizaciones");
 
@@ -96,13 +111,14 @@ export function usePortfolioQuotes({
           );
         }
 
-        // 2. Binance
         if (canRefreshBinance) {
           sources.push("Binance");
 
           tasks.push(
             Promise.resolve(
-              refreshBinanceSnapshot(),
+              refreshBinanceSnapshot({
+                slot: "manual",
+              }),
             ).then((result) => ({
               source: "binance",
               result: normalizeResult(
@@ -113,18 +129,37 @@ export function usePortfolioQuotes({
           );
         }
 
-        // 3. Bybit
         if (canRefreshBybit) {
           sources.push("Bybit");
 
           tasks.push(
             Promise.resolve(
-              refreshBybitSnapshot(),
+              refreshBybitSnapshot({
+                slot: "manual",
+              }),
             ).then((result) => ({
               source: "bybit",
               result: normalizeResult(
                 result,
                 "Falló el snapshot de Bybit.",
+              ),
+            })),
+          );
+        }
+
+        if (canRefreshWallbit) {
+          sources.push("Wallbit");
+
+          tasks.push(
+            Promise.resolve(
+              refreshWallbitSnapshot({
+                slot: "manual",
+              }),
+            ).then((result) => ({
+              source: "wallbit",
+              result: normalizeResult(
+                result,
+                "Falló el snapshot de Wallbit.",
               ),
             })),
           );
@@ -148,6 +183,7 @@ export function usePortfolioQuotes({
           force,
           includeBinance,
           includeBybit,
+          includeWallbit,
           results,
         };
       } catch (refreshError) {
@@ -170,6 +206,7 @@ export function usePortfolioQuotes({
       refreshBinanceSnapshot,
       refreshBybitSnapshot,
       refreshMarketQuotes,
+      refreshWallbitSnapshot,
       refreshing,
     ],
   );
@@ -180,6 +217,7 @@ export function usePortfolioQuotes({
         force: true,
         includeBinance: true,
         includeBybit: true,
+        includeWallbit: true,
       }),
     [refreshQuotes],
   );
@@ -190,6 +228,7 @@ export function usePortfolioQuotes({
         force: true,
         includeBinance: false,
         includeBybit: false,
+        includeWallbit: false,
       }),
     [refreshQuotes],
   );

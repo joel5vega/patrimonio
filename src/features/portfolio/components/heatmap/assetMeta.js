@@ -41,7 +41,7 @@ export const SI_SLUGS = {
   USDC: 'usdcoin',
   DAI: 'dai',
   BINANCE: 'binance',
-  BYBIT: 'bybit',
+  // bybit: no existe en simpleicons CDN → Lucide fallback
 };
 
 export const SI_COLORS = {
@@ -224,8 +224,9 @@ export function getDisplayLabel(asset = {}) {
     asset.type === 'stablecoin' ||
     ['USDT', 'USDC', 'BUSD', 'FDUSD', 'DAI', 'TUSD'].includes(symbol);
 
+  // Stablecoin en exchange: solo el nombre de la plataforma (sin "USDT ·")
   if (isStable && (platform === 'binance' || platform === 'bybit')) {
-    return `${PLATFORM_LABEL[platform]}`;
+    return PLATFORM_LABEL[platform];
   }
 
   if (symbol) return symbol;
@@ -264,6 +265,14 @@ export function getIconSymbol(asset = {}) {
   ) {
     return 'DEEL';
   }
+
+  // Stablecoin en exchange → logo de la plataforma (no Tether)
+  const isStable =
+    asset.type === 'stablecoin' ||
+    ['USDT', 'USDC', 'BUSD', 'FDUSD', 'DAI', 'TUSD'].includes(symbol);
+
+  if (isStable && platform === 'binance') return 'BINANCE';
+  if (isStable && platform === 'bybit') return 'BYBIT';
 
   return symbol || name || '';
 }
