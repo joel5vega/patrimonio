@@ -1,66 +1,66 @@
 {
-  "lastUpdated": "2026-09-30T22:47:00-04:00",
+  "lastUpdated": "2026-10-05T16:38:00-04:00",
   "etfs": {
     "VOO": {
       "symbol": "VOO",
       "issuer": "vanguard",
-      "asOfDate": "2026-08-15",
+      "asOfDate": "2026-08-31",
       "source": "vanguard_official",
       "status": "complete",
       "sectors": [
         {
           "sector": "tecnologia",
-          "weightPct": 38.61,
+          "weightPct": 38.72,
           "sourceStandard": "GICS"
         },
         {
           "sector": "finanzas",
-          "weightPct": 11.41,
+          "weightPct": 12.02,
           "sourceStandard": "GICS"
         },
         {
           "sector": "comunicacion",
-          "weightPct": 9.9,
+          "weightPct": 9.50,
           "sourceStandard": "GICS"
         },
         {
           "sector": "consumo_discrecional",
-          "weightPct": 9.5,
+          "weightPct": 9.31,
           "sourceStandard": "GICS"
         },
         {
           "sector": "salud",
-          "weightPct": 8.9,
+          "weightPct": 9.29,
           "sourceStandard": "GICS"
         },
         {
           "sector": "industria",
-          "weightPct": 8.5,
+          "weightPct": 7.75,
           "sourceStandard": "GICS"
         },
         {
           "sector": "consumo_basico",
-          "weightPct": 4.5,
+          "weightPct": 4.46,
           "sourceStandard": "GICS"
         },
         {
           "sector": "energia",
-          "weightPct": 3.0,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "materiales",
-          "weightPct": 2.4,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "inmobiliario",
-          "weightPct": 2.3,
+          "weightPct": 3.48,
           "sourceStandard": "GICS"
         },
         {
           "sector": "servicios_publicos",
-          "weightPct": 2.2,
+          "weightPct": 1.99,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "inmobiliario",
+          "weightPct": 1.80,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "materiales",
+          "weightPct": 1.68,
           "sourceStandard": "GICS"
         }
       ],
@@ -68,31 +68,31 @@
         {
           "symbol": "NVDA",
           "name": "NVIDIA Corporation",
-          "weightPct": 7.5,
+          "weightPct": 8.08,
           "sector": "tecnologia"
         },
         {
           "symbol": "AAPL",
           "name": "Apple Inc",
-          "weightPct": 6.58,
+          "weightPct": 7.03,
           "sector": "tecnologia"
         },
         {
           "symbol": "MSFT",
           "name": "Microsoft Corporation",
-          "weightPct": 4.29,
+          "weightPct": 4.52,
           "sector": "tecnologia"
         },
         {
           "symbol": "AMZN",
           "name": "Amazon.com Inc",
-          "weightPct": 3.61,
+          "weightPct": 3.89,
           "sector": "consumo_discrecional"
         },
         {
           "symbol": "GOOGL",
           "name": "Alphabet Inc Class A",
-          "weightPct": 3.24,
+          "weightPct": 2.15,
           "sector": "comunicacion"
         }
       ],
@@ -103,80 +103,229 @@
     "VXUS": {
       "symbol": "VXUS",
       "issuer": "vanguard",
-      "asOfDate": "2026-08-15",
+      "asOfDate": "2026-08-31",
       "source": "vanguard_official",
       "status": "complete",
       "sectors": [
         {
-          "sector": "tecnologia",
-          "weightPct": 22.5,
+          "sector": "finanzas",
+          "weightPct": 23.29,
           "sourceStandard": "GICS"
         },
         {
-          "sector": "finanzas",
-          "weightPct": 18.2,
+          "sector": "tecnologia",
+          "weightPct": 19.87,
           "sourceStandard": "GICS"
         },
         {
           "sector": "industria",
-          "weightPct": 13.1,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "salud",
-          "weightPct": 11.8,
+          "weightPct": 15.11,
           "sourceStandard": "GICS"
         },
         {
           "sector": "consumo_discrecional",
-          "weightPct": 10.4,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_basico",
-          "weightPct": 7.9,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "energia",
-          "weightPct": 5.2,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "comunicacion",
-          "weightPct": 4.3,
+          "weightPct": 8.07,
           "sourceStandard": "GICS"
         },
         {
           "sector": "materiales",
-          "weightPct": 3.8,
+          "weightPct": 7.70,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "salud",
+          "weightPct": 6.89,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "consumo_basico",
+          "weightPct": 4.77,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "energia",
+          "weightPct": 4.76,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "comunicacion",
+          "weightPct": 4.33,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "servicios_publicos",
+          "weightPct": 2.89,
           "sourceStandard": "GICS"
         },
         {
           "sector": "inmobiliario",
-          "weightPct": 2.8,
+          "weightPct": 2.33,
           "sourceStandard": "GICS"
         }
       ],
       "holdings": [
         {
-          "symbol": "NESN",
-          "name": "Nestle SA",
-          "weightPct": 1.1
+          "symbol": "TSM",
+          "name": "Taiwan Semiconductor Manufacturing Co Ltd",
+          "weightPct": 4.70,
+          "sector": "tecnologia"
+        },
+        {
+          "symbol": "SSNLF",
+          "name": "Samsung Electronics Co Ltd",
+          "weightPct": 1.90,
+          "sector": "tecnologia"
         },
         {
           "symbol": "ASML",
           "name": "ASML Holding NV",
-          "weightPct": 1.0
+          "weightPct": 1.42,
+          "sector": "tecnologia"
+        },
+        {
+          "symbol": "NESN",
+          "name": "Nestle SA",
+          "weightPct": 0.54,
+          "sector": "consumo_basico"
         },
         {
           "symbol": "ROG",
           "name": "Roche Holding AG",
-          "weightPct": 0.9
+          "weightPct": 0.67,
+          "sector": "salud"
         }
       ],
-      "totalHoldings": 7900,
+      "totalHoldings": 8549,
       "expenseRatio": 0.07
+    },
+
+    "VT": {
+      "symbol": "VT",
+      "issuer": "vanguard",
+      "asOfDate": "2026-08-31",
+      "source": "vanguard_official",
+      "status": "complete",
+      "sectors": [
+        {
+          "sector": "tecnologia",
+          "weightPct": 30.33,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "finanzas",
+          "weightPct": 16.49,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "industria",
+          "weightPct": 11.11,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "consumo_discrecional",
+          "weightPct": 8.96,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "salud",
+          "weightPct": 8.60,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "comunicacion",
+          "weightPct": 7.25,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "consumo_basico",
+          "weightPct": 4.50,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "materiales",
+          "weightPct": 4.11,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "energia",
+          "weightPct": 4.06,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "servicios_publicos",
+          "weightPct": 2.33,
+          "sourceStandard": "GICS"
+        },
+        {
+          "sector": "inmobiliario",
+          "weightPct": 2.26,
+          "sourceStandard": "GICS"
+        }
+      ],
+      "holdings": [
+        {
+          "symbol": "NVDA",
+          "name": "NVIDIA Corporation",
+          "weightPct": 4.00,
+          "sector": "tecnologia"
+        },
+        {
+          "symbol": "AAPL",
+          "name": "Apple Inc",
+          "weightPct": 3.80,
+          "sector": "tecnologia"
+        },
+        {
+          "symbol": "MSFT",
+          "name": "Microsoft Corporation",
+          "weightPct": 3.20,
+          "sector": "tecnologia"
+        },
+        {
+          "symbol": "AMZN",
+          "name": "Amazon.com Inc",
+          "weightPct": 2.10,
+          "sector": "consumo_discrecional"
+        },
+        {
+          "symbol": "GOOGL",
+          "name": "Alphabet Inc Class A",
+          "weightPct": 1.70,
+          "sector": "comunicacion"
+        },
+        {
+          "symbol": "TSM",
+          "name": "Taiwan Semiconductor Manufacturing Co Ltd",
+          "weightPct": 1.50,
+          "sector": "tecnologia"
+        },
+        {
+          "symbol": "AVGO",
+          "name": "Broadcom Inc",
+          "weightPct": 1.40,
+          "sector": "tecnologia"
+        },
+        {
+          "symbol": "GOOG",
+          "name": "Alphabet Inc Class C",
+          "weightPct": 1.30,
+          "sector": "comunicacion"
+        },
+        {
+          "symbol": "META",
+          "name": "Meta Platforms Inc",
+          "weightPct": 1.00,
+          "sector": "comunicacion"
+        },
+        {
+          "symbol": "JPM",
+          "name": "JPMorgan Chase & Co",
+          "weightPct": 0.90,
+          "sector": "finanzas"
+        }
+      ],
+      "totalHoldings": 10088,
+      "expenseRatio": 0.06
     },
 
     "VFMF": {
