@@ -1,3 +1,4 @@
+// src/features/portfolio/constants/portfolioRules.js
 // ─── CLASIFICACIÓN DE ACTIVOS ─────────────────────────────────
 
 export const ASSET_RULES = {

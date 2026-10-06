@@ -33,10 +33,10 @@ export async function refreshWallbitSnapshot({
       await refreshWallbitSnapshotCallable({
         slot,
       });
-    console.log(
-      "refreshWallbitSnapshot response:",
-      response,
-    );
+    // console.log(
+    //   "refreshWallbitSnapshot response:",
+    //   response,
+    // );
     return response.data;
   } catch (error) {
     throw normalizeCallableError(error);

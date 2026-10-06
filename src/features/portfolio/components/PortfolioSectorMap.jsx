@@ -86,6 +86,7 @@ export const SECTOR_ICONS = {
   emergentes: Sparkles,
   dividendos_value: PieChart,
   stablecoin_yield: BadgeDollarSign,
+  stablecoin: DollarSign,
   otros: Layers3,
 };
 
@@ -110,7 +111,7 @@ export const SECTOR_LABELS = {
   crypto_l1: 'Crypto L1',
   crypto_l2: 'Crypto L2',
   crypto_defi: 'Crypto DeFi',
-  crypto_stablecoin: 'Stablecoins',
+  crypto_stablecoin: 'Stablecoin',
   crypto_pagos: 'Crypto pagos',
   crypto_meme: 'Crypto meme',
   metales_precios: 'Metales preciosos',
@@ -122,15 +123,13 @@ export const SECTOR_LABELS = {
   emergentes: 'Emergentes',
   dividendos_value: 'Dividendos / value',
   stablecoin_yield: 'Stablecoin yield',
+  stablecoin: 'Stablecoin',
   otros: 'Otros',
 };
 
 function safeNumber(value, fallback = 0) {
   const number = Number(value);
-
-  return Number.isFinite(number)
-    ? number
-    : fallback;
+  return Number.isFinite(number) ? number : fallback;
 }
 
 function normalizeSectorKey(value) {
@@ -145,7 +144,6 @@ function normalizeSectorKey(value) {
 
 function formatSector(sector) {
   const key = normalizeSectorKey(sector);
-
   return (
     SECTOR_LABELS[key] ??
     String(sector ?? 'otros').replaceAll('_', ' ')
@@ -165,10 +163,10 @@ function formatPct(value, decimals = 1) {
 }
 
 function getColor(index, palette) {
-  const safePalette = Array.isArray(palette) && palette.length
-    ? palette
-    : DEFAULT_SECTOR_COLORS;
-
+  const safePalette =
+    Array.isArray(palette) && palette.length
+      ? palette
+      : DEFAULT_SECTOR_COLORS;
   return safePalette[index % safePalette.length];
 }
 
@@ -181,62 +179,62 @@ function normalizeSectorData(sectorAnalysis) {
     .map((sector) => ({
       ...sector,
       sector: normalizeSectorKey(
-        sector.sector ??
-        sector.key ??
-        'otros',
+        sector.sector ?? sector.key ?? 'otros',
       ),
       valueUSD: safeNumber(
-        sector.valueUSD ??
-        sector.value ??
-        0,
+        sector.valueUSD ?? sector.value ?? 0,
       ),
       pct: safeNumber(
-        sector.pct ??
-        sector.weightPct ??
-        0,
+        sector.pct ?? sector.weightPct ?? 0,
       ),
       count: safeNumber(
         sector.count ??
-        sector.positions ??
-        sector.n ??
-        0,
+          sector.positions ??
+          sector.n ??
+          0,
       ),
       sources: Array.isArray(sector.sources)
         ? sector.sources
         : [],
+      assets: Array.isArray(sector.assets)
+        ? sector.assets
+        : [],
     }))
     .filter(
       (sector) =>
-        sector.valueUSD > 0 ||
-        sector.pct > 0,
+        sector.valueUSD > 0 || sector.pct > 0,
     )
     .sort((a, b) => b.valueUSD - a.valueUSD);
 }
 
-function groupHoldingsByCompany(sources = []) {
+/**
+ * Builds the list of companies / positions shown in the details panel.
+ *
+ * 1. Look-through holdings from ETF sources (NVDA inside VOO, etc.)
+ * 2. Direct positions from sector.assets where lookThroughWeight is null
+ *    (IAU, SLV, BND, MELI, BTC, USDT, etc.)
+ */
+function groupHoldingsByCompany(
+  sources = [],
+  assets = [],
+  sectorKey = 'otros',
+) {
   const companies = new Map();
 
+  // --- 1. Look-through holdings from ETF sources ---
   for (const source of sources) {
     const sourceSymbol = String(source.symbol ?? '')
       .trim()
       .toUpperCase();
 
-    if (!sourceSymbol) {
-      continue;
-    }
+    if (!sourceSymbol) continue;
 
     const portfolioWeightPct = safeNumber(
-      source.portfolioWeightPct ??
-      source.weightPct ??
-      0,
+      source.portfolioWeightPct ?? source.weightPct ?? 0,
     );
-
     const sourceValueUSD = safeNumber(
-      source.valueUSD ??
-      source.value ??
-      0,
+      source.valueUSD ?? source.value ?? 0,
     );
-
     const holdings = Array.isArray(source.holdings)
       ? source.holdings
       : [];
@@ -246,48 +244,42 @@ function groupHoldingsByCompany(sources = []) {
         .trim()
         .toUpperCase();
 
-      if (!symbol) {
-        continue;
-      }
+      if (!symbol) continue;
 
       const etfWeightPct = safeNumber(
         holding.etfWeightPct ??
-        holding.weightPct ??
-        holding.weight ??
-        0,
+          holding.weightPct ??
+          holding.weight ??
+          0,
       );
 
-      const effectiveWeightPct =
-        portfolioWeightPct *
-        etfWeightPct /
-        100;
-
-      const effectiveValueUSD =
-        sourceValueUSD *
-        etfWeightPct /
-        100;
+      // Prefer backend pre-computed values when available
+      const effectiveWeightPct = safeNumber(
+        holding.effectiveWeightPct,
+        (portfolioWeightPct * etfWeightPct) / 100,
+      );
+      const effectiveValueUSD = safeNumber(
+        holding.effectiveValueUSD,
+        (sourceValueUSD * etfWeightPct) / 100,
+      );
 
       if (!companies.has(symbol)) {
         companies.set(symbol, {
           symbol,
           name: holding.name ?? symbol,
           sector: normalizeSectorKey(
-            holding.sector ?? 'otros',
+            holding.sector ?? sectorKey,
           ),
           totalEffectiveWeightPct: 0,
           totalEffectiveValueUSD: 0,
           sources: [],
+          isDirect: false,
         });
       }
 
       const company = companies.get(symbol);
-
-      company.totalEffectiveWeightPct +=
-        effectiveWeightPct;
-
-      company.totalEffectiveValueUSD +=
-        effectiveValueUSD;
-
+      company.totalEffectiveWeightPct += effectiveWeightPct;
+      company.totalEffectiveValueUSD += effectiveValueUSD;
       company.sources.push({
         symbol: sourceSymbol,
         name: source.name ?? sourceSymbol,
@@ -299,26 +291,78 @@ function groupHoldingsByCompany(sources = []) {
     }
   }
 
+  // --- 2. Direct positions from sector.assets ---
+  for (const asset of assets) {
+    const symbol = String(asset.symbol ?? '')
+      .trim()
+      .toUpperCase();
+
+    if (!symbol) continue;
+
+    const isDirect =
+      asset.lookThroughWeight == null ||
+      asset.lookThroughWeight === undefined;
+
+    if (!isDirect) continue;
+
+    // Skip if already present as a look-through company
+    if (companies.has(symbol) && !companies.get(symbol).isDirect) {
+      continue;
+    }
+
+    const valueUSD = safeNumber(
+      asset.valueUSD ?? asset.value ?? 0,
+    );
+    if (valueUSD <= 0) continue;
+
+    if (!companies.has(symbol)) {
+      companies.set(symbol, {
+        symbol,
+        name: asset.name ?? symbol,
+        sector: normalizeSectorKey(sectorKey),
+        totalEffectiveWeightPct: 0,
+        totalEffectiveValueUSD: 0,
+        sources: [],
+        isDirect: true,
+      });
+    }
+
+    const company = companies.get(symbol);
+    company.isDirect = true;
+    company.totalEffectiveValueUSD += valueUSD;
+    // Weight left at 0; CompanyRow derives a sector-relative % for display
+    company.sources.push({
+      symbol,
+      name: asset.name ?? symbol,
+      etfWeightPct: 100,
+      portfolioWeightPct: 0,
+      effectiveWeightPct: 0,
+      effectiveValueUSD: valueUSD,
+    });
+  }
+
   return [...companies.values()]
     .map((company) => ({
       ...company,
       sources: company.sources.sort(
-        (left, right) =>
-          right.effectiveWeightPct -
-          left.effectiveWeightPct,
+        (a, b) => b.effectiveWeightPct - a.effectiveWeightPct,
       ),
     }))
     .sort(
-      (left, right) =>
-        right.totalEffectiveWeightPct -
-        left.totalEffectiveWeightPct,
+      (a, b) =>
+        b.totalEffectiveValueUSD - a.totalEffectiveValueUSD ||
+        b.totalEffectiveWeightPct - a.totalEffectiveWeightPct,
     );
 }
 
 function enrichSectors(sectors) {
   return sectors.map((sector) => ({
     ...sector,
-    companies: groupHoldingsByCompany(sector.sources),
+    companies: groupHoldingsByCompany(
+      sector.sources,
+      sector.assets,
+      sector.sector,
+    ),
   }));
 }
 
@@ -329,19 +373,19 @@ function SectorDonut({
   onHoverChange,
   onSelect,
   colors,
-  size = 244,
-  radius = 78,
-  strokeWidth = 34,
-  gap = 3,
+  size = 200,
+  radius = 64,
+  strokeWidth = 28,
+  gap = 2.5,
 }) {
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
 
-  const totalPct = sectors.reduce(
-    (sum, sector) =>
-      sum + Math.max(0, safeNumber(sector.pct)),
-    0,
-  ) || 1;
+  const totalPct =
+    sectors.reduce(
+      (sum, sector) => sum + Math.max(0, safeNumber(sector.pct)),
+      0,
+    ) || 1;
 
   let offset = 0;
 
@@ -367,13 +411,8 @@ function SectorDonut({
         const pct = Math.max(0, safeNumber(sector.pct));
         const dash = (pct / totalPct) * circumference;
         const visibleDash = Math.max(0, dash - gap);
-
-        const dashArray = `${visibleDash} ${
-          circumference - visibleDash
-        }`;
-
+        const dashArray = `${visibleDash} ${circumference - visibleDash}`;
         const dashOffset = -offset;
-
         offset += dash;
 
         const isSelected = selectedIndex === index;
@@ -390,7 +429,7 @@ function SectorDonut({
             stroke={color}
             strokeWidth={
               isSelected || isHovered
-                ? strokeWidth + 3
+                ? strokeWidth + 2.5
                 : strokeWidth
             }
             strokeDasharray={dashArray}
@@ -424,24 +463,17 @@ function DonutCenter({
 
   return (
     <div className="sector-donut__center">
-      <Icon
-        size={18}
-        color={iconColor}
-        strokeWidth={2}
-      />
-
+      <Icon size={16} color={iconColor} strokeWidth={2} />
       <span className="sector-donut__label">
         {displaySector
           ? formatSector(displaySector.sector)
           : 'Total'}
       </span>
-
       <strong className="sector-donut__value">
         {displaySector
           ? formatPct(displaySector.pct)
           : formatUSD(totalUSD)}
       </strong>
-
       {displaySector && (
         <span className="sector-donut__usd">
           {formatUSD(displaySector.valueUSD)}
@@ -451,56 +483,65 @@ function DonutCenter({
   );
 }
 
-function CompanyRow({ company }) {
+function CompanyRow({ company, sectorPct = 0, sectorValueUSD = 0 }) {
+  const isDirect = Boolean(company.isDirect);
+
+  // Look-through: use portfolio-level %. Direct: derive sector-relative %.
+  const displayWeightPct = isDirect
+    ? sectorValueUSD > 0
+      ? (company.totalEffectiveValueUSD / sectorValueUSD) * sectorPct
+      : 0
+    : company.totalEffectiveWeightPct;
+
+  const lookThroughSources = isDirect
+    ? []
+    : company.sources.filter(
+        (s) => s.symbol !== company.symbol || s.etfWeightPct < 100,
+      );
+
   return (
     <div className="sector-company">
       <AssetIcon
         asset={{
           symbol: company.symbol,
           name: company.name,
-          type: 'stock',
+          type: isDirect ? 'etf' : 'stock',
           sector: company.sector,
         }}
-        size={18}
+        size={16}
       />
 
       <div className="sector-company__main">
         <span className="sector-company__symbol">
           {company.symbol}
         </span>
-
         <span className="sector-company__name">
           {company.name}
         </span>
-
-        <div className="sector-company__sources">
-          {company.sources.map((source) => (
-            <span
-              key={`${company.symbol}-${source.symbol}`}
-              className="sector-company__source"
-              title={[
-                `${source.symbol}:`,
-                `${formatPct(source.etfWeightPct, 2)} dentro del ETF`,
-                `${formatPct(source.effectiveWeightPct, 2)} efectivo en cartera`,
-              ].join(' · ')}
-            >
-              {source.symbol} {formatPct(
-                source.effectiveWeightPct,
-                2,
-              )}
-            </span>
-          ))}
-        </div>
+        {lookThroughSources.length > 0 && (
+          <div className="sector-company__sources">
+            {lookThroughSources.map((source) => (
+              <span
+                key={`${company.symbol}-${source.symbol}`}
+                className="sector-company__source"
+                title={[
+                  `${source.symbol}:`,
+                  `${formatPct(source.etfWeightPct, 2)} dentro del ETF`,
+                  `${formatPct(source.effectiveWeightPct, 2)} efectivo en cartera`,
+                ].join(' · ')}
+              >
+                {source.symbol}{' '}
+                {formatPct(source.effectiveWeightPct, 2)}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="sector-company__right">
         <strong className="sector-company__weight">
-          {formatPct(
-            company.totalEffectiveWeightPct,
-            2,
-          )}
+          {formatPct(displayWeightPct, 2)}
         </strong>
-
         <span className="sector-company__value">
           {formatUSD(company.totalEffectiveValueUSD)}
         </span>
@@ -509,39 +550,29 @@ function CompanyRow({ company }) {
   );
 }
 
-function SectorDetails({
-  sector,
-  index,
-  colors,
-}) {
+function SectorDetails({ sector, index, colors }) {
   if (!sector) {
     return (
       <div className="sector-map__placeholder">
-        <Layers3 size={28} />
+        <Layers3 size={22} />
         <span>
-          Pasa el cursor sobre un sector o selecciónalo para ver su composición.
+          Selecciona un sector para ver su composición.
         </span>
       </div>
     );
   }
 
-  const Icon =
-    SECTOR_ICONS[sector.sector] ??
-    Layers3;
-
+  const Icon = SECTOR_ICONS[sector.sector] ?? Layers3;
   const color = getColor(index, colors);
   const companies = Array.isArray(sector.companies)
     ? sector.companies
     : [];
+  const hasDirect = companies.some((c) => c.isDirect);
 
   return (
     <div className="sector-details">
       <div className="sector-details__header">
-        <Icon
-          size={25}
-          color={color}
-        />
-
+        <Icon size={20} color={color} />
         <h3 className="sector-details__title">
           {formatSector(sector.sector)}
         </h3>
@@ -551,17 +582,13 @@ function SectorDetails({
         <strong className="sector-details__pct">
           {formatPct(sector.pct)}
         </strong>
-
         <span className="sector-details__usd">
           {formatUSD(sector.valueUSD)}
         </span>
-
         {sector.count > 0 && (
           <span className="sector-details__count">
             {sector.count}{' '}
-            {sector.count === 1
-              ? 'posición'
-              : 'posiciones'}
+            {sector.count === 1 ? 'posición' : 'posiciones'}
           </span>
         )}
       </div>
@@ -569,27 +596,28 @@ function SectorDetails({
       {companies.length > 0 ? (
         <div className="sector-details__companies">
           <div className="sector-companies__title">
-            Principales empresas
+            {hasDirect ? 'Posiciones' : 'Principales empresas'}
           </div>
 
-          {companies
-            .slice(0, 8)
-            .map((company) => (
-              <CompanyRow
-                key={company.symbol}
-                company={company}
-              />
-            ))}
+          {companies.slice(0, 8).map((company) => (
+            <CompanyRow
+              key={company.symbol}
+              company={company}
+              sectorPct={sector.pct}
+              sectorValueUSD={sector.valueUSD}
+            />
+          ))}
 
           {companies.length > 8 && (
             <div className="sector-companies__more">
-              +{companies.length - 8} empresas más
+              +{companies.length - 8}{' '}
+              {hasDirect ? 'posiciones más' : 'empresas más'}
             </div>
           )}
         </div>
       ) : (
         <div className="sector-details__no-companies">
-          No hay holdings empresariales disponibles para este sector.
+          No hay holdings ni posiciones disponibles para este sector.
         </div>
       )}
     </div>
@@ -603,23 +631,11 @@ export default function PortfolioSectorMap({
   visibleLimit = DEFAULT_VISIBLE_LIMIT,
 }) {
   const [showAll, setShowAll] = useState(false);
-
-  /*
-   * selectedIndex controla el panel derecho.
-   * Solo cambia por clic, no por hover.
-   */
   const [selectedIndex, setSelectedIndex] = useState(null);
-
-  /*
-   * hoveredIndex solo controla resaltado visual.
-   * Nunca hace que aparezca/desaparezca el contenido grande.
-   */
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   const sectors = useMemo(
-    () => enrichSectors(
-      normalizeSectorData(sectorAnalysis),
-    ),
+    () => enrichSectors(normalizeSectorData(sectorAnalysis)),
     [sectorAnalysis],
   );
 
@@ -627,8 +643,7 @@ export default function PortfolioSectorMap({
     safeNumber(totalInvertibleUSD) > 0
       ? safeNumber(totalInvertibleUSD)
       : sectors.reduce(
-          (sum, sector) =>
-            sum + safeNumber(sector.valueUSD),
+          (sum, sector) => sum + safeNumber(sector.valueUSD),
           0,
         );
 
@@ -636,14 +651,8 @@ export default function PortfolioSectorMap({
     ? sectors
     : sectors.slice(0, visibleLimit);
 
-  /*
-   * El donut puede mostrar el sector bajo hover,
-   * pero el panel de empresas se mantiene solo con selectedIndex.
-   */
   const donutDisplayIndex =
-    hoveredIndex !== null
-      ? hoveredIndex
-      : selectedIndex;
+    hoveredIndex !== null ? hoveredIndex : selectedIndex;
 
   const donutDisplaySector =
     donutDisplayIndex !== null
@@ -657,9 +666,7 @@ export default function PortfolioSectorMap({
 
   function selectSector(index) {
     setSelectedIndex((current) =>
-      current === index
-        ? null
-        : index,
+      current === index ? null : index,
     );
   }
 
@@ -667,13 +674,10 @@ export default function PortfolioSectorMap({
     return (
       <section className="portfolio-sector-map">
         <div className="sector-map__empty">
-          <Layers3 size={30} />
+          <Layers3 size={24} />
           <span>No hay datos sectoriales disponibles.</span>
-
           {totalUSD > 0 && (
-            <small>
-              {formatUSD(totalUSD)} invertidos
-            </small>
+            <small>{formatUSD(totalUSD)} invertidos</small>
           )}
         </div>
       </section>
@@ -692,7 +696,6 @@ export default function PortfolioSectorMap({
             onSelect={selectSector}
             colors={colors}
           />
-
           <DonutCenter
             displaySector={donutDisplaySector}
             displayIndex={donutDisplayIndex}
@@ -714,12 +717,11 @@ export default function PortfolioSectorMap({
         <button
           type="button"
           className="sector-map__toggle"
-          onClick={() => setShowAll((current) => !current)}
+          onClick={() => setShowAll((c) => !c)}
         >
           {showAll ? 'Ver menos' : 'Ver más'}
-
           <ChevronDown
-            size={18}
+            size={16}
             className={
               showAll
                 ? 'sector-map__chevron sector-map__chevron--open'
@@ -732,33 +734,18 @@ export default function PortfolioSectorMap({
       <div className="sector-map__legend">
         {visibleSectors.map((sector) => {
           const sectorIndex = sectors.findIndex(
-            (candidate) =>
-              candidate.sector === sector.sector,
+            (c) => c.sector === sector.sector,
           );
-
           const Icon =
-            SECTOR_ICONS[sector.sector] ??
-            Layers3;
-
-          const color = getColor(
-            sectorIndex,
-            colors,
-          );
-
-          const isSelected =
-            selectedIndex === sectorIndex;
-
-          const isHovered =
-            hoveredIndex === sectorIndex;
+            SECTOR_ICONS[sector.sector] ?? Layers3;
+          const color = getColor(sectorIndex, colors);
+          const isSelected = selectedIndex === sectorIndex;
+          const isHovered = hoveredIndex === sectorIndex;
 
           const className = [
             'sector-legend-item',
-            isSelected
-              ? 'sector-legend-item--active'
-              : '',
-            isHovered
-              ? 'sector-legend-item--hovered'
-              : '',
+            isSelected ? 'sector-legend-item--active' : '',
+            isHovered ? 'sector-legend-item--hovered' : '',
           ]
             .filter(Boolean)
             .join(' ');
@@ -774,28 +761,19 @@ export default function PortfolioSectorMap({
               onBlur={() => setHoveredIndex(null)}
               onClick={() => selectSector(sectorIndex)}
               aria-pressed={isSelected}
-              aria-label={`Ver detalle de ${formatSector(
-                sector.sector,
-              )}`}
+              aria-label={`Ver detalle de ${formatSector(sector.sector)}`}
             >
               <span
                 className="sector-legend-item__dot"
                 style={{ backgroundColor: color }}
               />
-
-              <Icon
-                size={20}
-                color={color}
-              />
-
+              <Icon size={16} color={color} />
               <span className="sector-legend-item__label">
                 {formatSector(sector.sector)}
               </span>
-
               <strong className="sector-legend-item__pct">
                 {formatPct(sector.pct)}
               </strong>
-
               <span className="sector-legend-item__usd">
                 {formatUSD(sector.valueUSD)}
               </span>
