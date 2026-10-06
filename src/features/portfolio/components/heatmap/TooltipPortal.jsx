@@ -14,6 +14,7 @@ export default function TooltipPortal({
   etfData = null,
 }) {
   const tooltipRef = useRef(null);
+
   const [position, setPosition] = useState(null);
 
   useEffect(() => {
@@ -69,19 +70,19 @@ export default function TooltipPortal({
   const aprPct = asset.classification?.aprPct;
   const { color } = resolveIconLucide(asset);
 
-  const symbol = String(asset.symbol || '').toUpperCase();
-  const etfInfo = etfData?.[symbol];
-  const topHoldings =
-    Array.isArray(etfInfo?.holdings) && etfInfo.holdings.length > 0
-      ? etfInfo.holdings.slice(0, 5)
-      : [];
-  const topHoldingsWeight = topHoldings.reduce(
-    (sum, h) => sum + (Number(h.weightPct) || 0),
-    0,
-  );
-  const expenseRatio = Number(etfInfo?.expenseRatio);
-  const hasExpense =
-    Number.isFinite(expenseRatio) && expenseRatio > 0;
+  // El backend adjunta `asset.lookThrough` con { topHoldings, expenseRatio, etf, … }.
+// Normalizamos aquí para que el resto del tooltip no cambie.
+const lookThrough = asset?.lookThrough ?? null;
+const topHoldings = Array.isArray(lookThrough?.topHoldings)
+  ? lookThrough.topHoldings.slice(0, 5)
+  : [];
+const topHoldingsWeight = topHoldings.reduce(
+  (sum, h) => sum + (Number(h.etfWeightPct ?? h.weightPct) || 0),
+  0,
+);
+const expenseRatio = Number(lookThrough?.expenseRatio);
+const hasExpense =
+  Number.isFinite(expenseRatio) && expenseRatio > 0;
 
   const style = position
     ? {
@@ -251,43 +252,42 @@ export default function TooltipPortal({
         )}
       </div>
 
-      {topHoldings.length > 0 && (
-        <>
-          <div className="hm-tooltip__div" />
+     {topHoldings.length > 0 && (
+  <div className="tooltip-holdings">
+    <div className="tooltip-section-title">
+      Principales posiciones
+    </div>
 
-          <div className="hm-tooltip__etf">
-            <span className="hm-tooltip__etf-title">
-              Top holdings
-              <span className="hm-tooltip__etf-weight">
-                {topHoldingsWeight.toFixed(1)}%
-              </span>
-            </span>
+    {topHoldings.map((holding) => (
+  <div
+    key={holding.symbol}
+    className="tooltip-holding"
+  >
+    <AssetIcon
+      asset={{
+        symbol: holding.symbol,
+        name: holding.name,
+        type: 'stock',
+        sector: holding.sector,
+      }}
+      size={18}
+    />
 
-            <div className="hm-tooltip__etf-list">
-              {topHoldings.map((holding) => (
-                <div
-                  key={holding.symbol}
-                  className="hm-tooltip__etf-row"
-                >
-                  <span className="hm-tooltip__etf-symbol">
-                    {holding.symbol}
-                  </span>
-                  <span className="hm-tooltip__etf-pct">
-                    {Number(holding.weightPct).toFixed(1)}%
-                  </span>
-                </div>
-              ))}
-            </div>
+    <span className="tooltip-holding__name">
+      {holding.symbol}
+    </span>
 
-            {hasExpense && (
-              <div className="hm-tooltip__etf-expense">
-                <span>Expense ratio</span>
-                <span>{expenseRatio.toFixed(2)}%</span>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+    <span className="tooltip-holding__weight">
+      {Number(holding.etfWeightPct ?? holding.weightPct ?? 0).toFixed(2)}%
+    </span>
+  </div>
+))}
+
+    <div className="tooltip-holdings-total">
+      Top 5: {topHoldingsWeight.toFixed(1)}%
+    </div>
+  </div>
+)}
 
       {(roleMeta || sector) && (
         <div

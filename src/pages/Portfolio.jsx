@@ -115,6 +115,7 @@ export default function Portfolio() {
 
       <PortfolioSectorMap
         sectorAnalysis={portfolio.sectorAnalysis}
+        totalInvertibleUSD={portfolio.summary.investableUSD}
       />
 
       <PortfolioDecisionSupport

@@ -4,6 +4,11 @@ import { getPerformance } from './assetGetters';
 import { tileBg, getDisplayLabel, resolvePlatformKey } from './assetMeta';
 import AssetIcon from './AssetIcon';
 import TooltipPortal from './TooltipPortal';
+import HoldingStrip from './HoldingStrip';
+
+// Opción 2: mini-logos de las principales empresas dentro del tile del ETF.
+// Déjalo en false para usar solo el popup (opción 1).
+const SHOW_HOLDING_STRIP = false;
 
 // Cuánta información cabe según el tamaño real del rectángulo.
 // dot: solo color · xs: ticker · sm: ticker + P&L · md: + icono · lg: + peso
@@ -29,7 +34,7 @@ function shouldHidePct(asset) {
   return platform === 'binance' || platform === 'bybit';
 }
 
-export default function HeatTile({ rect, etfData }) {
+export default function HeatTile({ rect }) {
   const { asset, x, y, w, h } = rect;
   const tileRef = useRef(null);
   const [anchorRect, setAnchorRect] = useState(null);
@@ -71,6 +76,9 @@ export default function HeatTile({ rect, etfData }) {
         {pctLabel && density !== 'dot' && density !== 'xs' && (
           <span className="hm-tile__change">{pctLabel}</span>
         )}
+        {SHOW_HOLDING_STRIP && density === 'lg' && (
+          <HoldingStrip lookThrough={asset.lookThrough} width={w} height={h} />
+        )}
       </div>
 
       {anchorRect && (
@@ -78,7 +86,6 @@ export default function HeatTile({ rect, etfData }) {
           asset={asset}
           anchorRect={anchorRect}
           performance={performance}
-          etfData={etfData}
         />
       )}
     </div>

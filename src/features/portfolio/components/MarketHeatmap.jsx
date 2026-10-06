@@ -6,7 +6,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { animate, stagger } from 'animejs';
 
-import { useETFExposure } from '../hooks/useETFExposure';
 import { firstFiniteNumber } from './heatmap/format';
 import { getPerformance, getRole, isFuturesAsset } from './heatmap/assetGetters';
 import {
@@ -84,18 +83,14 @@ function countPerformance(assets) {
 }
 
 export default function MarketHeatmap({ assets = [], futuresAssets = [] }) {
-  const { data: etfData } = useETFExposure(assets);
   const [stageRef, width] = useContainerWidth();
   const viewportHeight = useViewportHeight();
   const height = stageHeight(width, viewportHeight);
 
-  const { enriched, total } = useMemo(() => {
-  const filtered = assets.filter(isVisibleInHeatmap);
-
-  
-
-  return enrichAssets(filtered);
-}, [assets]);
+  const { enriched, total } = useMemo(
+    () => enrichAssets(assets.filter(isVisibleInHeatmap)),
+    [assets],
+  );
   const roles = useMemo(() => groupByRole(enriched), [enriched]);
   const stats = useMemo(() => countPerformance(enriched), [enriched]);
   const layout = useTreemapLayout(roles, width, height);
@@ -134,7 +129,6 @@ export default function MarketHeatmap({ assets = [], futuresAssets = [] }) {
           <HeatTile
             key={rect.asset.id || rect.asset.symbol || rect.asset.name}
             rect={rect}
-            etfData={etfData}
           />
         ))}
       </div>

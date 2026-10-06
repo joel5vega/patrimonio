@@ -2,7 +2,8 @@ import {
   Bitcoin, TrendingUp, BarChart2, Landmark, Layers, RefreshCw, ShieldCheck, Zap,
   Dices, Droplets, Building2, Briefcase, DollarSign, Cpu, HeartPulse, Lock, Shield,
   CreditCard, Flame, Sun, ShoppingBag, ShoppingCart, Droplet, Signal, Globe2, Gem,
-  Box, Smartphone, Wallet, Banknote, CircleDollarSign,
+  Box, Smartphone, Wallet, Banknote, CircleDollarSign, Car, Ship, TrainFront,
+  Link2, Smile
 } from 'lucide-react';
 import { getRole, getSector } from './assetGetters';
 
@@ -70,42 +71,115 @@ export const SI_COLORS = {
 // ─── Lucide por símbolo (ETFs, stocks, liquidez) ───────────
 
 const SYMBOL_LUCIDE = {
+  // ─── ETFs ────────────────────────────────────────────────────
   VOO: { Icon: BarChart2, color: '#10b981' },
   SPY: { Icon: BarChart2, color: '#10b981' },
   IVV: { Icon: BarChart2, color: '#10b981' },
   VTI: { Icon: BarChart2, color: '#34d399' },
   QQQM: { Icon: Cpu, color: '#5a9fff' },
   QQQ: { Icon: Cpu, color: '#5a9fff' },
-  NVDA: { Icon: Cpu, color: '#76c442' },
-  TSLA: { Icon: Zap, color: '#34d399' },
-  AAPL: { Icon: Smartphone, color: '#a4a19b' },
-  MSFT: { Icon: Cpu, color: '#5a9fff' },
   VXUS: { Icon: Globe2, color: '#2b7fff' },
   VWO: { Icon: Globe2, color: '#2b7fff' },
+  VT: { Icon: Globe2, color: '#06b6d4' },
   SCHD: { Icon: TrendingUp, color: '#facc15' },
+  VFMF: { Icon: TrendingUp, color: '#f59e0b' },
+  AVUV: { Icon: TrendingUp, color: '#f59e0b' },
+  EMXC: { Icon: Globe2, color: '#2b7fff' },
+  MCHI: { Icon: Globe2, color: '#2b7fff' },
+  EMBJ: { Icon: Globe2, color: '#2b7fff' },
   IAU: { Icon: Gem, color: '#eab308' },
   GLD: { Icon: Gem, color: '#eab308' },
   BND: { Icon: Lock, color: '#facc15' },
   TIP: { Icon: Shield, color: '#facc15' },
   VNQ: { Icon: Building2, color: '#f97316' },
   SGOV: { Icon: DollarSign, color: '#2b7fff' },
-  MU: { Icon: Cpu, color: '#5a9fff' },
-  LITE: { Icon: Cpu, color: '#5a9fff' },
-  MELI: { Icon: ShoppingBag, color: '#facc15' },
   SLV: { Icon: Gem, color: '#eab308' },
+
+  // ─── Tecnología ─────────────────────────────────────────────
+  NVDA: { Icon: Cpu, color: '#76c442' },
+  AAPL: { Icon: Smartphone, color: '#a4a19b' },
+  MSFT: { Icon: Cpu, color: '#5a9fff' },
+  AMZN: { Icon: ShoppingBag, color: '#ff9900' },
+  GOOGL: { Icon: Globe2, color: '#4285f4' },
+  GOOG: { Icon: Globe2, color: '#4285f4' },
+  META: { Icon: Signal, color: '#0866ff' },
+  AVGO: { Icon: Cpu, color: '#cc0000' },
+  MU: { Icon: Cpu, color: '#5a9fff' },
+  DELL: { Icon: Cpu, color: '#007db8' },
+  TSM: { Icon: Cpu, color: '#e31837' },
+  ASML: { Icon: Cpu, color: '#00a6e0' },
+  SSNLF: { Icon: Smartphone, color: '#1428a0' },
+  INFY: { Icon: Cpu, color: '#0096e1' },
+  LITE: { Icon: Cpu, color: '#5a9fff' },
+
+  // ─── Finanzas ───────────────────────────────────────────────
+  JPM: { Icon: Landmark, color: '#117aca' },
+  HDB: { Icon: Landmark, color: '#ed1c24' },
+  IBN: { Icon: Landmark, color: '#e87511' },
+  TRV: { Icon: Shield, color: '#004b87' },
+  SCHW: { Icon: Landmark, color: '#0078d7' },
+
+  // ─── Salud ──────────────────────────────────────────────────
+  ROG: { Icon: HeartPulse, color: '#0066cc' },
+  BMY: { Icon: HeartPulse, color: '#cc0000' },
   MRNA: { Icon: HeartPulse, color: '#fb7185' },
-  HSY: { Icon: ShoppingCart, color: '#2b7fff' },
-  SCHW: { Icon: Landmark, color: '#2b7fff' },
-  ZTS: { Icon: HeartPulse, color: '#fb7185' },
-  MCHI: { Icon: Globe2, color: '#2b7fff' },
-  EMBJ: { Icon: Globe2, color: '#2b7fff' },
-  CEG: { Icon: Droplet, color: '#f59e0b' },
-  ECL: { Icon: Droplet, color: '#f59e0b' },
-  // Liquidez / plataformas
+  ZTS: { Icon: HeartPulse, color: '#3b82f6' },
+
+  // ─── Consumo básico ─────────────────────────────────────────
+  NESN: { Icon: ShoppingCart, color: '#1e3a8a' },
+  NESTLE: { Icon: ShoppingCart, color: '#1e3a8a' },
+  HSY: { Icon: ShoppingCart, color: '#744f2c' },
+  MO: { Icon: ShoppingCart, color: '#0078d7' },
+
+  // ─── Consumo discrecional ───────────────────────────────────
+  MELI: { Icon: ShoppingBag, color: '#00b1ea' },
+  FIVE: { Icon: ShoppingBag, color: '#0078d7' },
+  M: { Icon: ShoppingBag, color: '#cc0000' },
+  LEA: { Icon: Car, color: '#00529b' },
+
+  // ─── Energía ────────────────────────────────────────────────
+  VLO: { Icon: Droplet, color: '#00529b' },
+  COP: { Icon: Droplet, color: '#00529b' },
+  EOG: { Icon: Droplet, color: '#164194' },
+  MPC: { Icon: Droplet, color: '#00529b' },
+  NEM: { Icon: Gem, color: '#b8860b' },
+  SM: { Icon: Droplet, color: '#0078d7' },
+  CRC: { Icon: Droplet, color: '#00529b' },
+  MGY: { Icon: Droplet, color: '#0078d7' },
+
+  // ─── Materiales ─────────────────────────────────────────────
+  // (NEM ya está en energía/metales preciosos)
+
+  // ─── Telecomunicaciones ─────────────────────────────────────
+  VSAT: { Icon: Signal, color: '#0066cc' },
+
+  // ─── Industria ──────────────────────────────────────────────
+  MATX: { Icon: Ship, color: '#00529b' },
+  GATX: { Icon: TrainFront, color: '#00529b' },
+
+  // ─── Liquidez / plataformas ─────────────────────────────────
   AIRTM: { Icon: Wallet, color: '#00C2A8' },
   DEEL: { Icon: Banknote, color: '#FF5C35' },
   BINANCE: { Icon: CircleDollarSign, color: '#F0B90B' },
   BYBIT: { Icon: Zap, color: '#F7A600' },
+
+  // ─── Crypto ─────────────────────────────────────────────────
+  BTC: { Icon: Bitcoin, color: '#f7931a' },
+  ETH: { Icon: Gem, color: '#627eea' },
+  SOL: { Icon: Zap, color: '#9945ff' },
+  BNB: { Icon: CircleDollarSign, color: '#f3ba2f' },
+  XRP: { Icon: TrendingUp, color: '#346aa9' },
+  ADA: { Icon: Gem, color: '#0033ad' },
+  AVAX: { Icon: Zap, color: '#e84142' },
+  DOT: { Icon: Layers, color: '#e6007a' },
+  MATIC: { Icon: Layers, color: '#8247e5' },
+  UNI: { Icon: RefreshCw, color: '#ff007a' },
+  AAVE: { Icon: TrendingUp, color: '#b6509e' },
+  LINK: { Icon: Link2, color: '#2a5ada' },
+  DOGE: { Icon: Smile, color: '#c2a633' },
+  USDT: { Icon: DollarSign, color: '#26a17b' },
+  USDC: { Icon: DollarSign, color: '#2775ca' },
+  DAI: { Icon: DollarSign, color: '#f5ac37' }
 };
 
 export const SECTOR_META = {

@@ -1,0 +1,16 @@
+/* Importar junto a MarketHeatmap.css */
+.hm-hold { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.08); }
+.hm-hold-head { display: flex; justify-content: space-between; font: 600 9px/1 ui-monospace, monospace;
+  letter-spacing: .08em; color: rgba(255,255,255,.4); margin-bottom: 6px; }
+.hm-hold-foot { margin: 8px 0 0; }
+.hm-hold-row { display: grid; grid-template-columns: 16px 44px 1fr auto; gap: 8px; align-items: center;
+  padding: 3px 0; font-size: 11px; }
+.hm-hold-symbol { font-weight: 600; color: rgba(255,255,255,.9); }
+.hm-hold-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,255,255,.45); }
+.hm-hold-weight { font-family: ui-monospace, monospace; color: rgba(255,255,255,.75); }
+
+.hm-hold-logo { border-radius: 4px; object-fit: contain; background: rgba(255,255,255,.92); flex: none; }
+.hm-hold-logo--fallback { display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; background: rgba(255,255,255,.15); text-transform: uppercase; }
+
+.hm-hold-strip { display: flex; gap: 4px; justify-content: center; margin-top: 6px; pointer-events: none; }

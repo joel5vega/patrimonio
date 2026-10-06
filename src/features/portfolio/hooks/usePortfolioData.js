@@ -1,471 +1,104 @@
 // src/features/portfolio/hooks/usePortfolioData.js
-import { useMemo ,useEffect} from "react";
-import { usePortfolioFilters } from "./usePortfolioFilters";
-import {
-  INVESTOR_PROFILES,
-  DEFAULT_INVESTOR_PROFILE,
-} from "../constants/portfolioRules";
+//
+// Capa de lectura del portafolio. El backend (buildPortfolioV3) ya entrega
+// construidos sectorAnalysis (look-through) y heatmapAssets, así que aquí
+// solo se SELECCIONA lo que cada componente necesita:
+//
+//   análisis + manuales → assets → { futuros, reservas, patrimonio, filtros }
+//   portfolioV3         → { resumen, riesgo, asignación, sectores, heatmap }
+//
+// Ya no se descarga etf-exposure.json ni se hace look-through en el navegador.
 
-const EMPTY_PLAN = {
-  monthly: [],
-  lumpSum: [],
-  actions: [],
-  monthlyUSD: 0,
-  deployableCash: 0,
-  remainingCash: 0,
-  opportunityCount: 0,
-};
+import { useMemo } from 'react';
 
-function safeNumber(value, fallback = 0) {
-  if (value === null || value === undefined || value === "") {
-    return fallback;
-  }
+import { usePortfolioFilters } from './usePortfolioFilters';
+import { DEFAULT_INVESTOR_PROFILE, INVESTOR_PROFILES } from '../constants/portfolioRules';
 
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
-}
+import { buildAllocationRows } from './portfolioData/allocationRows';
+import { normalizeDecisionSupport } from './portfolioData/decisionSupport';
+import { extractFuturesAssets } from './portfolioData/futuresAssets';
+import { attachLiveMetrics } from './portfolioData/heatmapTiles';
+import { mergeAnalysisWithManual } from './portfolioData/mergeAssets';
+import { isReserveAsset } from './portfolioData/normalizeAsset';
+import { getAssetValueUSD, safeNumber } from './portfolioData/numbers';
 
-function firstFiniteNumber(...values) {
-  for (const value of values) {
-    if (value === null || value === undefined || value === "") {
-      continue;
-    }
+const EMPTY_SECTORS = { sectors: [] };
 
-    const number = Number(value);
-    if (Number.isFinite(number)) {
-      return number;
-    }
-  }
+// ── Selectores sobre el análisis ────────────────────────────
 
-  return null;
-}
-
-function getAssetRole(asset) {
-  return (
-    asset?.classification?.role ??
-    asset?.role ??
-    "unclassified"
-  );
-}
-
-function getQuantity(asset) {
-  return firstFiniteNumber(
-    asset?.quantity,
-    asset?.net_qty,
-    asset?.netQty,
-    asset?.sourceMeta?.quantity,
-    asset?.sourceMeta?.balances?.total,
-  );
-}
-
-function getPositiveNumber(...values) {
-  for (const value of values) {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ''
-    ) {
-      continue;
-    }
-
-    const number = Number(value);
-
-    if (Number.isFinite(number) && number > 0) {
-      return number;
-    }
-  }
-
-  return null;
-}
-
-function getEntryPrice(asset) {
-  return getPositiveNumber(
-    asset?.entryPrice,
-    asset?.entry_price,
-    asset?.avgEntryPrice,
-    asset?.avg_entry_price,
-    asset?.sourceMeta?.entryPrice,
-    asset?.sourceMeta?.entry_price,
-    asset?.sourceMeta?.avgEntryPrice,
-    asset?.sourceMeta?.avg_entry_price,
-  );
-}
-
-function getMarketPrice(asset) {
-  return getPositiveNumber(
-    asset?.marketPrice,
-    asset?.market_price,
-    asset?.priceUSD,
-    asset?.price_usd,
-    asset?.markPrice,
-    asset?.mark_price,
-    asset?.sourceMeta?.marketPrice,
-    asset?.sourceMeta?.market_price,
-    asset?.sourceMeta?.priceUSD,
-    asset?.sourceMeta?.price_usd,
-    asset?.sourceMeta?.markPrice,
-    asset?.sourceMeta?.mark_price,
-  );
-}
-
-function getCostBasis(asset) {
-  return firstFiniteNumber(
-    asset?.costBasisUSD,
-    asset?.cost_basis_usd,
-    asset?.sourceMeta?.costBasisUSD,
-    asset?.sourceMeta?.cost_basis_usd,
-  );
-}
-
-function getRealizedPnl(asset) {
-  return firstFiniteNumber(
-    asset?.realizedPnlUSD,
-    asset?.realized_pnl_usd,
-    asset?.sourceMeta?.realizedPnlUSD,
-    asset?.sourceMeta?.realized_pnl_usd,
-  );
-}
-
-function getUnrealizedPnl(asset) {
-  return firstFiniteNumber(
-    asset?.unrealizedPnlUSD,
-    asset?.unrealized_pnl_usd,
-    asset?.pnlUSD,
-    asset?.pnl_usd,
-    asset?.sourceMeta?.unrealizedPnlUSD,
-    asset?.sourceMeta?.unrealized_pnl_usd,
-    asset?.sourceMeta?.pnlUSD,
-    asset?.sourceMeta?.pnl_usd,
-  );
-}
-
-function getUnrealizedPnlPct(asset) {
-  return firstFiniteNumber(
-    asset?.unrealizedPnlPct,
-    asset?.unrealized_pnl_pct,
-    asset?.pnlPct,
-    asset?.pnl_pct,
-    asset?.changePct,
-    asset?.change_pct,
-    asset?.sourceMeta?.unrealizedPnlPct,
-    asset?.sourceMeta?.unrealized_pnl_pct,
-    asset?.sourceMeta?.pnlPct,
-    asset?.sourceMeta?.pnl_pct,
-    asset?.sourceMeta?.changePct,
-    asset?.sourceMeta?.change_pct,
-  );
-}
-
-function normalizeAsset(asset = {}, index = 0) {
-
-   if (isWallbitCash(asset)) {
-    const cashValue = safeNumber(
-      asset.valueUSD ??
-      asset.marketValueUSD ??
-      asset.quantity ??
-      0,
-    );
-
-    return {
-      ...asset,
-
-      id: asset.id ?? "wallbit-cash",
-      name: asset.name ?? "Wallbit Cash",
-      symbol: asset.symbol ?? "WALLBIT_CASH",
-
-      source: "wallbit",
-      type: "cash",
-      role: "reserve",
-
-      quantity: cashValue,
-      entryPrice: 1,
-      marketPrice: 1,
-
-      costBasisUSD: cashValue,
-      marketValueUSD: cashValue,
-      unrealizedPnlUSD: 0,
-      unrealizedPnlPct: 0,
-      realizedPnlUSD: 0,
-
-      valueUSD: cashValue,
-      pnlUSD: 0,
-      pnlPct: 0,
-      changePct: 0,
-
-      classification: {
-        ...(asset.classification ?? {}),
-        role: "reserve",
-        assetClass: "cash",
-        isInvestable: false,
-      },
-
-      sourceMeta: {
-        ...(asset.sourceMeta ?? {}),
-        platform: "wallbit",
-        balanceType: "cash",
-        quantity: cashValue,
-        entryPrice: 1,
-        marketPrice: 1,
-        costBasisUSD: cashValue,
-        marketValueUSD: cashValue,
-        unrealizedPnlUSD: 0,
-        valuationStatus: "cash_at_par",
-      },
-    };
-  }
-
-  const quantity = getQuantity(asset);
-  const entryPrice = getEntryPrice(asset);
-  const marketPrice = getMarketPrice(asset);
-  const explicitCostBasis = getCostBasis(asset);
-  const explicitUnrealizedPnl = getUnrealizedPnl(asset);
-  const explicitUnrealizedPnlPct = getUnrealizedPnlPct(asset);
-
-  const costBasisUSD =
-    explicitCostBasis ??
-    (quantity !== null && entryPrice !== null
-      ? quantity * entryPrice
-      : null);
-
-  const marketValueUSD =
-    quantity !== null && marketPrice !== null
-      ? quantity * marketPrice
-      : null;
-
-  const unrealizedPnlUSD =
-    explicitUnrealizedPnl ??
-    (marketValueUSD !== null && costBasisUSD !== null
-      ? marketValueUSD - costBasisUSD
-      : null);
-
-  const unrealizedPnlPct =
-    explicitUnrealizedPnlPct ??
-    (unrealizedPnlUSD !== null &&
-    costBasisUSD !== null &&
-    costBasisUSD > 0
-      ? (unrealizedPnlUSD / costBasisUSD) * 100
-      : null);
-
-  const rawValueUSD = safeNumber(asset.valueUSD, 0);
-  const valueUSD =
-    marketValueUSD !== null
-      ? marketValueUSD
-      : rawValueUSD > 0
-        ? rawValueUSD
-        : costBasisUSD ?? 0;
-
+function selectSummary(portfolioV3) {
+  const totals = portfolioV3?.totals ?? {};
   return {
-    ...asset,
-    id:
-      asset.id ??
-      `${asset.source ?? asset.groupKey ?? "asset"}-${
-        asset.symbol ?? asset.name ?? index
-      }`,
-    name: asset.name ?? asset.symbol ?? "Activo",
-    symbol: asset.symbol ?? asset.name ?? "—",
-    source: asset.source ?? asset.groupKey ?? "unknown",
-    role: getAssetRole(asset),
-    type: asset.type ?? "unknown",
-
-    // Contrato normalizado común.
-    quantity,
-    entryPrice,
-    marketPrice,
-    costBasisUSD,
-    marketValueUSD,
-    unrealizedPnlUSD,
-    unrealizedPnlPct,
-    realizedPnlUSD: getRealizedPnl(asset),
-
-    // Compatibilidad con componentes existentes.
-    valueUSD: safeNumber(valueUSD),
-    weightPct: safeNumber(asset.weightPct ?? asset.weight),
-    pnlUSD: unrealizedPnlUSD,
-    pnlPct: unrealizedPnlPct,
-    changePct: firstFiniteNumber(
-      asset?.changePct,
-      asset?.change_pct,
-      asset?.sourceMeta?.changePct,
-      asset?.sourceMeta?.change_pct,
-    ),
-    sourceMeta: {
-      ...(asset.sourceMeta ?? {}),
-      quantity,
-      entryPrice,
-      marketPrice,
-      costBasisUSD,
-      marketValueUSD,
-      unrealizedPnlUSD,
-      unrealizedPnlPct,
-      realizedPnlUSD: getRealizedPnl(asset),
-      entryPriceSource:
-        asset.entryPriceSource ??
-        asset.entry_price_source ??
-        asset.sourceMeta?.entryPriceSource ??
-        asset.sourceMeta?.entry_price_source ??
-        null,
-      entryPriceMethod:
-        asset.entryPriceMethod ??
-        asset.entry_price_method ??
-        asset.sourceMeta?.entryPriceMethod ??
-        asset.sourceMeta?.entry_price_method ??
-        null,
-      valuationStatus:
-        asset.valuationStatus ??
-        asset.valuation_status ??
-        asset.sourceMeta?.valuationStatus ??
-        asset.sourceMeta?.valuation_status ??
-        null,
-    },
+    totalUSD: safeNumber(totals.totalUSD),
+    investableUSD: safeNumber(totals.investableUSD),
+    reserveUSD: safeNumber(totals.reserveUSD),
+    patrimonyUSD: safeNumber(totals.patrimonyUSD),
   };
 }
 
-function normalizeActions(actions, maxActions) {
-  if (!Array.isArray(actions)) return [];
+function selectAllocationInputs(analysis, portfolioV3, investorProfile) {
+  const aiReport = analysis?.aiReport;
+  const portfolio = portfolioV3?.portfolio;
+  const allocationAnalysis = aiReport?.allocationAnalysis ?? portfolioV3?.allocationAnalysis ?? {};
 
-  return actions.filter(Boolean).slice(0, maxActions);
-}
-
-function normalizeDecisionSupport(analysis, portfolioV3) {
-  const decisionSupport =
-    analysis?.aiReport?.decisionSupport ?? {};
-
-  const backendPlan =
-    decisionSupport.recommendations ??
-    portfolioV3?.rebalancePlan ??
-    analysis?.rebalancePlan ??
-    EMPTY_PLAN;
-
-  const policy =
-    backendPlan.transactionPolicy ??
-    decisionSupport.transactionPolicy ??
+  const backendTargets =
+    allocationAnalysis.targets ??
+    aiReport?.targets ??
+    portfolioV3?.activeTargets ??
+    portfolioV3?.targets ??
     {};
 
-  const maxActions = Math.max(
-    1,
-    safeNumber(policy.maxMonthlyOpportunities, 2),
-  );
-
-  const monthly = normalizeActions(
-    backendPlan.monthly,
-    maxActions,
-  );
-
-  const lumpSum = normalizeActions(
-    backendPlan.lumpSum,
-    maxActions,
-  );
-
-  const backendActions = normalizeActions(
-    backendPlan.actions,
-    maxActions,
-  );
-
-  const actions = backendActions.length
-    ? backendActions
-    : monthly.length
-      ? monthly
-      : lumpSum;
+  const profileTargets = INVESTOR_PROFILES[investorProfile || DEFAULT_INVESTOR_PROFILE]?.targets;
 
   return {
-    ...decisionSupport,
-    recommendations: {
-      ...backendPlan,
-      monthly,
-      lumpSum,
-      actions,
-      opportunityCount: actions.length,
-      transactionPolicy: {
-        ...policy,
-        maxMonthlyOpportunities: maxActions,
-      },
-    },
-    rebalancePlan: {
-      ...backendPlan,
-      monthly,
-      lumpSum,
-      actions,
-      opportunityCount: actions.length,
-      transactionPolicy: {
-        ...policy,
-        maxMonthlyOpportunities: maxActions,
-      },
+    allocationAnalysis,
+    byRole: allocationAnalysis.byRole ?? portfolio?.byRole ?? {},
+    byRoleUSD:
+      aiReport?.totalsByRoleUSD ?? portfolio?.byRoleUSD ?? portfolio?.totalsByRoleUSD ?? {},
+    byAssetClass: allocationAnalysis.byAssetClass ?? portfolio?.byAssetClass ?? {},
+    bySubClass: allocationAnalysis.bySubClass ?? portfolio?.bySubClass ?? {},
+    targets: profileTargets && typeof profileTargets === 'object' ? profileTargets : backendTargets,
+  };
+}
+
+function selectFx(analysis) {
+  const fx = analysis?.provenance?.fx ?? {};
+  const bobRate = safeNumber(fx.rateBOBPerUSD ?? analysis?.aiReport?.snapshot?.bobRate, null);
+
+  return {
+    bobRate,
+    fx: {
+      rateBOBPerUSD: bobRate,
+      rateUSDPerBOB: bobRate > 0 ? 1 / bobRate : null,
+      source: fx.source ?? null,
+      status: fx.status ?? 'unknown',
+      providerUpdatedAt: fx.providerUpdatedAt ?? null,
     },
   };
 }
 
-// ─── Helpers para futuros ────────────────────────────────────
+/** Valor invertible por plataforma (Binance, Wallbit, …). */
+function computeExposureBySource(assets) {
+  const bySource = {};
 
-const DERIVATIVES_SOURCES = new Set([
-  "binance",
-  "bybit",
-  "binance_usdm",
-  "binanceusdm",
-]);
+  for (const asset of assets) {
+    const investable =
+      asset.role !== 'reserve' &&
+      asset.role !== 'patrimony' &&
+      asset.classification?.isInvestable !== false;
+    const value = getAssetValueUSD(asset);
+    if (!investable || value <= 0) continue;
 
-function isDerivativesExchange(asset = {}) {
-  const source = String(
-    asset.source ?? asset.groupKey ?? "",
-  ).toLowerCase();
+    const source = asset.source ?? asset.groupKey ?? 'unknown';
+    bySource[source] = (bySource[source] ?? 0) + value;
+  }
 
-  return DERIVATIVES_SOURCES.has(source);
-}
-
-function getPositionSide(asset = {}) {
-  return (
-    asset.positionSide ??
-    asset.sourceMeta?.positionSide ??
-    null
+  return Object.fromEntries(
+    Object.entries(bySource).map(([source, value]) => [source, Number(value.toFixed(2))]),
   );
 }
 
-function isFuturesAsset(asset = {}) {
-  if (!isDerivativesExchange(asset)) return false;
-
-  const positionSide = getPositionSide(asset);
-
-  const hasNotional = Boolean(
-    asset.notionalUSD ??
-      asset.sourceMeta?.notionalUSD,
-  );
-
-  return (
-    asset.type === "futures" ||
-    Boolean(positionSide) ||
-    hasNotional
-  );
-}
-
-function futuresDedupeKey(asset = {}) {
-  return [
-    asset.source ?? asset.groupKey ?? "unknown",
-    asset.symbol ?? asset.name ?? "unknown",
-    asset.positionSide ?? "",
-    asset.quantity ?? "",
-    asset.entryPrice ?? "",
-  ].join(":");
-}
-function isWallbitCash(asset = {}) {
-  return (
-    asset?.source === "wallbit" &&
-    (
-      asset?.type === "cash" ||
-      asset?.symbol === "WALLBIT_CASH" ||
-      asset?.classification?.assetClass === "cash" ||
-      asset?.role === "reserve"
-    )
-  );
-}
-
-function isReserveAsset(asset = {}) {
-  return (
-    asset?.role === "reserve" ||
-    asset?.type === "cash" ||
-    asset?.classification?.assetClass === "cash" ||
-    asset?.classification?.isInvestable === false
-  );
-}
-// ─── Hook ────────────────────────────────────────────────────
+// ── Hook ────────────────────────────────────────────────────
 
 export function usePortfolioData({
   loading = false,
@@ -474,405 +107,65 @@ export function usePortfolioData({
   manualAssets = [],
   investorProfile = DEFAULT_INVESTOR_PROFILE,
 } = {}) {
-  
   const analysis = todayPortfolioAnalysis ?? null;
+  const portfolioV3 = analysis?.portfolioV3 ?? todayPortfolioV3 ?? null;
 
-  const portfolioV3 =
-    analysis?.portfolioV3 ??
-    todayPortfolioV3 ??
-    null;
-
-useEffect(() => {
-  console.log(
-    "[Portfolio] todayPortfolioAnalysis:",
-    todayPortfolioAnalysis,
+  // Activos: análisis del backend + manuales vivos
+  const assets = useMemo(
+    () => mergeAnalysisWithManual(portfolioV3?.assets, manualAssets),
+    [portfolioV3, manualAssets],
   );
-
-  console.log(
-    "[Portfolio] portfolioV3:",
-    portfolioV3,
+  const futuresAssets = useMemo(
+    () => extractFuturesAssets(assets, analysis?.operationalRisk),
+    [assets, analysis],
   );
-
-  console.log(
-    "[Portfolio] portfolioV3.assets:",
-    portfolioV3?.assets,
-  );
-}, [
-  todayPortfolioAnalysis,
-  portfolioV3,
-]);
-
-  // 1. Assets normalizados (spot + Quantfury + manuales)
-  const assets = useMemo(() => {
-    const analyzedAssets = Array.isArray(portfolioV3?.assets)
-      ? portfolioV3.assets
-      : [];
-
-    const normalizedManualAssets = Array.isArray(manualAssets)
-      ? manualAssets.map(normalizeAsset)
-      : [];
-
-    const manualById = new Map(
-      normalizedManualAssets.map((asset) => [asset.id, asset]),
-    );
-
-    const manualBySourceAndSymbol = new Map(
-      normalizedManualAssets.map((asset) => [
-        `${asset.source}:${asset.symbol}`,
-        asset,
-      ]),
-    );
-
-    const mergedAssets = analyzedAssets.map((analyzedAsset) => {
-      const normalizedAnalysis = normalizeAsset(analyzedAsset);
-
-      const matchingManualAsset =
-        manualById.get(normalizedAnalysis.id) ??
-        manualBySourceAndSymbol.get(
-          `${normalizedAnalysis.source}:${normalizedAnalysis.symbol}`,
-        );
-
-      if (
-        normalizedAnalysis.source === "quantfury" &&
-        matchingManualAsset
-      ) {
-        return normalizeAsset({
-          ...normalizedAnalysis,
-          ...matchingManualAsset,
-          classification:
-            matchingManualAsset.classification ??
-            normalizedAnalysis.classification,
-          strategy:
-            matchingManualAsset.strategy ??
-            normalizedAnalysis.strategy,
-          sourceMeta: {
-            ...normalizedAnalysis.sourceMeta,
-            ...matchingManualAsset.sourceMeta,
-          },
-          valueUSD:
-            matchingManualAsset.marketValueUSD ??
-            matchingManualAsset.costBasisUSD ??
-            matchingManualAsset.valueUSD ??
-            normalizedAnalysis.valueUSD,
-        });
-      }
-
-      return normalizedAnalysis;
-    });
-
-    const analyzedKeys = new Set(
-      mergedAssets.map(
-        (asset) => `${asset.source}:${asset.symbol}`,
-      ),
-    );
-
-    const missingManualAssets = normalizedManualAssets.filter(
-      (asset) =>
-        !analyzedKeys.has(`${asset.source}:${asset.symbol}`),
-    );
-
-    return [...mergedAssets, ...missingManualAssets];
-  }, [portfolioV3, manualAssets]);
-
-
-
-  // 2. Futuros (portfolioV3 + operationalRisk para SHORTs con valueUSD=0)
-  const futuresAssets = useMemo(() => {
-    // 2a. Del portfolioV3.assets
-    const fromPortfolio = assets.filter(isFuturesAsset);
-
-    // 2b. Del operationalRisk (incluye SHORTs con valueUSD=0)
-    const operationalRisk =
-      analysis?.operationalRisk ?? {};
-
-    const binanceShorts =
-      operationalRisk?.binance?.usdMFutures?.shortPositions ?? [];
-
-    const binanceLongs =
-      operationalRisk?.binance?.usdMFutures?.longPositions ?? [];
-
-    const bybitShorts =
-      operationalRisk?.bybit?.futures?.shortPositions ?? [];
-
-    const bybitLongs =
-      operationalRisk?.bybit?.futures?.longPositions ?? [];
-
-    const fromOperationalRisk = [
-      ...binanceShorts.map((position) => ({
-        ...position,
-        source: position.source ?? "binance",
-        groupKey: position.groupKey ?? "binance_usdm",
-      })),
-      ...binanceLongs.map((position) => ({
-        ...position,
-        source: position.source ?? "binance",
-        groupKey: position.groupKey ?? "binance_usdm",
-      })),
-      ...bybitShorts.map((position) => ({
-        ...position,
-        source: position.source ?? "bybit",
-        groupKey: position.groupKey ?? "bybit",
-      })),
-      ...bybitLongs.map((position) => ({
-        ...position,
-        source: position.source ?? "bybit",
-        groupKey: position.groupKey ?? "bybit",
-      })),
-    ].map((position) =>
-      normalizeAsset({
-        ...position,
-        id:
-          position.id ??
-          `${position.source}-${position.symbol}-${position.positionSide ?? ""}`,
-      }),
-    );
-
-    // 2c. Merge sin duplicados
-    const seen = new Set();
-    const merged = [];
-
-    for (const asset of [
-      ...fromPortfolio,
-      ...fromOperationalRisk,
-    ]) {
-      const key = futuresDedupeKey(asset);
-
-      if (seen.has(key)) continue;
-
-      seen.add(key);
-      merged.push(asset);
-    }
-
-    return merged;
-  }, [assets, analysis]);
-
-  // 3. Filtros (aplicados sobre assets, no futuros)
   const filters = usePortfolioFilters(assets);
-  const wallbitCashAssets = assets.filter(
-  isWallbitCash,
-);
+  const exposureBySource = useMemo(() => computeExposureBySource(assets), [assets]);
 
-const reserveAssets = assets.filter(
-  isReserveAsset,
-);
-
-const heatmapAssets = [
-  ...(filters?.investableAssets ?? []),
-  ...wallbitCashAssets,
-].filter((asset, index, collection) => {
-  const key = `${asset.source}:${asset.symbol}`;
-
-  return (
-    collection.findIndex(
-      (candidate) =>
-        `${candidate.source}:${candidate.symbol}` === key,
-    ) === index
+  // Datos ya construidos por el backend
+  const heatmapAssets = useMemo(
+    () =>
+      portfolioV3?.heatmapAssets
+        ? attachLiveMetrics(portfolioV3.heatmapAssets, assets)
+        : filters?.investableAssets ?? [],
+    [portfolioV3, assets, filters?.investableAssets],
   );
-});
-  const totals = portfolioV3?.totals ?? {};
-
-  const summary = {
-    totalUSD: safeNumber(totals.totalUSD),
-    investableUSD: safeNumber(totals.investableUSD),
-    reserveUSD: safeNumber(totals.reserveUSD),
-    patrimonyUSD: safeNumber(totals.patrimonyUSD),
-  };
-
-  const allocationAnalysis =
-    analysis?.aiReport?.allocationAnalysis ??
-    portfolioV3?.allocationAnalysis ??
-    {};
-
-  const byRole =
-    allocationAnalysis.byRole ??
-    portfolioV3?.portfolio?.byRole ??
-    {};
-
-  const byRoleUSD =
-    analysis?.aiReport?.totalsByRoleUSD ??
-    portfolioV3?.portfolio?.byRoleUSD ??
-    portfolioV3?.portfolio?.totalsByRoleUSD ??
-    {};
-
-  const byAssetClass =
-    allocationAnalysis.byAssetClass ??
-    portfolioV3?.portfolio?.byAssetClass ??
-    {};
-
-  const bySubClass =
-    allocationAnalysis.bySubClass ??
-    portfolioV3?.portfolio?.bySubClass ??
-    {};
-
-  const backendTargets =
-    allocationAnalysis.targets ??
-    analysis?.aiReport?.targets ??
-    portfolioV3?.activeTargets ??
-    portfolioV3?.targets ??
-    {};
-
-  const profileKey =
-    investorProfile || DEFAULT_INVESTOR_PROFILE;
-
-  const profileTargets =
-    INVESTOR_PROFILES[profileKey]?.targets ?? null;
-
-  const targets =
-    profileTargets && typeof profileTargets === "object"
-      ? profileTargets
-      : backendTargets;
-
-  const sourceRows = Array.isArray(allocationAnalysis.roleRows)
-    ? allocationAnalysis.roleRows
-    : Array.isArray(allocationAnalysis.rows)
-      ? allocationAnalysis.rows
-      : [];
-  
-
-
-
-      
-  function statusFromDiff(diff) {
-    const abs = Math.abs(safeNumber(diff, 0));
-    if (abs >= 5) return "critical";
-    if (abs >= 1) return "warning";
-    return "ok";
-  }
-
-  const allocationRows = sourceRows.length
-    ? sourceRows.map((row) => {
-        const role = row.role ?? row.key;
-        const currentPct = safeNumber(
-          row.currentPct ?? row.current,
-        );
-        const targetPct = safeNumber(
-          targets[role] ?? row.targetPct ?? row.target,
-          null,
-        );
-        const differencePct =
-          targetPct === null || targetPct === undefined
-            ? null
-            : currentPct - targetPct;
-
-        return {
-          ...row,
-          key: role,
-          role,
-          label: row.label ?? role,
-          current: currentPct,
-          currentPct,
-          currentUSD: safeNumber(
-            row.currentUSD ?? byRoleUSD[role],
-          ),
-          target: targetPct,
-          targetPct,
-          difference: differencePct,
-          differencePct,
-          status:
-            differencePct === null
-              ? "unknown"
-              : statusFromDiff(differencePct),
-          assets: assets.filter(
-            (asset) => asset.role === role,
-          ),
-        };
-      })
-    : Object.entries(byRole).map(([role, value]) => {
-        const currentPct = safeNumber(value);
-        const targetPct = safeNumber(targets[role], null);
-        const differencePct =
-          targetPct === null || targetPct === undefined
-            ? null
-            : currentPct - targetPct;
-
-        return {
-          key: role,
-          role,
-          label: role,
-          current: currentPct,
-          currentPct,
-          currentUSD: safeNumber(byRoleUSD[role]),
-          target: targetPct,
-          targetPct,
-          difference: differencePct,
-          differencePct,
-          status:
-            differencePct === null
-              ? "unknown"
-              : statusFromDiff(differencePct),
-          action: null,
-          assets: assets.filter(
-            (asset) => asset.role === role,
-          ),
-        };
-      });
-
   const sectorAnalysis =
-    analysis?.aiReport?.sectorAnalysis ??
-    portfolioV3?.sectorAnalysis ??
-    analysis?.sectorAnalysis ??
-    { sectors: [] };
+    portfolioV3?.sectorAnalysis ?? analysis?.aiReport?.sectorAnalysis ?? EMPTY_SECTORS;
 
-  const decisionSupport = normalizeDecisionSupport(
-    analysis,
-    portfolioV3,
+  const summary = selectSummary(portfolioV3);
+  const allocationInputs = useMemo(
+    () => selectAllocationInputs(analysis, portfolioV3, investorProfile),
+    [analysis, portfolioV3, investorProfile],
+  );
+  const allocationRows = useMemo(
+    () => buildAllocationRows({ ...allocationInputs, assets }),
+    [allocationInputs, assets],
   );
 
-  const historicalContext =
-    analysis?.aiReport?.historicalContext ??
-    portfolioV3?.historicalContext ??
-    analysis?.historicalContext ??
-    null;
-
-  const fx = analysis?.provenance?.fx ?? {};
-  const bobRate = safeNumber(
-    fx.rateBOBPerUSD ??
-      analysis?.aiReport?.snapshot?.bobRate,
-    null,
+  const decisionSupport = useMemo(
+    () => normalizeDecisionSupport(analysis, portfolioV3),
+    [analysis, portfolioV3],
   );
 
-// ─── Exposición por fuente (para PortfolioSecondaryDetails) ─────────────
-const exposureBySource = useMemo(() => {
-  const map = {};
-
-  // Solo activos investables (no reserves ni patrimony)
-  const investable = assets.filter(
-    (asset) =>
-      asset.role !== "reserve" &&
-      asset.role !== "patrimony" &&
-      asset.classification?.isInvestable !== false,
-  );
-
-  for (const asset of investable) {
-    const source = asset.source ?? asset.groupKey ?? "unknown";
-    const value = safeNumber(asset.valueUSD ?? 0);
-    if (value > 0) {
-      map[source] = (map[source] ?? 0) + value;
-    }
-  }
-
-  // Redondear a 2 decimales para evitar floats largos en UI
-  return Object.fromEntries(
-    Object.entries(map).map(([k, v]) => [k, Number(v.toFixed(2))]),
-  );
-}, [assets]);
-//   useEffect(() => {
-//   console.log('usePortfolioData.assets:', assets.length);
-//   console.log('hasUSDT:', assets.some(a => a.symbol === 'USDT'));
-//   console.log('hasXRP:', assets.some(a => a.symbol === 'XRP'));
-//   console.log('USDT raw:', assets.find(a => a.symbol === 'USDT'));
-// }, [assets]);
+  const { bobRate, fx } = selectFx(analysis);
+  const { byRole, byRoleUSD, byAssetClass, bySubClass, targets } = allocationInputs;
+  // console.log('heatmapAssets', heatmapAssets);
+  // console.log('sectorAnalysis', sectorAnalysis);
   return {
     loading,
     analysis,
     portfolioV3,
     aiReport: analysis?.aiReport ?? null,
-    historicalAnalysis:
-      analysis?.historicalAnalysis ?? null,
+    historicalAnalysis: analysis?.historicalAnalysis ?? null,
+    historicalContext:
+      analysis?.aiReport?.historicalContext ??
+      portfolioV3?.historicalContext ??
+      analysis?.historicalContext ??
+      null,
     dataQuality: analysis?.dataQuality ?? null,
     provenance: analysis?.provenance ?? null,
     operationalRisk: analysis?.operationalRisk ?? null,
-
     generatedAt:
       analysis?.asOfDate ??
       analysis?.date ??
@@ -880,22 +173,9 @@ const exposureBySource = useMemo(() => {
       null,
 
     bobRate,
-    fx: {
-      rateBOBPerUSD: bobRate,
-      rateUSDPerBOB:
-        bobRate > 0 ? 1 / bobRate : null,
-      source: fx.source ?? null,
-      status: fx.status ?? "unknown",
-      providerUpdatedAt:
-        fx.providerUpdatedAt ?? null,
-    },
-
+    fx,
     summary,
-
-    risk:
-      analysis?.aiReport?.riskAssessment ??
-      portfolioV3?.risk ??
-      {},
+    risk: analysis?.aiReport?.riskAssessment ?? portfolioV3?.risk ?? {},
 
     allocation: {
       rows: allocationRows,
@@ -909,25 +189,21 @@ const exposureBySource = useMemo(() => {
       targets,
       sectors: sectorAnalysis.sectors ?? [],
     },
-
     targets,
+
     decisionSupport,
     rebalance: decisionSupport.rebalancePlan,
+
     sectorAnalysis,
-    historicalContext,
-
-    // Assets y derivados
-    assets,
-    futuresAssets,
     heatmapAssets,
-    filteredAssets: filters?.filteredAssets ?? assets,
+    futuresAssets,
 
+    assets,
+    filteredAssets: filters?.filteredAssets ?? assets,
     filters,
 
-    reserves: reserveAssets,
-    patrimony: assets.filter(
-      (asset) => asset.role === "patrimony",
-    ),
+    reserves: assets.filter(isReserveAsset),
+    patrimony: assets.filter((asset) => asset.role === 'patrimony'),
     exposureBySource,
   };
 }

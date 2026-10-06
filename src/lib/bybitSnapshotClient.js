@@ -24,10 +24,10 @@ export async function refreshBybitSnapshot() {
       slot: 'manual',
     });
 
-    console.log(
-      '[Bybit client] Respuesta recibida',
-      result.data,
-    );
+    // console.log(
+    //   '[Bybit client] Respuesta recibida',
+    //   result.data,
+    // );
 
     return result.data;
   } catch (error) {

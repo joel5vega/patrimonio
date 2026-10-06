@@ -33,13 +33,11 @@ import {
   Zap,
   BadgeDollarSign,
 } from 'lucide-react';
+import AssetIcon from './heatmap/AssetIcon';
+import '../styles/PortfolioSectorMap.css';
 
-/* ─── Parámetros configurables ─────────────────────────────────────────── */
-
-/** Máximo de sectores visibles antes del “Ver más”. */
 export const DEFAULT_VISIBLE_LIMIT = 8;
 
-/** Paleta de colores del donut / legend (cíclica). */
 export const DEFAULT_SECTOR_COLORS = [
   '#2b7fff',
   '#5a9fff',
@@ -55,7 +53,6 @@ export const DEFAULT_SECTOR_COLORS = [
   '#4ade80',
 ];
 
-/** Iconos por clave de sector. */
 export const SECTOR_ICONS = {
   tecnologia: Cpu,
   salud: HeartPulse,
@@ -80,6 +77,7 @@ export const SECTOR_ICONS = {
   crypto_stablecoin: DollarSign,
   crypto_pagos: CreditCard,
   crypto_meme: Rocket,
+  metales_precios: Gem,
   metales_preciosos: Gem,
   mineria: Pickaxe,
   efectivo_global: Wallet,
@@ -87,11 +85,10 @@ export const SECTOR_ICONS = {
   diversificado_global: Globe,
   emergentes: Sparkles,
   dividendos_value: PieChart,
-  otros: Layers3,
   stablecoin_yield: BadgeDollarSign,
+  otros: Layers3,
 };
 
-/** Etiquetas legibles (corregidas / completas). */
 export const SECTOR_LABELS = {
   tecnologia: 'Tecnología',
   salud: 'Salud',
@@ -116,6 +113,7 @@ export const SECTOR_LABELS = {
   crypto_stablecoin: 'Stablecoins',
   crypto_pagos: 'Crypto pagos',
   crypto_meme: 'Crypto meme',
+  metales_precios: 'Metales preciosos',
   metales_preciosos: 'Metales preciosos',
   mineria: 'Minería',
   efectivo_global: 'Efectivo global',
@@ -123,431 +121,687 @@ export const SECTOR_LABELS = {
   diversificado_global: 'Diversificado global',
   emergentes: 'Emergentes',
   dividendos_value: 'Dividendos / value',
-  otros: 'Otros',
   stablecoin_yield: 'Stablecoin yield',
+  otros: 'Otros',
 };
 
-/* ─── Helpers ──────────────────────────────────────────────────────────── */
+function safeNumber(value, fallback = 0) {
+  const number = Number(value);
 
-const formatSector = (sector, labels = SECTOR_LABELS) =>
-  labels[sector] || String(sector || 'otros').replaceAll('_', ' ');
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+}
 
-const formatUSD = (value) =>
-  Number(value || 0).toLocaleString('en-US', {
+function normalizeSectorKey(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replaceAll(' ', '_')
+    .replaceAll('-', '_');
+}
+
+function formatSector(sector) {
+  const key = normalizeSectorKey(sector);
+
+  return (
+    SECTOR_LABELS[key] ??
+    String(sector ?? 'otros').replaceAll('_', ' ')
+  );
+}
+
+function formatUSD(value) {
+  return safeNumber(value).toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
   });
+}
 
-const formatPct = (value) => `${Number(value || 0).toFixed(1)}%`;
+function formatPct(value, decimals = 1) {
+  return `${safeNumber(value).toFixed(decimals)}%`;
+}
+
+function getColor(index, palette) {
+  const safePalette = Array.isArray(palette) && palette.length
+    ? palette
+    : DEFAULT_SECTOR_COLORS;
+
+  return safePalette[index % safePalette.length];
+}
 
 function normalizeSectorData(sectorAnalysis) {
-  const sectors = Array.isArray(sectorAnalysis)
+  const rawSectors = Array.isArray(sectorAnalysis)
     ? sectorAnalysis
-    : sectorAnalysis?.sectors || [];
+    : sectorAnalysis?.sectors ?? [];
 
-  return sectors
-    .map((sector) => {
-      const sources = Array.isArray(sector.sources) ? sector.sources : [];
-      const count = Number(
-        sector.count ?? sector.positions ?? sector.n ?? sources.length ?? 0
-      );
-
-      return {
-        ...sector,
-        sector: sector.sector || sector.key || 'otros',
-        valueUSD: Number(sector.valueUSD || sector.value || 0),
-        pct: Number(sector.pct || sector.weightPct || 0),
-        sources,
-        count,
-      };
-    })
-    .filter((sector) => sector.valueUSD > 0 || sector.pct > 0)
+  return rawSectors
+    .map((sector) => ({
+      ...sector,
+      sector: normalizeSectorKey(
+        sector.sector ??
+        sector.key ??
+        'otros',
+      ),
+      valueUSD: safeNumber(
+        sector.valueUSD ??
+        sector.value ??
+        0,
+      ),
+      pct: safeNumber(
+        sector.pct ??
+        sector.weightPct ??
+        0,
+      ),
+      count: safeNumber(
+        sector.count ??
+        sector.positions ??
+        sector.n ??
+        0,
+      ),
+      sources: Array.isArray(sector.sources)
+        ? sector.sources
+        : [],
+    }))
+    .filter(
+      (sector) =>
+        sector.valueUSD > 0 ||
+        sector.pct > 0,
+    )
     .sort((a, b) => b.valueUSD - a.valueUSD);
 }
 
-function getColor(index, palette = DEFAULT_SECTOR_COLORS) {
-  return palette[index % palette.length];
+function groupHoldingsByCompany(sources = []) {
+  const companies = new Map();
+
+  for (const source of sources) {
+    const sourceSymbol = String(source.symbol ?? '')
+      .trim()
+      .toUpperCase();
+
+    if (!sourceSymbol) {
+      continue;
+    }
+
+    const portfolioWeightPct = safeNumber(
+      source.portfolioWeightPct ??
+      source.weightPct ??
+      0,
+    );
+
+    const sourceValueUSD = safeNumber(
+      source.valueUSD ??
+      source.value ??
+      0,
+    );
+
+    const holdings = Array.isArray(source.holdings)
+      ? source.holdings
+      : [];
+
+    for (const holding of holdings) {
+      const symbol = String(holding.symbol ?? '')
+        .trim()
+        .toUpperCase();
+
+      if (!symbol) {
+        continue;
+      }
+
+      const etfWeightPct = safeNumber(
+        holding.etfWeightPct ??
+        holding.weightPct ??
+        holding.weight ??
+        0,
+      );
+
+      const effectiveWeightPct =
+        portfolioWeightPct *
+        etfWeightPct /
+        100;
+
+      const effectiveValueUSD =
+        sourceValueUSD *
+        etfWeightPct /
+        100;
+
+      if (!companies.has(symbol)) {
+        companies.set(symbol, {
+          symbol,
+          name: holding.name ?? symbol,
+          sector: normalizeSectorKey(
+            holding.sector ?? 'otros',
+          ),
+          totalEffectiveWeightPct: 0,
+          totalEffectiveValueUSD: 0,
+          sources: [],
+        });
+      }
+
+      const company = companies.get(symbol);
+
+      company.totalEffectiveWeightPct +=
+        effectiveWeightPct;
+
+      company.totalEffectiveValueUSD +=
+        effectiveValueUSD;
+
+      company.sources.push({
+        symbol: sourceSymbol,
+        name: source.name ?? sourceSymbol,
+        etfWeightPct,
+        portfolioWeightPct,
+        effectiveWeightPct,
+        effectiveValueUSD,
+      });
+    }
+  }
+
+  return [...companies.values()]
+    .map((company) => ({
+      ...company,
+      sources: company.sources.sort(
+        (left, right) =>
+          right.effectiveWeightPct -
+          left.effectiveWeightPct,
+      ),
+    }))
+    .sort(
+      (left, right) =>
+        right.totalEffectiveWeightPct -
+        left.totalEffectiveWeightPct,
+    );
 }
 
-/* ─── Donut ────────────────────────────────────────────────────────────── */
+function enrichSectors(sectors) {
+  return sectors.map((sector) => ({
+    ...sector,
+    companies: groupHoldingsByCompany(sector.sources),
+  }));
+}
 
 function SectorDonut({
   sectors,
-  activeIndex,
-  onHover,
-  totalUSD,
-  colors = DEFAULT_SECTOR_COLORS,
-  size = 200,
-  radius = 68,
-  strokeWidth = 26,
+  selectedIndex,
+  hoveredIndex,
+  onHoverChange,
+  onSelect,
+  colors,
+  size = 244,
+  radius = 78,
+  strokeWidth = 34,
   gap = 3,
 }) {
   const center = size / 2;
   const circumference = 2 * Math.PI * radius;
-  const totalPct =
-    sectors.reduce((sum, s) => sum + Math.max(0, s.pct), 0) || 1;
+
+  const totalPct = sectors.reduce(
+    (sum, sector) =>
+      sum + Math.max(0, safeNumber(sector.pct)),
+    0,
+  ) || 1;
 
   let offset = 0;
 
-  const activeSector = activeIndex !== null ? sectors[activeIndex] : null;
-  const ActiveIcon = activeSector
-    ? SECTOR_ICONS[activeSector.sector] || Layers3
-    : null;
-  const activeColor =
-    activeIndex !== null ? getColor(activeIndex, colors) : null;
+  return (
+    <svg
+      className="sector-donut"
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      role="img"
+      aria-label="Distribución por sectores"
+    >
+      <circle
+        cx={center}
+        cy={center}
+        r={radius}
+        fill="none"
+        stroke="#262626"
+        strokeWidth={strokeWidth}
+      />
+
+      {sectors.map((sector, index) => {
+        const pct = Math.max(0, safeNumber(sector.pct));
+        const dash = (pct / totalPct) * circumference;
+        const visibleDash = Math.max(0, dash - gap);
+
+        const dashArray = `${visibleDash} ${
+          circumference - visibleDash
+        }`;
+
+        const dashOffset = -offset;
+
+        offset += dash;
+
+        const isSelected = selectedIndex === index;
+        const isHovered = hoveredIndex === index;
+        const color = getColor(index, colors);
+
+        return (
+          <circle
+            key={sector.sector}
+            cx={center}
+            cy={center}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={
+              isSelected || isHovered
+                ? strokeWidth + 3
+                : strokeWidth
+            }
+            strokeDasharray={dashArray}
+            strokeDashoffset={dashOffset}
+            strokeLinecap="butt"
+            transform={`rotate(-90 ${center} ${center})`}
+            className="sector-donut__segment"
+            onMouseEnter={() => onHoverChange(index)}
+            onMouseLeave={() => onHoverChange(null)}
+            onClick={() => onSelect(index)}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function DonutCenter({
+  displaySector,
+  displayIndex,
+  totalUSD,
+  colors,
+}) {
+  const Icon = displaySector
+    ? SECTOR_ICONS[displaySector.sector] ?? Layers3
+    : Layers3;
+
+  const iconColor = displaySector
+    ? getColor(displayIndex, colors)
+    : '#a4a19b';
 
   return (
-    <div
-      className="sector-donut"
-      style={{
-        '--donut-size': `${size}px`,
-        width: size,
-        height: size,
-      }}
-    >
-      <svg
-        viewBox={`0 0 ${size} ${size}`}
-        className="sector-donut__svg"
-        role="img"
-        aria-label="Distribución de la cartera por sector"
-      >
-        <circle
-          className="sector-donut__track"
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          strokeWidth={strokeWidth}
-        />
+    <div className="sector-donut__center">
+      <Icon
+        size={18}
+        color={iconColor}
+        strokeWidth={2}
+      />
 
-        {sectors.map((sector, index) => {
-          const segment =
-            (Math.max(0, sector.pct) / totalPct) * circumference;
-          const visibleSegment = Math.max(
-            0,
-            segment - (sectors.length > 1 ? gap : 0)
-          );
-          const currentOffset = offset;
-          offset += segment;
+      <span className="sector-donut__label">
+        {displaySector
+          ? formatSector(displaySector.sector)
+          : 'Total'}
+      </span>
 
-          const isActive = activeIndex === index;
-          const isDimmed = activeIndex !== null && !isActive;
+      <strong className="sector-donut__value">
+        {displaySector
+          ? formatPct(displaySector.pct)
+          : formatUSD(totalUSD)}
+      </strong>
 
-          return (
-            <circle
-              key={`${sector.sector}-${index}`}
-              className={`sector-donut__segment${isActive ? ' is-active' : ''}${isDimmed ? ' is-dimmed' : ''}`}
-              cx={center}
-              cy={center}
-              r={radius}
-              fill="none"
-              stroke={getColor(index, colors)}
-              strokeWidth={isActive ? strokeWidth + 6 : strokeWidth}
-              strokeLinecap="butt"
-              strokeDasharray={`${visibleSegment} ${circumference - visibleSegment}`}
-              strokeDashoffset={-currentOffset}
-              onMouseEnter={() => onHover(index)}
-              onMouseLeave={() => onHover(null)}
-            />
-          );
-        })}
-      </svg>
-
-      <div className="sector-donut__center">
-        {activeSector ? (
-          <>
-            <div
-              className="sector-donut__icon"
-              style={{
-                '--sector-color': activeColor,
-              }}
-            >
-              <ActiveIcon size={18} strokeWidth={1.8} />
-            </div>
-            <p className="sector-donut__name">
-              {formatSector(activeSector.sector)}
-            </p>
-            <p className="sector-donut__pct">
-              {formatPct(activeSector.pct)}
-            </p>
-            <p className="sector-donut__usd">
-              {formatUSD(activeSector.valueUSD)}
-            </p>
-          </>
-        ) : (
-          <>
-            <p className="sector-donut__eyebrow">Total</p>
-            <p className="sector-donut__total">{formatUSD(totalUSD)}</p>
-          </>
-        )}
-      </div>
+      {displaySector && (
+        <span className="sector-donut__usd">
+          {formatUSD(displaySector.valueUSD)}
+        </span>
+      )}
     </div>
   );
 }
 
-/* ─── Legend card ──────────────────────────────────────────────────────── */
-
-function SectorLegendCard({
-  sector,
-  color,
-  index,
-  activeIndex,
-  onHover,
-  onSelect,
-  labels,
-}) {
-  const Icon = SECTOR_ICONS[sector.sector] || Layers3;
-  const isActive = activeIndex === index;
-  const isLookThrough = Number(sector.lookThroughValueUSD || 0) > 0;
-  const hasPositions = sector.count > 0;
-
+function CompanyRow({ company }) {
   return (
-    <button
-      type="button"
-      className={`portfolio-legend-card sector-legend-row${isActive ? ' active' : ''}`}
-      style={{ '--sector-color': color }}
-      onMouseEnter={() => onHover(index)}
-      onMouseLeave={() => onHover(null)}
-      onFocus={() => onHover(index)}
-      onBlur={() => onHover(null)}
-      onClick={() => onSelect(index)}
-      aria-pressed={isActive}
-    >
-      <span className="portfolio-legend-top">
-        <span
-          className="portfolio-legend-icon"
-          style={{
-            color,
-            backgroundColor: `${color}18`,
-            borderColor: `${color}35`,
-          }}
-        >
-          <Icon size={14} strokeWidth={1.8} />
+    <div className="sector-company">
+      <AssetIcon
+        asset={{
+          symbol: company.symbol,
+          name: company.name,
+          type: 'stock',
+          sector: company.sector,
+        }}
+        size={18}
+      />
+
+      <div className="sector-company__main">
+        <span className="sector-company__symbol">
+          {company.symbol}
         </span>
-        <span className="portfolio-legend-label">
-          {formatSector(sector.sector, labels)}
+
+        <span className="sector-company__name">
+          {company.name}
         </span>
-        <span className="sector-legend-pct">{formatPct(sector.pct)}</span>
-      </span>
 
-      <span className="portfolio-legend-bottom">
-        <span className="portfolio-legend-value">
-          {formatUSD(sector.valueUSD)}
-        </span>
-        {hasPositions && (
-          <span className="sector-legend-count">{sector.count} pos.</span>
-        )}
-        {isLookThrough && (
-          <span className="sector-legend-tag">ETF 🔎</span>
-        )}
-      </span>
-    </button>
-  );
-}
-
-/* ─── Detail panel ─────────────────────────────────────────────────────── */
-
-function SectorDetail({ sector, labels }) {
-  if (!sector) return null;
-
-  const direct = Number(sector.directValueUSD || 0);
-  const lookThrough = Number(sector.lookThroughValueUSD || 0);
-  const sources = sector.sources || [];
-  const count = sector.count || 0;
-
-  return (
-    <div className="sector-detail">
-      <div className="sector-detail-head">
-        <div>
-          <p className="sector-detail-name">
-            {formatSector(sector.sector, labels)}
-          </p>
-          <p className="sector-detail-sub">
-            {formatPct(sector.pct)} de los activos invertibles
-            {count > 0 &&
-              ` · ${count} ${count === 1 ? 'posición' : 'posiciones'}`}
-          </p>
-        </div>
-        <p className="sector-detail-value">{formatUSD(sector.valueUSD)}</p>
-      </div>
-
-      {(direct > 0 || lookThrough > 0) && (
-        <div className="v3-metrics-grid" style={{ marginBottom: 0 }}>
-          <div className="v3-metric-card">
-            <span className="v3-metric-label">Directo</span>
-            <span className="v3-metric-value muted">{formatUSD(direct)}</span>
-          </div>
-          <div className="v3-metric-card">
-            <span className="v3-metric-label">Por ETFs</span>
-            <span className="v3-metric-value sector-detail-lookthrough">
-              {formatUSD(lookThrough)}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {sources.length > 0 && (
-        <div className="sector-detail-sources">
-          {sources.map((source) => (
-            <span key={source} className="v3-mini-badge">
-              {source}
+        <div className="sector-company__sources">
+          {company.sources.map((source) => (
+            <span
+              key={`${company.symbol}-${source.symbol}`}
+              className="sector-company__source"
+              title={[
+                `${source.symbol}:`,
+                `${formatPct(source.etfWeightPct, 2)} dentro del ETF`,
+                `${formatPct(source.effectiveWeightPct, 2)} efectivo en cartera`,
+              ].join(' · ')}
+            >
+              {source.symbol} {formatPct(
+                source.effectiveWeightPct,
+                2,
+              )}
             </span>
           ))}
         </div>
+      </div>
+
+      <div className="sector-company__right">
+        <strong className="sector-company__weight">
+          {formatPct(
+            company.totalEffectiveWeightPct,
+            2,
+          )}
+        </strong>
+
+        <span className="sector-company__value">
+          {formatUSD(company.totalEffectiveValueUSD)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SectorDetails({
+  sector,
+  index,
+  colors,
+}) {
+  if (!sector) {
+    return (
+      <div className="sector-map__placeholder">
+        <Layers3 size={28} />
+        <span>
+          Pasa el cursor sobre un sector o selecciónalo para ver su composición.
+        </span>
+      </div>
+    );
+  }
+
+  const Icon =
+    SECTOR_ICONS[sector.sector] ??
+    Layers3;
+
+  const color = getColor(index, colors);
+  const companies = Array.isArray(sector.companies)
+    ? sector.companies
+    : [];
+
+  return (
+    <div className="sector-details">
+      <div className="sector-details__header">
+        <Icon
+          size={25}
+          color={color}
+        />
+
+        <h3 className="sector-details__title">
+          {formatSector(sector.sector)}
+        </h3>
+      </div>
+
+      <div className="sector-details__summary">
+        <strong className="sector-details__pct">
+          {formatPct(sector.pct)}
+        </strong>
+
+        <span className="sector-details__usd">
+          {formatUSD(sector.valueUSD)}
+        </span>
+
+        {sector.count > 0 && (
+          <span className="sector-details__count">
+            {sector.count}{' '}
+            {sector.count === 1
+              ? 'posición'
+              : 'posiciones'}
+          </span>
+        )}
+      </div>
+
+      {companies.length > 0 ? (
+        <div className="sector-details__companies">
+          <div className="sector-companies__title">
+            Principales empresas
+          </div>
+
+          {companies
+            .slice(0, 8)
+            .map((company) => (
+              <CompanyRow
+                key={company.symbol}
+                company={company}
+              />
+            ))}
+
+          {companies.length > 8 && (
+            <div className="sector-companies__more">
+              +{companies.length - 8} empresas más
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="sector-details__no-companies">
+          No hay holdings empresariales disponibles para este sector.
+        </div>
       )}
     </div>
   );
 }
 
-/* ─── Componente principal ─────────────────────────────────────────────── */
-
-/**
- * Mapa de distribución por sector (donut + legend + detalle).
- *
- * @param {object}   props
- * @param {object|array} props.sectorAnalysis  - array o { sectors: [...] }
- * @param {number}   [props.visibleLimit]      - sectores antes de “Ver más”
- * @param {string[]} [props.colors]            - paleta del donut/legend
- * @param {object}   [props.labels]            - override de etiquetas
- * @param {number}   [props.donutSize]         - tamaño del SVG
- * @param {number}   [props.donutRadius]
- * @param {number}   [props.donutStroke]
- * @param {string}   [props.className]
- */
 export default function PortfolioSectorMap({
   sectorAnalysis,
-  visibleLimit = DEFAULT_VISIBLE_LIMIT,
+  totalInvertibleUSD = 0,
   colors = DEFAULT_SECTOR_COLORS,
-  labels = SECTOR_LABELS,
-  donutSize = 200,
-  donutRadius = 68,
-  donutStroke = 26,
-  className = '',
+  visibleLimit = DEFAULT_VISIBLE_LIMIT,
 }) {
-  const sectors = useMemo(
-    () => normalizeSectorData(sectorAnalysis),
-    [sectorAnalysis]
-  );
-  const [activeIndex, setActiveIndex] = useState(null);
-  const [selectedIndex, setSelectedIndex] = useState(null);
-  const [expanded, setExpanded] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
-  const mainSectors = sectors.slice(0, visibleLimit);
-  const extraSectors = sectors.slice(visibleLimit);
+  /*
+   * selectedIndex controla el panel derecho.
+   * Solo cambia por clic, no por hover.
+   */
+  const [selectedIndex, setSelectedIndex] = useState(null);
+
+  /*
+   * hoveredIndex solo controla resaltado visual.
+   * Nunca hace que aparezca/desaparezca el contenido grande.
+   */
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  const sectors = useMemo(
+    () => enrichSectors(
+      normalizeSectorData(sectorAnalysis),
+    ),
+    [sectorAnalysis],
+  );
+
+  const totalUSD =
+    safeNumber(totalInvertibleUSD) > 0
+      ? safeNumber(totalInvertibleUSD)
+      : sectors.reduce(
+          (sum, sector) =>
+            sum + safeNumber(sector.valueUSD),
+          0,
+        );
+
+  const visibleSectors = showAll
+    ? sectors
+    : sectors.slice(0, visibleLimit);
+
+  /*
+   * El donut puede mostrar el sector bajo hover,
+   * pero el panel de empresas se mantiene solo con selectedIndex.
+   */
+  const donutDisplayIndex =
+    hoveredIndex !== null
+      ? hoveredIndex
+      : selectedIndex;
+
+  const donutDisplaySector =
+    donutDisplayIndex !== null
+      ? sectors[donutDisplayIndex] ?? null
+      : null;
+
   const selectedSector =
-    selectedIndex === null ? null : sectors[selectedIndex];
-  const totalUSD = sectors.reduce((sum, s) => sum + s.valueUSD, 0);
-  const dominantSector = sectors[0];
+    selectedIndex !== null
+      ? sectors[selectedIndex] ?? null
+      : null;
+
+  function selectSector(index) {
+    setSelectedIndex((current) =>
+      current === index
+        ? null
+        : index,
+    );
+  }
 
   if (!sectors.length) {
     return (
-      <section className={`portfolio-card ${className}`}>
-        <div className="portfolio-section-head">
-          <div>
-            <span className="portfolio-eyebrow">Análisis de concentración</span>
-            <span className="v3-section-title">Distribución por sector</span>
-          </div>
+      <section className="portfolio-sector-map">
+        <div className="sector-map__empty">
+          <Layers3 size={30} />
+          <span>No hay datos sectoriales disponibles.</span>
+
+          {totalUSD > 0 && (
+            <small>
+              {formatUSD(totalUSD)} invertidos
+            </small>
+          )}
         </div>
-        <p className="sector-map-empty">
-          No hay datos sectoriales disponibles.
-        </p>
       </section>
     );
   }
 
   return (
-    <section className={`portfolio-card ${className}`}>
-      <div className="portfolio-section-head">
-        <div>
-          <span className="portfolio-eyebrow">Análisis de concentración</span>
-          <span className="v3-section-title">Distribución por sector</span>
-        </div>
-        {dominantSector && (
-          <span className="portfolio-risk-badge">
-            Principal: {formatSector(dominantSector.sector, labels)}{' '}
-            {formatPct(dominantSector.pct)}
-          </span>
-        )}
-      </div>
-
-      <div className="portfolio-hero-grid">
-        <div className="sector-donut-col">
+    <section className="portfolio-sector-map">
+      <div className="sector-map__content">
+        <div className="sector-map__donut-wrap">
           <SectorDonut
             sectors={sectors}
-            activeIndex={activeIndex}
-            onHover={setActiveIndex}
+            selectedIndex={selectedIndex}
+            hoveredIndex={hoveredIndex}
+            onHoverChange={setHoveredIndex}
+            onSelect={selectSector}
+            colors={colors}
+          />
+
+          <DonutCenter
+            displaySector={donutDisplaySector}
+            displayIndex={donutDisplayIndex}
             totalUSD={totalUSD}
             colors={colors}
-            size={donutSize}
-            radius={donutRadius}
-            strokeWidth={donutStroke}
           />
-          <p className="portfolio-stat-label sector-donut-caption">
-            {formatUSD(totalUSD)} invertidos
-          </p>
         </div>
 
-        <div className="sector-legend-col">
-          <div className="portfolio-legend-grid">
-            {mainSectors.map((sector, index) => (
-              <SectorLegendCard
-                key={`${sector.sector}-${index}`}
-                sector={sector}
-                index={index}
-                color={getColor(index, colors)}
-                activeIndex={activeIndex}
-                onHover={setActiveIndex}
-                onSelect={setSelectedIndex}
-                labels={labels}
+        <div className="sector-map__details">
+          <SectorDetails
+            sector={selectedSector}
+            index={selectedIndex}
+            colors={colors}
+          />
+        </div>
+      </div>
+
+      {sectors.length > visibleLimit && (
+        <button
+          type="button"
+          className="sector-map__toggle"
+          onClick={() => setShowAll((current) => !current)}
+        >
+          {showAll ? 'Ver menos' : 'Ver más'}
+
+          <ChevronDown
+            size={18}
+            className={
+              showAll
+                ? 'sector-map__chevron sector-map__chevron--open'
+                : 'sector-map__chevron'
+            }
+          />
+        </button>
+      )}
+
+      <div className="sector-map__legend">
+        {visibleSectors.map((sector) => {
+          const sectorIndex = sectors.findIndex(
+            (candidate) =>
+              candidate.sector === sector.sector,
+          );
+
+          const Icon =
+            SECTOR_ICONS[sector.sector] ??
+            Layers3;
+
+          const color = getColor(
+            sectorIndex,
+            colors,
+          );
+
+          const isSelected =
+            selectedIndex === sectorIndex;
+
+          const isHovered =
+            hoveredIndex === sectorIndex;
+
+          const className = [
+            'sector-legend-item',
+            isSelected
+              ? 'sector-legend-item--active'
+              : '',
+            isHovered
+              ? 'sector-legend-item--hovered'
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
+
+          return (
+            <button
+              key={sector.sector}
+              type="button"
+              className={className}
+              onMouseEnter={() => setHoveredIndex(sectorIndex)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              onFocus={() => setHoveredIndex(sectorIndex)}
+              onBlur={() => setHoveredIndex(null)}
+              onClick={() => selectSector(sectorIndex)}
+              aria-pressed={isSelected}
+              aria-label={`Ver detalle de ${formatSector(
+                sector.sector,
+              )}`}
+            >
+              <span
+                className="sector-legend-item__dot"
+                style={{ backgroundColor: color }}
               />
-            ))}
-          </div>
 
-          {extraSectors.length > 0 && (
-            <>
-              <button
-                type="button"
-                className="portfolio-legend-toggle"
-                onClick={() => setExpanded((v) => !v)}
-                aria-expanded={expanded}
-              >
-                <span className="portfolio-legend-toggle__count">
-                  {extraSectors.length}
-                </span>
-                {expanded ? 'Ver menos sectores' : 'Ver todos los sectores'}
-                <ChevronDown
-                  size={14}
-                  className={`portfolio-legend-toggle__chevron${expanded ? ' open' : ''}`}
-                />
-              </button>
+              <Icon
+                size={20}
+                color={color}
+              />
 
-              <div
-                className={`portfolio-legend-collapsible${expanded ? ' open' : ''}`}
-              >
-                <div className="portfolio-legend-grid">
-                  {extraSectors.map((sector, i) => {
-                    const index = visibleLimit + i;
-                    return (
-                      <SectorLegendCard
-                        key={`${sector.sector}-${index}`}
-                        sector={sector}
-                        index={index}
-                        color={getColor(index, colors)}
-                        activeIndex={activeIndex}
-                        onHover={setActiveIndex}
-                        onSelect={setSelectedIndex}
-                        labels={labels}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          )}
+              <span className="sector-legend-item__label">
+                {formatSector(sector.sector)}
+              </span>
 
-          <SectorDetail sector={selectedSector} labels={labels} />
-        </div>
+              <strong className="sector-legend-item__pct">
+                {formatPct(sector.pct)}
+              </strong>
+
+              <span className="sector-legend-item__usd">
+                {formatUSD(sector.valueUSD)}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

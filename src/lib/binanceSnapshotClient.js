@@ -17,7 +17,7 @@ const refreshBinanceSnapshotCallable = httpsCallable(
 );
 
 export async function refreshBinanceSnapshot() {
-  console.log('[Binance client] Iniciando callable');
+  // console.log('[Binance client] Iniciando callable');
 
   try {
     const result = await refreshBinanceSnapshotCallable({
