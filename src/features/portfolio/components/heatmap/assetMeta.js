@@ -66,6 +66,31 @@ export const SI_SLUGS = {
 
   // Otros
   GE: 'generalelectric',
+  TXN: 'texasinstruments',
+QCOM: 'qualcomm',
+PG: 'procterandgamble',   // a veces 'pg'
+KO: 'cocacola',
+CVX: null,                // no hay slug fiable → DeBounce
+COP: null,
+MRK: null,
+UNH: null,
+AMGN: null,
+VZ: 'verizon',
+HD: 'homedepot',
+ABT: null,
+PEP: 'pepsi',
+BMY: null,
+ACN: 'accenture',
+MO: null,
+ADP: null,
+LMT: null,
+BX: null,
+EOG: null,
+CMCSA: 'comcast',
+SLB: null,
+UPS: 'ups',
+TGT: 'target',
+FAST: null,
 };
 
 export const SI_COLORS = {
@@ -162,6 +187,18 @@ HYPE: '#97fce4',
   // Plataformas
   AIRTM: '#00C2A8',
   DEEL: '#FF5C35',
+  // ── SI_COLORS (opcional) ──
+TXN: '#cc0000',
+QCOM: '#3253dc',
+PG: '#003da5',
+KO: '#f40009',
+VZ: '#cd040b',
+HD: '#f96302',
+PEP: '#e32934',
+ACN: '#a100ff',
+CMCSA: '#000000',
+UPS: '#351c15',
+TGT: '#cc0000',
 };
 
 // ─── Lucide por símbolo (fallback) ─────────────────────────

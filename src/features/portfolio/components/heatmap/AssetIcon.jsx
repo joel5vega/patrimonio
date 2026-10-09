@@ -32,6 +32,32 @@ const LOGO_DOMAINS = {
   // ... resto de acciones
   BCH: 'bitcoincash.org',
 HYPE: 'hyperliquid.xyz',
+// ── LOGO_DOMAINS (DeBounce / logo CDN) ──
+TXN: 'ti.com',
+QCOM: 'qualcomm.com',
+PG: 'pg.com',
+KO: 'coca-cola.com',
+CVX: 'chevron.com',
+COP: 'conocophillips.com',
+MRK: 'merck.com',
+UNH: 'unitedhealthgroup.com',
+AMGN: 'amgen.com',
+VZ: 'verizon.com',
+HD: 'homedepot.com',
+ABT: 'abbott.com',
+PEP: 'pepsico.com',
+BMY: 'bms.com',
+ACN: 'accenture.com',
+MO: 'altria.com',
+ADP: 'adp.com',
+LMT: 'lockheedmartin.com',
+BX: 'blackstone.com',
+EOG: 'eogresources.com',
+CMCSA: 'comcast.com',
+SLB: 'slb.com',
+UPS: 'ups.com',
+TGT: 'target.com',
+FAST: 'fastenal.com',
 };
 
 export default function AssetIcon({ asset, size = 16 }) {
