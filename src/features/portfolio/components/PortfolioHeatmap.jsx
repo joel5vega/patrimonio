@@ -160,6 +160,8 @@ export default function PortfolioHeatmap({
   assets = [],
   futuresMonitoring = null, // Recibimos el objeto completo en lugar de un array plano
   bobRate,
+  historicalContext = null,
+  decisionSupport = null,
 }) {
   const normalizedAssets = useMemo(() => {
     return assets
@@ -186,6 +188,8 @@ export default function PortfolioHeatmap({
       assets={normalizedAssets}
       futuresAssets={normalizedFutures}
       bobRate={bobRate}
+      historicalContext={historicalContext}
+      decisionSupport={decisionSupport}
     />
   );
 }

@@ -42,7 +42,7 @@ export const SI_SLUGS = {
   USDC: 'usdcoin',
   DAI: 'dai',
   BINANCE: 'binance',
-
+  BCH: 'bitcoincash',
   // Tech que SÍ existen en Simple Icons
   NVDA: 'nvidia',
   AAPL: 'apple',
@@ -88,7 +88,8 @@ export const SI_COLORS = {
   DAI: '#f5ac37',
   BINANCE: '#F0B90B',
   BYBIT: '#F7A600',
-
+  BCH: '#0ac18e',
+HYPE: '#97fce4',
   // Tech
   NVDA: '#76b900',
   AAPL: '#a2aaad',

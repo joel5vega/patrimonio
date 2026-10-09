@@ -83,33 +83,30 @@ export default function Portfolio() {
         quoteError={quoteError}
       />
 
-      <PortfolioPerformance
-        historicalContext={portfolio.historicalContext}
-      />
+      
+<PortfolioHeatmap
+      assets={portfolio.heatmapAssets}
+      futuresMonitoring={portfolio.futuresMonitoring}
+      bobRate={portfolio.bobRate}
+      historicalContext={portfolio.historicalContext}
+      decisionSupport={portfolio.decisionSupport}
+    />
+  <PortfolioAllocation
+      allocation={portfolio.allocation}
+      targets={portfolio.targets}
+      investorProfile={investorProfile}
+      onProfileChange={setInvestorProfile}
+    />
+    
+    
+<PortfolioSectorMap
+  sectorAnalysis={portfolio.sectorAnalysis}
+  totalInvertibleUSD={portfolio.summary.investableUSD}
+/>
 
-      <PortfolioHeatmap
-        assets={portfolio.heatmapAssets}
-        futuresMonitoring={portfolio.futuresMonitoring}
-        bobRate={portfolio.bobRate}
-      />
 
-     
 
-      <PortfolioAllocation
-        allocation={portfolio.allocation}
-        targets={portfolio.targets}
-        investorProfile={investorProfile}
-        onProfileChange={setInvestorProfile}
-      />
 
-      <PortfolioSectorMap
-        sectorAnalysis={portfolio.sectorAnalysis}
-        totalInvertibleUSD={portfolio.summary.investableUSD}
-      />
-
-      <PortfolioDecisionSupport
-        decisionSupport={portfolio.decisionSupport}
-      />
     </main>
   );
 }

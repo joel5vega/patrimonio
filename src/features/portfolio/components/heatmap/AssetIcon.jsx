@@ -30,6 +30,8 @@ const LOGO_DOMAINS = {
   SCHW: 'schwab.com',
   JPM: 'jpmorganchase.com',
   // ... resto de acciones
+  BCH: 'bitcoincash.org',
+HYPE: 'hyperliquid.xyz',
 };
 
 export default function AssetIcon({ asset, size = 16 }) {

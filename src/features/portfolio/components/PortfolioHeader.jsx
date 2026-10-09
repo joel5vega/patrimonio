@@ -21,7 +21,6 @@ export default function PortfolioHeader({
 }) {
   return (
     <header className="portfolio-header">
-      <div>
        
 
         <h1 className="portfolio-title">
@@ -31,9 +30,8 @@ export default function PortfolioHeader({
         <p className="portfolio-subtitle">
           {formatDate(generatedAt)} · {profile}
         </p>
-      </div>
 
-      <div className="portfolio-header-actions">
+<div className="portfolio-header-actions">
         <span className="portfolio-rate-pill">
           <span className="portfolio-rate-dot" />
 
@@ -83,6 +81,9 @@ export default function PortfolioHeader({
           <Download size={14} />
         </button>
       </div>
+
+
+      
     </header>
   );
 }

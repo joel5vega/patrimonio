@@ -17,7 +17,8 @@ import {
 import RoleFrame from './heatmap/RoleFrame';
 import HeatTile from './heatmap/HeatTile';
 import FuturesBlock from './heatmap/FuturesBlock';
-
+import PortfolioPerformance from './PortfolioPerformance';
+import PortfolioDecisionSupport from './PortfolioDecisionSupport';
 import '../styles/MarketHeatmap.css';
 
 const EXCLUDED_ROLES = new Set(['reserve', 'patrimony']);
@@ -82,7 +83,7 @@ function countPerformance(assets) {
   );
 }
 
-export default function MarketHeatmap({ assets = [], futuresAssets = [] }) {
+export default function MarketHeatmap({ assets = [], futuresAssets = [] ,historicalContext = null,decisionSupport = null, bobRate = null }) {
   const [stageRef, width] = useContainerWidth();
   const viewportHeight = useViewportHeight();
   const height = stageHeight(width, viewportHeight);
@@ -114,6 +115,10 @@ export default function MarketHeatmap({ assets = [], futuresAssets = [] }) {
     <div className="hm-container">
       <div className="hm-header">
         <span className="hm-title">Portafolio</span>
+        <PortfolioPerformance
+        historicalContext={historicalContext}
+      />
+
         <div className="hm-counts">
           {stats.down > 0 && <span className="hm-count red">▼ {stats.down}</span>}
           {stats.noData > 0 && <span className="hm-count neutral">― {stats.noData}</span>}
@@ -132,8 +137,9 @@ export default function MarketHeatmap({ assets = [], futuresAssets = [] }) {
           />
         ))}
       </div>
-
-      {futuresAssets.length > 0 && <FuturesBlock assets={futuresAssets} />}
+<div className="portfolio-header">
+      {futuresAssets.length > 0 && <FuturesBlock assets={futuresAssets} />}<PortfolioDecisionSupport decisionSupport={decisionSupport} />
+      </div>
     </div>
   );
 }

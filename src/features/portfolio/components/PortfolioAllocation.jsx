@@ -13,9 +13,19 @@ const LABELS = {
   trading: 'Trading',
 };
 
+const ROLE_ORDER = [
+  'core',
+  'growth',
+  'defensive',
+  'liquidity',
+  'yield',
+  'speculative',
+  'trading',
+];
+
 function toNumber(value, fallback = 0) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 function getRowStatus(row) {
@@ -24,79 +34,66 @@ function getRowStatus(row) {
   }
   const current = toNumber(row.currentPct ?? row.current);
   const target = toNumber(row.targetPct ?? row.target);
-  const difference = Math.abs(current - target);
-  if (difference >= 5) return 'critical';
-  if (difference >= 1) return 'warning';
+  const diff = Math.abs(current - target);
+  if (diff >= 5) return 'critical';
+  if (diff >= 1) return 'warning';
   return 'ok';
 }
 
-function AllocationCard({ row }) {
+function AllocationRow({ row }) {
   const color = ROLE_COLORS[row.role] || '#a4a19b';
   const current = toNumber(row.currentPct ?? row.current);
   const target = toNumber(row.targetPct ?? row.target);
-  const difference = current - target;
+  const diff = current - target;
   const status = getRowStatus(row);
-  const currentWidth = Math.min(Math.max(current, 0), 100);
-  const targetPos = Math.min(Math.max(target, 0), 100);
+  const fill = Math.min(Math.max(current, 0), 100);
+  const mark = Math.min(Math.max(target, 0), 100);
 
-  const deltaLabel =
+  const delta =
     status === 'ok'
-      ? 'En rango'
-      : difference > 0
-        ? `+${Math.abs(difference).toFixed(1)}%`
-        : `−${Math.abs(difference).toFixed(1)}%`;
+      ? 'OK'
+      : `${diff > 0 ? '+' : '−'}${Math.abs(diff).toFixed(1)}%`;
 
   return (
-    <article className={`alloc-card alloc-card--${status}`}>
-      <header className="alloc-card__head">
-        <div className="alloc-card__role">
-          <span className="alloc-card__dot" style={{ background: color }} />
-          <span className="alloc-card__name">
-            {LABELS[row.role] || row.label || row.role}
-          </span>
-        </div>
-        <span className={`alloc-card__delta alloc-card__delta--${status}`}>
-          {deltaLabel}
-        </span>
-      </header>
+    <div className={`alloc-row alloc-row--${status}`}>
+      <span className="alloc-row__dot" style={{ background: color }} />
+      <span className="alloc-row__name">
+        {LABELS[row.role] || row.label || row.role}
+      </span>
 
-      <div className="alloc-card__track" aria-hidden="true">
+      <div className="alloc-row__track" aria-hidden="true">
         <div
-          className="alloc-card__fill"
-          style={{ width: `${currentWidth}%`, background: color }}
+          className="alloc-row__fill"
+          style={{ width: `${fill}%`, background: color }}
         />
-        <div
-          className="alloc-card__marker"
-          style={{ left: `${targetPos}%` }}
-          title={`Objetivo ${formatPct(target)}`}
-        />
+        <div className="alloc-row__marker" style={{ left: `${mark}%` }} />
       </div>
 
-      <div className="alloc-card__meta">
-        <span>
-          <em>Actual</em> {formatPct(current)}
+      <span className="alloc-row__pcts">
+        <b>{formatPct(current)}</b>
+        <span>/ {formatPct(target)}</span>
+      </span>
+
+      <span className={`alloc-row__delta alloc-row__delta--${status}`}>
+        {delta}
+      </span>
+
+      {row.currentUSD != null && (
+        <span className="alloc-row__usd">
+          $
+          {toNumber(row.currentUSD).toLocaleString('en-US', {
+            maximumFractionDigits: 0,
+          })}
         </span>
-        <span>
-          <em>Objetivo</em> {formatPct(target)}
-        </span>
-        {row.currentUSD != null && (
-          <span className="alloc-card__usd">
-            $
-            {toNumber(row.currentUSD).toLocaleString('en-US', {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}
-          </span>
-        )}
-      </div>
-    </article>
+      )}
+    </div>
   );
 }
 
-export default function PortfolioAllocation({ 
-  allocation, 
-  investorProfile = 'moderado', 
-  onProfileChange 
+export default function PortfolioAllocation({
+  allocation,
+  investorProfile = 'moderado',
+  onProfileChange,
 }) {
   const rows = useMemo(() => {
     if (Array.isArray(allocation)) return allocation;
@@ -113,98 +110,88 @@ export default function PortfolioAllocation({
     return [];
   }, [allocation]);
 
-  const normalizedRows = useMemo(
-    () =>
-      rows.filter(Boolean).map((row) => ({
-        ...row,
-        role: row.role || row.key,
-        status: getRowStatus(row),
-      })),
-    [rows],
-  );
+  const normalized = useMemo(() => {
+    const list = rows.filter(Boolean).map((row) => ({
+      ...row,
+      role: row.role || row.key,
+      status: getRowStatus(row),
+    }));
 
-  const groups = useMemo(
+    // orden fijo por rol
+    list.sort((a, b) => {
+      const ia = ROLE_ORDER.indexOf(a.role);
+      const ib = ROLE_ORDER.indexOf(b.role);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+
+    return list;
+  }, [rows]);
+
+  const counts = useMemo(
     () => ({
-      critical: normalizedRows.filter((r) => r.status === 'critical'),
-      warning: normalizedRows.filter((r) => r.status === 'warning'),
-      ok: normalizedRows.filter((r) => r.status === 'ok'),
+      critical: normalized.filter((r) => r.status === 'critical').length,
+      warning: normalized.filter((r) => r.status === 'warning').length,
+      ok: normalized.filter((r) => r.status === 'ok').length,
     }),
-    [normalizedRows],
+    [normalized],
   );
-
-  const sections = [
-    { key: 'critical', title: 'Urgente', items: groups.critical },
-    { key: 'warning', title: 'Ajuste', items: groups.warning },
-    { key: 'ok', title: 'En rango', items: groups.ok },
-  ].filter((s) => s.items.length);
 
   return (
     <section className="alloc-section">
       <header className="alloc-section__header">
         <div>
           <p className="alloc-section__eyebrow">Portfolio</p>
-          <h2 className="alloc-section__title">Rebalanceo y Asignación</h2>
+          <h2 className="alloc-section__title">Asignación</h2>
         </div>
 
-        {/* Selector de Perfil de Inversor */}
-        <div className="alloc-section__controls" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="alloc-section__controls">
           {onProfileChange && (
-            <div className="profile-selector-wrapper">
-              <label htmlFor="investor-profile-select" style={{ fontSize: '0.85rem', marginRight: '0.5rem', opacity: 0.8 }}>
-                Perfil:
-              </label>
-              <select
-                id="investor-profile-select"
-                value={investorProfile}
-                onChange={(e) => onProfileChange(e.target.value)}
-                style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', background: 'var(--bg-card, #222)', color: 'inherit', border: '1px solid var(--border-color, #444)' }}
-              >
-                <option value="defensivo">Defensivo</option>
-                <option value="moderado">Moderado</option>
-                <option value="crecimiento">Crecimiento</option>
-                <option value="agresivo">Agresivo</option>
-              </select>
-            </div>
+            <select
+              className="alloc-profile-select"
+              value={investorProfile}
+              onChange={(e) => onProfileChange(e.target.value)}
+              aria-label="Perfil de inversor"
+            >
+              <option value="defensivo">Defensivo</option>
+              <option value="moderado">Moderado</option>
+              <option value="crecimiento">Crecimiento</option>
+              <option value="agresivo">Agresivo</option>
+            </select>
           )}
 
           <div className="alloc-section__counts">
-            {groups.critical.length > 0 && (
+            {counts.critical > 0 && (
               <span className="alloc-count alloc-count--critical">
-                {groups.critical.length} urgente
+                {counts.critical}
               </span>
             )}
-            {groups.warning.length > 0 && (
+            {counts.warning > 0 && (
               <span className="alloc-count alloc-count--warning">
-                {groups.warning.length} ajuste
+                {counts.warning}
               </span>
             )}
-            {groups.ok.length > 0 && (
-              <span className="alloc-count alloc-count--ok">
-                {groups.ok.length} ok
-              </span>
+            {counts.ok > 0 && (
+              <span className="alloc-count alloc-count--ok">{counts.ok}</span>
             )}
           </div>
         </div>
       </header>
 
-      {!normalizedRows.length ? (
-        <div className="alloc-section--empty" style={{ padding: '2rem', textAlign: 'center' }}>
-          <p>No hay datos de asignación disponibles.</p>
-        </div>
+      {!normalized.length ? (
+        <div className="alloc-section--empty">Sin datos de asignación</div>
       ) : (
-        <div className="alloc-section__body">
-          {sections.map((section) => (
-            <div key={section.key} className={`alloc-group alloc-group--${section.key}`}>
-              <h3 className="alloc-group__title">
-                {section.title}
-                <span>{section.items.length}</span>
-              </h3>
-              <div className="alloc-grid">
-                {section.items.map((row) => (
-                  <AllocationCard key={row.key || row.role} row={row} />
-                ))}
-              </div>
-            </div>
+        <div className="alloc-list">
+          <div className="alloc-list__head">
+            <span />
+            <span>Rol</span>
+            <span className="alloc-list__head-track" />
+            <span>Actual / Obj</span>
+            <span>Δ</span>
+            <span className="alloc-list__head-usd">USD</span>
+          </div>
+
+          {normalized.map((row) => (
+            <AllocationRow key={row.key || row.role} row={row} />
           ))}
         </div>
       )}
@@ -212,6 +199,9 @@ export default function PortfolioAllocation({
       <p className="alloc-legend">
         <span className="alloc-legend__swatch" /> Actual
         <span className="alloc-legend__marker" /> Objetivo
+        <span className="alloc-legend__hint">
+          Rojo ≥5% · Amarillo ≥1% · Azul en rango
+        </span>
       </p>
     </section>
   );

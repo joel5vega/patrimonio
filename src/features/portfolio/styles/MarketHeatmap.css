@@ -614,3 +614,82 @@
   font-size: 11px;
   opacity: 0.6;
 }
+
+.hm-futures-tile {
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 110px;
+}
+
+.hm-futures-tile__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hm-futures-tile__symbol {
+  font-weight: 600;
+  font-size: 13px;
+  flex: 1;
+}
+
+.hm-futures-tile__side {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.hm-futures-tile__pnl {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hm-futures-tile__pnl-pct {
+  opacity: 0.7;
+  font-weight: 500;
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+.hm-futures-tile__foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+.hm-futures-tile__liq {
+  font-weight: 600;
+}
+
+.hm-futures__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.hm-futures__title {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hm-futures__stats {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.hm-futures__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
