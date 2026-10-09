@@ -14,12 +14,10 @@ export default function PortfolioDecisionSupport({ decisionSupport }) {
     ...(decisionSupport?.recommendations?.monthly || []).map((item) => ({ ...item, source: 'mensual' })),
     ...(decisionSupport?.recommendations?.lumpSum || []).map((item) => ({ ...item, source: 'capital disponible' })),
   ];
-
   return (
     <section className="portfolio-card portfolio-decisions">
       <div className="portfolio-section-head">
         <div>
-          <span className="portfolio-eyebrow">Decisiones</span>
           <h2 className="portfolio-section-title">Alertas y acciones</h2>
         </div>
         <ListChecks size={18} className="portfolio-section-icon" />
@@ -49,7 +47,6 @@ export default function PortfolioDecisionSupport({ decisionSupport }) {
 
         {recommendations.length > 0 && (
           <div className="portfolio-recommendation-list">
-            <span className="portfolio-subsection-label">Recomendaciones</span>
             {recommendations.map((item, index) => (
               <article className="portfolio-recommendation" key={`${item.asset}-${index}`}>
                 <div>

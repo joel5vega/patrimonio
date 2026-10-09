@@ -25,7 +25,7 @@ import {
 import { useAuth } from './AuthContext';
 import { useManualAssets } from '../hooks/useManualAssets';
 import { buildPortfolioV3 } from '../features/portfolio/utils/portfolioAnalysis';
-
+import { buildDecisionSupport } from './buildDecisionSupport';
 const AppContext = createContext(null);
 
 // ─── Constantes de módulo ───────────────────────────────────────────────────
@@ -431,6 +431,7 @@ const riskData = useMemo(() => {
   // snapshot de Binance como respaldo para lo que es específico de spot/futuros.
   const backendRisk = todayPortfolioAnalysis?.analysis?.risk ?? {};
   const backendAlerts = todayPortfolioAnalysis?.analysis?.alerts ?? {};
+  
   const topPositions =
     todayPortfolioAnalysis?.riskContext?.concentrationRisk?.topPositions ?? [];
   const openLeverageX =
@@ -593,6 +594,14 @@ const pieData = useMemo(
   [todayPortfolioAnalysis]
 );
 // console.log(futuresMonitoring)
+// ─── Decision support (alerts + recommendations) ─────────────────────────
+  // Deriva la estructura que consume <PortfolioDecisionSupport /> desde el
+  // portfolioV3 que ya produce el backend. No recalcula nada: solo compone.
+  const decisionSupport = useMemo(
+    () =>
+      buildDecisionSupport(todayPortfolioV3 ?? {}),
+    [todayPortfolioV3],
+  );
   // ─── Quantfury: builder de análisis desde tradingHistory ──────────────────
   const buildQuantfuryAnalysisFromHistory = useCallback((rows = []) => {
     if (!rows.length) return null;
@@ -1119,6 +1128,7 @@ totalValueBOB,
 todayPortfolioV3,
 todayPortfolioMeta,
 futuresMonitoring,
+decisionSupport,
     addAsset,
     removeAsset,
     updateAsset,

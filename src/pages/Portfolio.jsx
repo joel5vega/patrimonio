@@ -27,9 +27,9 @@ export default function Portfolio() {
     todayPortfolioV3,
     refreshMarketQuotes,
     refreshAll,
-    futuresMonitoring
+    futuresMonitoring,
+    decisionSupport,
   } = useApp();
-
   const [investorProfile, setInvestorProfile] = useState('moderado-agresivo');
 
   // El hook recibe el perfil y recalcula targets y allocation de forma automatizada al cambiar
@@ -41,7 +41,6 @@ export default function Portfolio() {
     futuresMonitoring,
     heatmapAssets: todayPortfolioV3?.heatmapAssets || todayPortfolioV3?.assets || [],
   });
-  // console.log("Portfolio heat:", portfolio.heatmapAssets);
   const exporter = usePortfolioExport(portfolio.aiReport);
 
   const {
@@ -89,7 +88,7 @@ export default function Portfolio() {
       futuresMonitoring={portfolio.futuresMonitoring}
       bobRate={portfolio.bobRate}
       historicalContext={portfolio.historicalContext}
-      decisionSupport={portfolio.decisionSupport}
+      decisionSupport={decisionSupport}
     />
   <PortfolioAllocation
       allocation={portfolio.allocation}

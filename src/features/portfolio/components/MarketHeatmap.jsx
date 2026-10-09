@@ -138,7 +138,8 @@ export default function MarketHeatmap({ assets = [], futuresAssets = [] ,histori
         ))}
       </div>
 <div className="portfolio-header">
-      {futuresAssets.length > 0 && <FuturesBlock assets={futuresAssets} />}<PortfolioDecisionSupport decisionSupport={decisionSupport} />
+      {futuresAssets.length > 0 && <FuturesBlock assets={futuresAssets} />}
+      <PortfolioDecisionSupport decisionSupport={decisionSupport} />
       </div>
     </div>
   );
