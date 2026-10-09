@@ -86,7 +86,7 @@ export function usePortfolioData({
   const [activeTab, setActiveTab] = useState('all');
   const portfolio = useMemo(() => {
     const v3Data = todayPortfolioV3 || {};
-    console.log(v3Data.heatmapAssets.length);
+    console.log(v3Data.heatmapAssets? v3Data.heatmapAssets.length : "no");
     const analysisData = todayPortfolioAnalysis || {};
 
     const valuation = v3Data.snapshot?.valuation || analysisData.snapshot?.valuation || {};
