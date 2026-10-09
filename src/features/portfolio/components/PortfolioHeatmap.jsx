@@ -8,15 +8,23 @@ function numberOrNull(value) {
 }
 
 function calculatePnlPct(asset) {
-  const entryPrice = numberOrNull(asset.sourceMeta?.entryPrice);
-
+  // Soporta tanto sourceMeta (formato antiguo) como propiedades raíz (nuevo futuresMonitoring)
+  const entryPrice = numberOrNull(
+    asset.entryPrice ?? asset.sourceMeta?.entryPrice
+  );
   const currentPrice = numberOrNull(
+    asset.markPrice ??
     asset.sourceMeta?.marketPrice ??
-    asset.sourceMeta?.priceUSD,
+    asset.sourceMeta?.priceUSD
   );
 
   if (!entryPrice || entryPrice <= 0 || currentPrice == null) {
     return null;
+  }
+
+  // Si ya viene calculado en el JSON (como unrealizedPnlPct), lo priorizamos
+  if (asset.unrealizedPnlPct !== undefined) {
+    return numberOrNull(asset.unrealizedPnlPct);
   }
 
   return ((currentPrice - entryPrice) / entryPrice) * 100;
@@ -38,7 +46,11 @@ function normalizeAsset(asset) {
     ? 0
     : calculatePnlPct(asset);
 
-  const isFutures = asset.type === "futures";
+  // Detecta si es futuro ya sea por su tipo, o por la presencia de campos de futuros
+  const isFutures = 
+    asset.type === "futures" || 
+    asset.positionSide !== undefined || 
+    asset.leverage !== undefined;
 
   return {
     ...asset,
@@ -59,7 +71,7 @@ function normalizeAsset(asset) {
           asset.symbol ||
           "Activo sin nombre",
 
-    valueUSD: Number(asset.valueUSD || 0),
+    valueUSD: Number(asset.notionalUSD || asset.valueUSD || 0),
     weightPct: Number(asset.weightPct || 0),
 
     role:
@@ -87,13 +99,17 @@ function normalizeAsset(asset) {
       asset.groupKey ||
       "manual",
 
-    type:
-      isPendingInvestmentCash
-        ? "cash"
-        : asset.type || "other",
+    type: isFutures ? "futures" : (isPendingInvestmentCash ? "cash" : (asset.type || "other")),
 
     ...(isFutures
-      ? {}
+      ? {
+          positionSide: asset.positionSide || null,
+          notionalUSD: numberOrNull(asset.notionalUSD),
+          leverage: numberOrNull(asset.leverage),
+          liquidationPrice: numberOrNull(asset.liquidationPrice),
+          liquidationDistancePct: numberOrNull(asset.liquidationDistancePct),
+          marginMode: asset.marginMode || null,
+        }
       : {
           positionSide: null,
           notionalUSD: null,
@@ -105,22 +121,24 @@ function normalizeAsset(asset) {
 
     quantity: isPendingInvestmentCash
       ? Number(asset.valueUSD || 0)
-      : numberOrNull(sourceMeta.quantity),
+      : numberOrNull(asset.quantity ?? sourceMeta.quantity),
 
     marketPrice: isPendingInvestmentCash
       ? 1
       : numberOrNull(
+          asset.markPrice ??
           sourceMeta.marketPrice ??
           sourceMeta.priceUSD,
         ),
 
     entryPrice: isPendingInvestmentCash
       ? 1
-      : numberOrNull(sourceMeta.entryPrice),
+      : numberOrNull(asset.entryPrice ?? sourceMeta.entryPrice),
 
     pnlUSD: isPendingInvestmentCash
       ? 0
       : numberOrNull(
+          asset.unrealizedPnlUSD ??
           sourceMeta.unrealizedPnlUSD,
         ),
 
@@ -137,9 +155,10 @@ function normalizeAsset(asset) {
     strategy: asset.strategy || {},
   };
 }
+
 export default function PortfolioHeatmap({
   assets = [],
-  futuresAssets = [],
+  futuresMonitoring = null, // Recibimos el objeto completo en lugar de un array plano
   bobRate,
 }) {
   const normalizedAssets = useMemo(() => {
@@ -147,9 +166,11 @@ export default function PortfolioHeatmap({
       .filter((asset) => Number(asset?.valueUSD) > 0)
       .map(normalizeAsset);
   }, [assets]);
-
+  
   const normalizedFutures = useMemo(() => {
-    return futuresAssets
+    // Extraemos las posiciones directamente de la agregación multiexchange
+    const rawPositions = futuresMonitoring?.aggregated?.positions || [];
+    return rawPositions
       .filter((asset) => {
         const notional =
           Number(asset.notionalUSD) ||
@@ -159,8 +180,7 @@ export default function PortfolioHeatmap({
         return Number.isFinite(notional) && notional > 0;
       })
       .map(normalizeAsset);
-  }, [futuresAssets]);
-
+  }, [futuresMonitoring]);
   return (
     <MarketHeatmap
       assets={normalizedAssets}

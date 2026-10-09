@@ -6,12 +6,9 @@ import { usePortfolioExport } from '../features/portfolio/hooks/usePortfolioExpo
 import { usePortfolioQuotes } from '../features/portfolio/hooks/usePortfolioQuotes';
 
 import PortfolioHeader from '../features/portfolio/components/PortfolioHeader';
-import PortfolioProfileSelector from '../features/portfolio/components/PortfolioProfileSelector';
 import PortfolioHeatmap from '../features/portfolio/components/PortfolioHeatmap';
 import PortfolioAllocation from '../features/portfolio/components/PortfolioAllocation';
 import PortfolioDecisionSupport from '../features/portfolio/components/PortfolioDecisionSupport';
-import PortfolioAssets from '../features/portfolio/components/PortfolioAssets';
-import PortfolioSecondaryDetails from '../features/portfolio/components/PortfolioSecondaryDetails';
 import PortfolioSectorMap from '../features/portfolio/components/PortfolioSectorMap';
 import PortfolioPerformance from '../features/portfolio/components/PortfolioPerformance';
 
@@ -22,10 +19,7 @@ import '../features/portfolio/styles/portfolio.css';
 import PatrimonioLoader from '../components/PatrimonioLoader';
 import { refreshWallbitSnapshot } from '../lib/wallbitSnapshotClient';
 
-// Flag: activa Bybit solo cuando esté configurado en backend
-const HAS_BYBIT =
-  import.meta.env.VITE_HAS_BYBIT === 'true';
-
+const HAS_BYBIT = import.meta.env.VITE_HAS_BYBIT === 'true';
 export default function Portfolio() {
   const {
     loading,
@@ -33,24 +27,22 @@ export default function Portfolio() {
     todayPortfolioV3,
     refreshMarketQuotes,
     refreshAll,
-    manualAssets,
-    cryptoAssets,
+    futuresMonitoring
   } = useApp();
 
-  const [investorProfile, setInvestorProfile] =
-    useState('moderado');
+  const [investorProfile, setInvestorProfile] = useState('moderado-agresivo');
 
+  // El hook recibe el perfil y recalcula targets y allocation de forma automatizada al cambiar
   const portfolio = usePortfolioData({
     loading,
     todayPortfolioAnalysis,
     todayPortfolioV3,
-    manualAssets,
     investorProfile,
+    futuresMonitoring,
+    heatmapAssets: todayPortfolioV3?.heatmapAssets || todayPortfolioV3?.assets || [],
   });
-  
-  const exporter = usePortfolioExport(
-    portfolio.aiReport,
-  );
+  // console.log("Portfolio heat:", portfolio.heatmapAssets);
+  const exporter = usePortfolioExport(portfolio.aiReport);
 
   const {
     refreshingQuotes,
@@ -61,9 +53,7 @@ export default function Portfolio() {
     loading,
     refreshMarketQuotes,
     refreshBinanceSnapshot,
-    refreshBybitSnapshot: HAS_BYBIT
-      ? refreshBybitSnapshot
-      : undefined,
+    refreshBybitSnapshot: HAS_BYBIT ? refreshBybitSnapshot : undefined,
     refreshWallbitSnapshot,
     refreshAll,
   });
@@ -99,18 +89,17 @@ export default function Portfolio() {
 
       <PortfolioHeatmap
         assets={portfolio.heatmapAssets}
-        futuresAssets={portfolio.futuresAssets}
+        futuresMonitoring={portfolio.futuresMonitoring}
         bobRate={portfolio.bobRate}
       />
 
-      <PortfolioProfileSelector
-        value={investorProfile}
-        onChange={setInvestorProfile}
-      />
+     
 
       <PortfolioAllocation
         allocation={portfolio.allocation}
         targets={portfolio.targets}
+        investorProfile={investorProfile}
+        onProfileChange={setInvestorProfile}
       />
 
       <PortfolioSectorMap
@@ -120,20 +109,6 @@ export default function Portfolio() {
 
       <PortfolioDecisionSupport
         decisionSupport={portfolio.decisionSupport}
-      />
-
-      <PortfolioAssets
-        assets={portfolio.heatmapAssets}
-        filters={portfolio.filters}
-        activeTab={portfolio.filters.activeTab}
-        onTabChange={portfolio.filters.setActiveTab}
-        bobRate={portfolio.bobRate}
-      />
-
-      <PortfolioSecondaryDetails
-        reserves={portfolio.reserves}
-        patrimony={portfolio.patrimony}
-        exposureBySource={portfolio.exposureBySource}
       />
     </main>
   );

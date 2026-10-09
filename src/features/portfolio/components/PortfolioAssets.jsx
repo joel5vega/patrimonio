@@ -30,8 +30,12 @@ export default function PortfolioAssets({ assets = [], activeTab, onTabChange, f
       </div>
 
       <div className="portfolio-assets-list">
-        {visibleAssets.length ? visibleAssets.map((asset) => (
-          <PortfolioAssetCard key={asset.id} asset={asset} bobRate={bobRate} />
+        {visibleAssets.length ? visibleAssets.map((asset, index) => (
+          <PortfolioAssetCard 
+            key={asset.id || asset.symbol || `asset-${index}`} 
+            asset={asset} 
+            bobRate={bobRate} 
+          />
         )) : (
           <p className="portfolio-empty-state">Sin activos visibles.</p>
         )}

@@ -490,7 +490,8 @@ const riskData = useMemo(() => {
     overExposed,
   };
 }, [binanceSnap, totalCryptoUSD, todayPortfolioAnalysis]);
-  const pieData = useMemo(
+  
+const pieData = useMemo(
     () =>
       [
         ...(totalVolatileUSD > 0
@@ -587,7 +588,11 @@ const riskData = useMemo(() => {
       manualCtx.manualAssets,
     ]
   );
-
+  const futuresMonitoring = useMemo(
+  () => todayPortfolioAnalysis?.futuresMonitoring ?? null,
+  [todayPortfolioAnalysis]
+);
+// console.log(futuresMonitoring)
   // ─── Quantfury: builder de análisis desde tradingHistory ──────────────────
   const buildQuantfuryAnalysisFromHistory = useCallback((rows = []) => {
     if (!rows.length) return null;
@@ -1070,7 +1075,6 @@ const refreshMarketQuotes = useCallback(
 
  
 
-
   // ─── value del contexto ────────────────────────────────────────────────────
   const value = {
     user,
@@ -1114,6 +1118,7 @@ totalValueBOB,
     todayPortfolioAnalysis,
 todayPortfolioV3,
 todayPortfolioMeta,
+futuresMonitoring,
     addAsset,
     removeAsset,
     updateAsset,

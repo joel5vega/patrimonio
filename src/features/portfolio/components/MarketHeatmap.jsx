@@ -36,7 +36,7 @@ const isPendingInvestmentCash = (asset = {}) => {
 };
 
 const isVisibleInHeatmap = (asset) =>
-  !isFuturesAsset(asset) &&
+  !(asset.type === 'futures' && asset.positionSide) &&
   (
     isPendingInvestmentCash(asset) ||
     (

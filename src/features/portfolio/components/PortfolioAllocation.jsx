@@ -93,8 +93,13 @@ function AllocationCard({ row }) {
   );
 }
 
-export default function PortfolioAllocation({ allocation }) {
+export default function PortfolioAllocation({ 
+  allocation, 
+  investorProfile = 'moderado', 
+  onProfileChange 
+}) {
   const rows = useMemo(() => {
+    if (Array.isArray(allocation)) return allocation;
     if (Array.isArray(allocation?.rows)) return allocation.rows;
     if (Array.isArray(allocation?.roles)) return allocation.roles;
     if (allocation?.byRole && typeof allocation.byRole === 'object') {
@@ -133,55 +138,76 @@ export default function PortfolioAllocation({ allocation }) {
     { key: 'ok', title: 'En rango', items: groups.ok },
   ].filter((s) => s.items.length);
 
-  if (!normalizedRows.length) {
-    return (
-      <section className="alloc-section alloc-section--empty">
-        <p>No hay datos de asignación.</p>
-      </section>
-    );
-  }
-
   return (
     <section className="alloc-section">
       <header className="alloc-section__header">
         <div>
           <p className="alloc-section__eyebrow">Portfolio</p>
-          <h2 className="alloc-section__title">Rebalanceo</h2>
+          <h2 className="alloc-section__title">Rebalanceo y Asignación</h2>
         </div>
-        <div className="alloc-section__counts">
-          {groups.critical.length > 0 && (
-            <span className="alloc-count alloc-count--critical">
-              {groups.critical.length} urgente
-            </span>
+
+        {/* Selector de Perfil de Inversor */}
+        <div className="alloc-section__controls" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {onProfileChange && (
+            <div className="profile-selector-wrapper">
+              <label htmlFor="investor-profile-select" style={{ fontSize: '0.85rem', marginRight: '0.5rem', opacity: 0.8 }}>
+                Perfil:
+              </label>
+              <select
+                id="investor-profile-select"
+                value={investorProfile}
+                onChange={(e) => onProfileChange(e.target.value)}
+                style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', background: 'var(--bg-card, #222)', color: 'inherit', border: '1px solid var(--border-color, #444)' }}
+              >
+                <option value="defensivo">Defensivo</option>
+                <option value="moderado">Moderado</option>
+                <option value="crecimiento">Crecimiento</option>
+                <option value="agresivo">Agresivo</option>
+              </select>
+            </div>
           )}
-          {groups.warning.length > 0 && (
-            <span className="alloc-count alloc-count--warning">
-              {groups.warning.length} ajuste
-            </span>
-          )}
-          {groups.ok.length > 0 && (
-            <span className="alloc-count alloc-count--ok">
-              {groups.ok.length} ok
-            </span>
-          )}
+
+          <div className="alloc-section__counts">
+            {groups.critical.length > 0 && (
+              <span className="alloc-count alloc-count--critical">
+                {groups.critical.length} urgente
+              </span>
+            )}
+            {groups.warning.length > 0 && (
+              <span className="alloc-count alloc-count--warning">
+                {groups.warning.length} ajuste
+              </span>
+            )}
+            {groups.ok.length > 0 && (
+              <span className="alloc-count alloc-count--ok">
+                {groups.ok.length} ok
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="alloc-section__body">
-        {sections.map((section) => (
-          <div key={section.key} className={`alloc-group alloc-group--${section.key}`}>
-            <h3 className="alloc-group__title">
-              {section.title}
-              <span>{section.items.length}</span>
-            </h3>
-            <div className="alloc-grid">
-              {section.items.map((row) => (
-                <AllocationCard key={row.key || row.role} row={row} />
-              ))}
+      {!normalizedRows.length ? (
+        <div className="alloc-section--empty" style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>No hay datos de asignación disponibles.</p>
+        </div>
+      ) : (
+        <div className="alloc-section__body">
+          {sections.map((section) => (
+            <div key={section.key} className={`alloc-group alloc-group--${section.key}`}>
+              <h3 className="alloc-group__title">
+                {section.title}
+                <span>{section.items.length}</span>
+              </h3>
+              <div className="alloc-grid">
+                {section.items.map((row) => (
+                  <AllocationCard key={row.key || row.role} row={row} />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <p className="alloc-legend">
         <span className="alloc-legend__swatch" /> Actual
