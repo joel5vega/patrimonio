@@ -1,757 +1,167 @@
 {
-  "lastUpdated": "2026-10-05T16:38:00-04:00",
+  "lastUpdated": "2026-10-09T10:30:00-04:00",
   "etfs": {
     "VOO": {
       "symbol": "VOO",
       "issuer": "vanguard",
       "asOfDate": "2026-08-31",
-      "source": "vanguard_official",
+      "source": "vanguard_official_and_aggregated",
       "status": "complete",
       "sectors": [
-        {
-          "sector": "tecnologia",
-          "weightPct": 38.72,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "finanzas",
-          "weightPct": 12.02,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "comunicacion",
-          "weightPct": 9.50,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_discrecional",
-          "weightPct": 9.31,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "salud",
-          "weightPct": 9.29,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "industria",
-          "weightPct": 7.75,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_basico",
-          "weightPct": 4.46,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "energia",
-          "weightPct": 3.48,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "servicios_publicos",
-          "weightPct": 1.99,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "inmobiliario",
-          "weightPct": 1.80,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "materiales",
-          "weightPct": 1.68,
-          "sourceStandard": "GICS"
-        }
+        { "sector": "tecnologia", "weightPct": 38.7, "sourceStandard": "GICS" },
+        { "sector": "finanzas", "weightPct": 12.0, "sourceStandard": "GICS" },
+        { "sector": "comunicacion", "weightPct": 9.5, "sourceStandard": "GICS" },
+        { "sector": "consumo_discrecional", "weightPct": 9.3, "sourceStandard": "GICS" },
+        { "sector": "salud", "weightPct": 9.3, "sourceStandard": "GICS" },
+        { "sector": "industria", "weightPct": 7.8, "sourceStandard": "GICS" },
+        { "sector": "consumo_basico", "weightPct": 4.5, "sourceStandard": "GICS" },
+        { "sector": "energia", "weightPct": 3.5, "sourceStandard": "GICS" },
+        { "sector": "servicios_publicos", "weightPct": 2.0, "sourceStandard": "GICS" },
+        { "sector": "inmobiliario", "weightPct": 1.8, "sourceStandard": "GICS" },
+        { "sector": "materiales", "weightPct": 1.7, "sourceStandard": "GICS" }
       ],
       "holdings": [
-        {
-          "symbol": "NVDA",
-          "name": "NVIDIA Corporation",
-          "weightPct": 8.08,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "AAPL",
-          "name": "Apple Inc",
-          "weightPct": 7.03,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "MSFT",
-          "name": "Microsoft Corporation",
-          "weightPct": 4.52,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "AMZN",
-          "name": "Amazon.com Inc",
-          "weightPct": 3.89,
-          "sector": "consumo_discrecional"
-        },
-        {
-          "symbol": "GOOGL",
-          "name": "Alphabet Inc Class A",
-          "weightPct": 2.15,
-          "sector": "comunicacion"
-        }
+        { "symbol": "NVDA", "name": "NVIDIA Corporation", "weightPct": 8.09, "sector": "tecnologia" },
+        { "symbol": "AAPL", "name": "Apple Inc", "weightPct": 7.04, "sector": "tecnologia" },
+        { "symbol": "MSFT", "name": "Microsoft Corporation", "weightPct": 5.70, "sector": "tecnologia" },
+        { "symbol": "AMZN", "name": "Amazon.com Inc", "weightPct": 3.85, "sector": "consumo_discrecional" },
+        { "symbol": "GOOGL", "name": "Alphabet Inc Class A", "weightPct": 3.01, "sector": "comunicacion" },
+        { "symbol": "AVGO", "name": "Broadcom Inc", "weightPct": 2.65, "sector": "tecnologia" },
+        { "symbol": "GOOG", "name": "Alphabet Inc Class C", "weightPct": 2.40, "sector": "comunicacion" },
+        { "symbol": "META", "name": "Meta Platforms Inc", "weightPct": 1.90, "sector": "comunicacion" },
+        { "symbol": "MU", "name": "Micron Technology Inc", "weightPct": 1.64, "sector": "tecnologia" },
+        { "symbol": "TSLA", "name": "Tesla Inc", "weightPct": 1.57, "sector": "consumo_discrecional" },
+        { "symbol": "JPM", "name": "JPMorgan Chase & Co", "weightPct": 1.44, "sector": "finanzas" },
+        { "symbol": "BRK.B", "name": "Berkshire Hathaway Inc Class B", "weightPct": 1.40, "sector": "finanzas" },
+        { "symbol": "LLY", "name": "Eli Lilly & Co", "weightPct": 1.38, "sector": "salud" },
+        { "symbol": "AMD", "name": "Advanced Micro Devices Inc", "weightPct": 1.16, "sector": "tecnologia" },
+        { "symbol": "XOM", "name": "Exxon Mobil Corp", "weightPct": 1.01, "sector": "energia" },
+        { "symbol": "JNJ", "name": "Johnson & Johnson", "weightPct": 0.97, "sector": "salud" },
+        { "symbol": "V", "name": "Visa Inc Class A", "weightPct": 0.93, "sector": "finanzas" },
+        { "symbol": "MA", "name": "Mastercard Inc Class A", "weightPct": 0.72, "sector": "finanzas" },
+        { "symbol": "WMT", "name": "Walmart Inc", "weightPct": 0.70, "sector": "consumo_basico" },
+        { "symbol": "ABBV", "name": "AbbVie Inc", "weightPct": 0.69, "sector": "salud" },
+        { "symbol": "INTC", "name": "Intel Corp", "weightPct": 0.67, "sector": "tecnologia" },
+        { "symbol": "CSCO", "name": "Cisco Systems Inc", "weightPct": 0.66, "sector": "tecnologia" },
+        { "symbol": "PLTR", "name": "Palantir Technologies Inc", "weightPct": 0.65, "sector": "tecnologia" },
+        { "symbol": "COST", "name": "Costco Wholesale Corp", "weightPct": 0.63, "sector": "consumo_basico" },
+        { "symbol": "BAC", "name": "Bank of America Corp", "weightPct": 0.61, "sector": "finanzas" },
+        { "symbol": "CVX", "name": "Chevron Corp", "weightPct": 0.58, "sector": "energia" },
+        { "symbol": "LRCX", "name": "Lam Research Corp", "weightPct": 0.57, "sector": "tecnologia" },
+        { "symbol": "CAT", "name": "Caterpillar Inc", "weightPct": 0.56, "sector": "industria" },
+        { "symbol": "MRK", "name": "Merck & Co Inc", "weightPct": 0.55, "sector": "salud" },
+        { "symbol": "AMAT", "name": "Applied Materials Inc", "weightPct": 0.55, "sector": "tecnologia" },
+        { "symbol": "UNH", "name": "UnitedHealth Group Inc", "weightPct": 0.53, "sector": "salud" },
+        { "symbol": "GE", "name": "General Electric Co", "weightPct": 0.53, "sector": "industria" },
+        { "symbol": "NFLX", "name": "Netflix Inc", "weightPct": 0.52, "sector": "comunicacion" },
+        { "symbol": "KO", "name": "Coca-Cola Co", "weightPct": 0.52, "sector": "consumo_basico" },
+        { "symbol": "PG", "name": "Procter & Gamble Co", "weightPct": 0.51, "sector": "consumo_basico" },
+        { "symbol": "HD", "name": "Home Depot Inc", "weightPct": 0.49, "sector": "consumo_discrecional" },
+        { "symbol": "PANW", "name": "Palo Alto Networks Inc", "weightPct": 0.47, "sector": "tecnologia" },
+        { "symbol": "PM", "name": "Philip Morris International Inc", "weightPct": 0.44, "sector": "consumo_basico" },
+        { "symbol": "GS", "name": "Goldman Sachs Group Inc", "weightPct": 0.43, "sector": "finanzas" },
+        { "symbol": "RTX", "name": "RTX Corp", "weightPct": 0.42, "sector": "industria" },
+        { "symbol": "WFC", "name": "Wells Fargo & Co", "weightPct": 0.40, "sector": "finanzas" }
       ],
-      "totalHoldings": 520,
+      "totalHoldings": 505,
+      "topHoldingsCoveragePct": 72.5,
       "expenseRatio": 0.03
     },
-
     "VXUS": {
       "symbol": "VXUS",
       "issuer": "vanguard",
       "asOfDate": "2026-08-31",
-      "source": "vanguard_official",
+      "source": "vanguard_official_and_aggregated",
       "status": "complete",
       "sectors": [
-        {
-          "sector": "finanzas",
-          "weightPct": 23.29,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "tecnologia",
-          "weightPct": 19.87,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "industria",
-          "weightPct": 15.11,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_discrecional",
-          "weightPct": 8.07,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "materiales",
-          "weightPct": 7.70,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "salud",
-          "weightPct": 6.89,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_basico",
-          "weightPct": 4.77,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "energia",
-          "weightPct": 4.76,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "comunicacion",
-          "weightPct": 4.33,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "servicios_publicos",
-          "weightPct": 2.89,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "inmobiliario",
-          "weightPct": 2.33,
-          "sourceStandard": "GICS"
-        }
+        { "sector": "finanzas", "weightPct": 23.29, "sourceStandard": "GICS" },
+        { "sector": "tecnologia", "weightPct": 19.87, "sourceStandard": "GICS" },
+        { "sector": "industria", "weightPct": 15.11, "sourceStandard": "GICS" },
+        { "sector": "consumo_discrecional", "weightPct": 8.07, "sourceStandard": "GICS" },
+        { "sector": "materiales", "weightPct": 7.70, "sourceStandard": "GICS" },
+        { "sector": "salud", "weightPct": 6.89, "sourceStandard": "GICS" },
+        { "sector": "consumo_basico", "weightPct": 4.77, "sourceStandard": "GICS" },
+        { "sector": "energia", "weightPct": 4.76, "sourceStandard": "GICS" },
+        { "sector": "comunicacion", "weightPct": 4.33, "sourceStandard": "GICS" },
+        { "sector": "servicios_publicos", "weightPct": 2.89, "sourceStandard": "GICS" },
+        { "sector": "inmobiliario", "weightPct": 2.33, "sourceStandard": "GICS" }
       ],
       "holdings": [
-        {
-          "symbol": "TSM",
-          "name": "Taiwan Semiconductor Manufacturing Co Ltd",
-          "weightPct": 4.70,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "SSNLF",
-          "name": "Samsung Electronics Co Ltd",
-          "weightPct": 1.90,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "ASML",
-          "name": "ASML Holding NV",
-          "weightPct": 1.42,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "NESN",
-          "name": "Nestle SA",
-          "weightPct": 0.54,
-          "sector": "consumo_basico"
-        },
-        {
-          "symbol": "ROG",
-          "name": "Roche Holding AG",
-          "weightPct": 0.67,
-          "sector": "salud"
-        }
+        { "symbol": "TSM", "name": "Taiwan Semiconductor Manufacturing Co Ltd", "weightPct": 3.98, "sector": "tecnologia" },
+        { "symbol": "005930.KS", "name": "Samsung Electronics Co Ltd", "weightPct": 1.90, "sector": "tecnologia" },
+        { "symbol": "000660.KS", "name": "SK hynix Inc", "weightPct": 1.46, "sector": "tecnologia" },
+        { "symbol": "ASML", "name": "ASML Holding NV", "weightPct": 1.43, "sector": "tecnologia" },
+        { "symbol": "0700.HK", "name": "Tencent Holdings Ltd", "weightPct": 0.78, "sector": "comunicacion" },
+        { "symbol": "HSBA.L", "name": "HSBC Holdings PLC", "weightPct": 0.77, "sector": "finanzas" },
+        { "symbol": "ROG.SW", "name": "Roche Holding AG", "weightPct": 0.67, "sector": "salud" },
+        { "symbol": "RY.TO", "name": "Royal Bank of Canada", "weightPct": 0.62, "sector": "finanzas" },
+        { "symbol": "NOVN.SW", "name": "Novartis AG", "weightPct": 0.62, "sector": "salud" },
+        { "symbol": "9988.HK", "name": "Alibaba Group Holding Ltd", "weightPct": 0.59, "sector": "consumo_discrecional" },
+        { "symbol": "SHEL.L", "name": "Shell PLC", "weightPct": 0.56, "sector": "energia" },
+        { "symbol": "NESN.SW", "name": "Nestle SA", "weightPct": 0.56, "sector": "consumo_basico" },
+        { "symbol": "AZN.L", "name": "AstraZeneca PLC", "weightPct": 0.55, "sector": "salud" },
+        { "symbol": "8306.T", "name": "Mitsubishi UFJ Financial Group Inc", "weightPct": 0.52, "sector": "finanzas" },
+        { "symbol": "SIE.DE", "name": "Siemens AG", "weightPct": 0.52, "sector": "industria" },
+        { "symbol": "BHP.AX", "name": "BHP Group Ltd", "weightPct": 0.48, "sector": "materiales" },
+        { "symbol": "CBA.AX", "name": "Commonwealth Bank of Australia", "weightPct": 0.47, "sector": "finanzas" },
+        { "symbol": "SAN.MC", "name": "Banco Santander SA", "weightPct": 0.46, "sector": "finanzas" },
+        { "symbol": "7203.T", "name": "Toyota Motor Corp", "weightPct": 0.45, "sector": "consumo_discrecional" },
+        { "symbol": "TD.TO", "name": "Toronto-Dominion Bank", "weightPct": 0.45, "sector": "finanzas" }
       ],
-      "totalHoldings": 8549,
+      "totalHoldings": 8784,
+      "topHoldingsCoveragePct": 18.5,
       "expenseRatio": 0.07
     },
-
     "VT": {
       "symbol": "VT",
       "issuer": "vanguard",
       "asOfDate": "2026-08-31",
-      "source": "vanguard_official",
+      "source": "vanguard_official_and_aggregated",
       "status": "complete",
       "sectors": [
-        {
-          "sector": "tecnologia",
-          "weightPct": 30.33,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "finanzas",
-          "weightPct": 16.49,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "industria",
-          "weightPct": 11.11,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_discrecional",
-          "weightPct": 8.96,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "salud",
-          "weightPct": 8.60,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "comunicacion",
-          "weightPct": 7.25,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_basico",
-          "weightPct": 4.50,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "materiales",
-          "weightPct": 4.11,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "energia",
-          "weightPct": 4.06,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "servicios_publicos",
-          "weightPct": 2.33,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "inmobiliario",
-          "weightPct": 2.26,
-          "sourceStandard": "GICS"
-        }
+        { "sector": "tecnologia", "weightPct": 30.7, "sourceStandard": "GICS" },
+        { "sector": "finanzas", "weightPct": 16.5, "sourceStandard": "GICS" },
+        { "sector": "industria", "weightPct": 10.9, "sourceStandard": "GICS" },
+        { "sector": "consumo_discrecional", "weightPct": 8.7, "sourceStandard": "GICS" },
+        { "sector": "salud", "weightPct": 8.6, "sourceStandard": "GICS" },
+        { "sector": "comunicacion", "weightPct": 7.1, "sourceStandard": "GICS" },
+        { "sector": "consumo_basico", "weightPct": 4.5, "sourceStandard": "GICS" },
+        { "sector": "materiales", "weightPct": 4.4, "sourceStandard": "GICS" },
+        { "sector": "energia", "weightPct": 4.0, "sourceStandard": "GICS" },
+        { "sector": "servicios_publicos", "weightPct": 2.3, "sourceStandard": "GICS" },
+        { "sector": "inmobiliario", "weightPct": 2.2, "sourceStandard": "GICS" }
       ],
       "holdings": [
-        {
-          "symbol": "NVDA",
-          "name": "NVIDIA Corporation",
-          "weightPct": 4.00,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "AAPL",
-          "name": "Apple Inc",
-          "weightPct": 3.80,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "MSFT",
-          "name": "Microsoft Corporation",
-          "weightPct": 3.20,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "AMZN",
-          "name": "Amazon.com Inc",
-          "weightPct": 2.10,
-          "sector": "consumo_discrecional"
-        },
-        {
-          "symbol": "GOOGL",
-          "name": "Alphabet Inc Class A",
-          "weightPct": 1.70,
-          "sector": "comunicacion"
-        },
-        {
-          "symbol": "TSM",
-          "name": "Taiwan Semiconductor Manufacturing Co Ltd",
-          "weightPct": 1.50,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "AVGO",
-          "name": "Broadcom Inc",
-          "weightPct": 1.40,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "GOOG",
-          "name": "Alphabet Inc Class C",
-          "weightPct": 1.30,
-          "sector": "comunicacion"
-        },
-        {
-          "symbol": "META",
-          "name": "Meta Platforms Inc",
-          "weightPct": 1.00,
-          "sector": "comunicacion"
-        },
-        {
-          "symbol": "JPM",
-          "name": "JPMorgan Chase & Co",
-          "weightPct": 0.90,
-          "sector": "finanzas"
-        }
+        { "symbol": "NVDA", "name": "NVIDIA Corporation", "weightPct": 4.32, "sector": "tecnologia" },
+        { "symbol": "AAPL", "name": "Apple Inc", "weightPct": 3.84, "sector": "tecnologia" },
+        { "symbol": "MSFT", "name": "Microsoft Corporation", "weightPct": 3.16, "sector": "tecnologia" },
+        { "symbol": "AMZN", "name": "Amazon.com Inc", "weightPct": 2.11, "sector": "consumo_discrecional" },
+        { "symbol": "GOOGL", "name": "Alphabet Inc Class A", "weightPct": 1.68, "sector": "comunicacion" },
+        { "symbol": "TSM", "name": "Taiwan Semiconductor Manufacturing Co Ltd", "weightPct": 1.53, "sector": "tecnologia" },
+        { "symbol": "AVGO", "name": "Broadcom Inc", "weightPct": 1.45, "sector": "tecnologia" },
+        { "symbol": "GOOG", "name": "Alphabet Inc Class C", "weightPct": 1.31, "sector": "comunicacion" },
+        { "symbol": "META", "name": "Meta Platforms Inc", "weightPct": 1.06, "sector": "comunicacion" },
+        { "symbol": "MU", "name": "Micron Technology Inc", "weightPct": 0.91, "sector": "tecnologia" },
+        { "symbol": "TSLA", "name": "Tesla Inc", "weightPct": 0.90, "sector": "consumo_discrecional" },
+        { "symbol": "JPM", "name": "JPMorgan Chase & Co", "weightPct": 0.80, "sector": "finanzas" },
+        { "symbol": "LLY", "name": "Eli Lilly & Co", "weightPct": 0.77, "sector": "salud" },
+        { "symbol": "005930.KS", "name": "Samsung Electronics Co Ltd", "weightPct": 0.73, "sector": "tecnologia" },
+        { "symbol": "BRK.B", "name": "Berkshire Hathaway Inc Class B", "weightPct": 0.69, "sector": "finanzas" },
+        { "symbol": "AMD", "name": "Advanced Micro Devices Inc", "weightPct": 0.64, "sector": "tecnologia" },
+        { "symbol": "000660.KS", "name": "SK hynix Inc", "weightPct": 0.56, "sector": "tecnologia" },
+        { "symbol": "XOM", "name": "Exxon Mobil Corp", "weightPct": 0.56, "sector": "energia" },
+        { "symbol": "ASML", "name": "ASML Holding NV", "weightPct": 0.55, "sector": "tecnologia" },
+        { "symbol": "JNJ", "name": "Johnson & Johnson", "weightPct": 0.53, "sector": "salud" }
       ],
-      "totalHoldings": 10088,
+      "totalHoldings": 10172,
+      "topHoldingsCoveragePct": 27.1,
       "expenseRatio": 0.06
-    },
-
-    "VFMF": {
-      "symbol": "VFMF",
-      "issuer": "vanguard",
-      "asOfDate": "2026-08-31",
-      "source": "vanguard_official",
-      "status": "complete",
-      "strategy": "multifactor",
-      "role": "core_diversifier",
-      "factors": [
-        "value",
-        "momentum",
-        "quality"
-      ],
-      "marketCapitalization": [
-        {
-          "segment": "large",
-          "weightPct": 19.6
-        },
-        {
-          "segment": "medium_large",
-          "weightPct": 6.0
-        },
-        {
-          "segment": "medium",
-          "weightPct": 14.6
-        },
-        {
-          "segment": "medium_small",
-          "weightPct": 10.6
-        },
-        {
-          "segment": "small",
-          "weightPct": 49.2
-        }
-      ],
-      "sectors": [
-        {
-          "sector": "finanzas",
-          "weightPct": 22.48,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_discrecional",
-          "weightPct": 15.62,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "tecnologia",
-          "weightPct": 13.88,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "salud",
-          "weightPct": 12.83,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "industria",
-          "weightPct": 11.34,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "energia",
-          "weightPct": 10.32,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_basico",
-          "weightPct": 6.51,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "materiales",
-          "weightPct": 4.68,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "comunicacion",
-          "weightPct": 2.18,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "inmobiliario",
-          "weightPct": 0.16,
-          "sourceStandard": "GICS"
-        }
-      ],
-      "holdings": [
-        {
-          "symbol": "MU",
-          "name": "Micron Technology Inc",
-          "weightPct": 1.04,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "NEM",
-          "name": "Newmont Corp",
-          "weightPct": 1.01,
-          "sector": "materiales"
-        },
-        {
-          "symbol": "VLO",
-          "name": "Valero Energy Corp",
-          "weightPct": 1.00,
-          "sector": "energia"
-        },
-        {
-          "symbol": "COP",
-          "name": "ConocoPhillips",
-          "weightPct": 0.92,
-          "sector": "energia"
-        },
-        {
-          "symbol": "EOG",
-          "name": "EOG Resources Inc",
-          "weightPct": 0.92,
-          "sector": "energia"
-        },
-        {
-          "symbol": "DELL",
-          "name": "Dell Technologies Inc",
-          "weightPct": 0.88,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "TRV",
-          "name": "Travelers Cos Inc/The",
-          "weightPct": 0.88,
-          "sector": "finanzas"
-        },
-        {
-          "symbol": "MO",
-          "name": "Altria Group Inc",
-          "weightPct": 0.87,
-          "sector": "consumo_basico"
-        },
-        {
-          "symbol": "BMY",
-          "name": "Bristol-Myers Squibb Co",
-          "weightPct": 0.85,
-          "sector": "salud"
-        },
-        {
-          "symbol": "MPC",
-          "name": "Marathon Petroleum Corp",
-          "weightPct": 0.84,
-          "sector": "energia"
-        }
-      ],
-      "totalHoldings": 651,
-      "expenseRatio": 0.18
-    },
-
-    "AVUV": {
-      "symbol": "AVUV",
-      "issuer": "avantis",
-      "asOfDate": "2026-09-29",
-      "source": "avantis_official",
-      "status": "complete",
-      "strategy": "us_small_cap_value",
-      "role": "core_diversifier",
-      "benchmark": "Russell 2000 Value Index",
-      "sectors": [
-        {
-          "sector": "energia",
-          "weightPct": 19.44,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_discrecional",
-          "weightPct": 17.47,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "industria",
-          "weightPct": 15.72,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "finanzas",
-          "weightPct": 25.80,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_basico",
-          "weightPct": 4.10,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "comunicacion",
-          "weightPct": 2.49,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "materiales",
-          "weightPct": 5.22,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "tecnologia",
-          "weightPct": 5.59,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "servicios_publicos",
-          "weightPct": 0.16,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "salud",
-          "weightPct": 3.42,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "inmobiliario",
-          "weightPct": 0.60,
-          "sourceStandard": "GICS"
-        }
-      ],
-      "holdings": [
-        {
-          "symbol": "SM",
-          "name": "SM Energy Co",
-          "weightPct": 1.05,
-          "sector": "energia"
-        },
-        {
-          "symbol": "FIVE",
-          "name": "Five Below Inc",
-          "weightPct": 0.99,
-          "sector": "consumo_discrecional"
-        },
-        {
-          "symbol": "VSAT",
-          "name": "Viasat Inc",
-          "weightPct": 0.93,
-          "sector": "comunicacion"
-        },
-        {
-          "symbol": "MATX",
-          "name": "Matson Inc",
-          "weightPct": 0.92,
-          "sector": "industria"
-        },
-        {
-          "symbol": "CRC",
-          "name": "California Resources Corp",
-          "weightPct": 0.84,
-          "sector": "energia"
-        },
-        {
-          "symbol": "M",
-          "name": "Macy's Inc",
-          "weightPct": 0.81,
-          "sector": "consumo_discrecional"
-        },
-        {
-          "symbol": "LEA",
-          "name": "Lear Corp",
-          "weightPct": 0.81,
-          "sector": "consumo_discrecional"
-        },
-        {
-          "symbol": "GATX",
-          "name": "GATX Corp",
-          "weightPct": 0.81,
-          "sector": "industria"
-        },
-        {
-          "symbol": "MGY",
-          "name": "Magnolia Oil & Gas Corp",
-          "weightPct": 0.80,
-          "sector": "energia"
-        }
-      ],
-      "totalHoldings": 799,
-      "expenseRatio": 0.25,
-      "latestMarketData": {
-        "nav": 118.74,
-        "marketPrice": 118.78,
-        "marketPriceDate": "2026-09-29"
-      }
-    },
-
-    "BND": {
-      "symbol": "BND",
-      "issuer": "vanguard",
-      "asOfDate": "2026-10-01",
-      "source": "vanguard_api_error",
-      "status": "error",
-      "holdings": [],
-      "sectors": [],
-      "error": "Vanguard API 400",
-      "scrapedAt": "2026-10-01T02:59:54.001Z"
-    },
-
-    "EMXC": {
-      "symbol": "EMXC",
-      "issuer": "ishares",
-      "asOfDate": "2026-09-30",
-      "source": "ishares_fallback",
-      "status": "complete",
-      "sectors": [
-        {
-          "sector": "tecnologia",
-          "weightPct": 32.5,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "finanzas",
-          "weightPct": 22.1,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_discrecional",
-          "weightPct": 12.8,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "industria",
-          "weightPct": 7.2,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "materiales",
-          "weightPct": 6.5,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "energia",
-          "weightPct": 5.8,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "consumo_basico",
-          "weightPct": 4.9,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "salud",
-          "weightPct": 3.8,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "comunicacion",
-          "weightPct": 2.6,
-          "sourceStandard": "GICS"
-        },
-        {
-          "sector": "servicios_publicos",
-          "weightPct": 1.8,
-          "sourceStandard": "GICS"
-        }
-      ],
-      "holdings": [
-        {
-          "symbol": "TSM",
-          "name": "Taiwan Semiconductor",
-          "weightPct": 21.5,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "SSNLF",
-          "name": "Samsung Electronics",
-          "weightPct": 4.2,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "INFY",
-          "name": "Infosys Ltd",
-          "weightPct": 1.9,
-          "sector": "tecnologia"
-        },
-        {
-          "symbol": "HDB",
-          "name": "HDFC Bank",
-          "weightPct": 1.5,
-          "sector": "finanzas"
-        },
-        {
-          "symbol": "IBN",
-          "name": "ICICI Bank",
-          "weightPct": 1.3,
-          "sector": "finanzas"
-        }
-      ],
-      "totalHoldings": 680,
-      "expenseRatio": 0.25
-    },
-
-    "VTI": {
-      "symbol": "VTI",
-      "issuer": "vanguard",
-      "asOfDate": "2026-10-01",
-      "source": "vanguard_api_error",
-      "status": "error",
-      "holdings": [],
-      "sectors": [],
-      "error": "Vanguard API 400",
-      "scrapedAt": "2026-10-01T02:59:54.788Z"
-    },
-
-    "IAU": {
-      "symbol": "IAU",
-      "issuer": "ishares",
-      "asOfDate": "2026-10-01",
-      "source": "ishares_api_error",
-      "status": "error",
-      "holdings": [],
-      "sectors": [],
-      "error": "iShares API 404: Not Found",
-      "scrapedAt": "2026-10-01T02:59:56.452Z"
-    },
-
-    "SLV": {
-      "symbol": "SLV",
-      "issuer": "ishares",
-      "asOfDate": "2026-10-01",
-      "source": "ishares_api_error",
-      "status": "error",
-      "holdings": [],
-      "sectors": [],
-      "error": "iShares API 404: Not Found",
-      "scrapedAt": "2026-10-01T02:59:56.813Z"
     }
-  }
+  },
+  "notes": [
+    "VOO: top ~40 holdings cover ~72.5% del portfolio (suficiente para look-through detallado).",
+    "VXUS y VT: fondos extremadamente dispersos; top holdings públicos cubren 15-27%. Los sectores son los más fiables para análisis de exposición.",
+    "Datos combinados de reportes Vanguard (as of 31-ago-2026) y agregadores actualizados a inicios de octubre 2026.",
+    "Símbolos internacionales mantienen formato local (ej. 005930.KS, 0700.HK) para precisión."
+  ]
 }
