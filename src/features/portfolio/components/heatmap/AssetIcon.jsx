@@ -6,57 +6,74 @@ import {
   getIconSymbol,
 } from './assetMeta';
 
-/** ETFs / índices US → bandera de EE.UU. (flagcdn). */
 const US_FLAG_SYMBOLS = new Set([
-  'VOO',
-  'SPY',
-  'IVV',
-  'VTI',
-  'QQQ',
-  'QQQM',
-  'DIA',
-  'IWM',
+  'VOO', 'SPY', 'IVV', 'VTI', 'QQQ', 'QQQM', 'DIA', 'IWM',
 ]);
 
-/**
- * Icono del tile:
- * - VOO / SPY / … → bandera USA
- * - Simple Icons si hay slug (BTC, USDT, …)
- * - AirTM / Deel → Lucide vía getIconSymbol
- */
+// Dominios para logos reales (DeBounce – reemplazo de Clearbit)
+const LOGO_DOMAINS = {
+  // Plataformas
+  BYBIT: 'bybit.com',
+  AIRTM: 'airtm.com',
+  DEEL: 'deel.com',
+  BINANCE: 'binance.com',
+
+  // Acciones individuales
+  AMZN: 'amazon.com',
+  MSFT: 'microsoft.com',
+  MELI: 'mercadolibre.com',
+  ASML: 'asml.com',
+  TSM: 'tsmc.com',
+  '0700': 'tencent.com',
+  HD: 'homedepot.com',
+  'BRK.B': 'berkshirehathaway.com',
+  SCHW: 'schwab.com',
+  JPM: 'jpmorganchase.com',
+  // ... resto de acciones
+};
+
 export default function AssetIcon({ asset, size = 16 }) {
   const iconSymbol = getIconSymbol(asset || {});
-  const [failed, setFailed] = useState(false);
+  const [stage, setStage] = useState(0); // 0 = SI, 1 = Clearbit, 2 = Lucide
   const fallback = resolveIconLucide(asset || { symbol: iconSymbol });
 
-  // Bandera USA para equity US core
-  if (US_FLAG_SYMBOLS.has(iconSymbol) && !failed) {
+  // 1. Bandera USA para ETFs core
+  if (US_FLAG_SYMBOLS.has(iconSymbol) && stage === 0) {
     return (
       <img
-        src={`https://flagcdn.com/w40/us.png`}
+        src="https://flagcdn.com/w40/us.png"
         alt="USA"
         width={size}
         height={Math.round(size * 0.75)}
-        style={{
-          borderRadius: 2,
-          display: 'block',
-          flexShrink: 0,
-          objectFit: 'cover',
-        }}
-        onError={() => setFailed(true)}
+        style={{ borderRadius: 2, display: 'block', flexShrink: 0, objectFit: 'cover' }}
+        onError={() => setStage(2)}
       />
     );
   }
 
+  // 2. Simple Icons (solo los que existen)
   const slug = SI_SLUGS[iconSymbol];
   const color = SI_COLORS[iconSymbol];
 
-  if (slug && !failed) {
+  if (slug && stage === 0) {
     return (
       <img
-        src={`https://cdn.simpleicons.org/${slug}/${(
-          color || '#1f1f1f'
-        ).replace('#', '')}`}
+        src={`https://cdn.simpleicons.org/${slug}/${(color || '#ffffff').replace('#', '')}`}
+        alt={iconSymbol}
+        width={size}
+        height={size}
+        style={{ borderRadius: 3, display: 'block', flexShrink: 0, objectFit: 'contain' }}
+        onError={() => setStage(1)}
+      />
+    );
+  }
+
+  // 3. DeBounce (logos reales – reemplazo de Clearbit)
+  const domain = LOGO_DOMAINS[iconSymbol];
+  if (domain && stage <= 1) {
+    return (
+      <img
+        src={`https://logo.debounce.com/${domain}`}
         alt={iconSymbol}
         width={size}
         height={size}
@@ -65,14 +82,15 @@ export default function AssetIcon({ asset, size = 16 }) {
           display: 'block',
           flexShrink: 0,
           objectFit: 'contain',
+          background: 'transparent',
         }}
-        onError={() => setFailed(true)}
+        onError={() => setStage(2)}
       />
     );
   }
 
+  // 4. Fallback Lucide
   const Icon = fallback.Icon;
-
   return (
     <Icon
       size={size}

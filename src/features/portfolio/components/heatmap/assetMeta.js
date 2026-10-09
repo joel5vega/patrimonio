@@ -5,7 +5,6 @@ import {
   Box, Smartphone, Wallet, Banknote, CircleDollarSign, Car, Ship, TrainFront,
   Link2, Smile
 } from 'lucide-react';
-import { getRole, getSector } from './assetGetters';
 
 // ─── Meta de roles ──────────────────────────────────────────
 
@@ -25,6 +24,7 @@ export const ROLE_META = {
 // ─── Iconos por símbolo (Simple Icons CDN) ─────────────────
 
 export const SI_SLUGS = {
+  // Crypto
   BTC: 'bitcoin',
   ETH: 'ethereum',
   SOL: 'solana',
@@ -42,10 +42,34 @@ export const SI_SLUGS = {
   USDC: 'usdcoin',
   DAI: 'dai',
   BINANCE: 'binance',
-  // bybit: no existe en simpleicons CDN → Lucide fallback
+
+  // Tech que SÍ existen en Simple Icons
+  NVDA: 'nvidia',
+  AAPL: 'apple',
+  GOOGL: 'google',
+  GOOG: 'google',
+  META: 'meta',
+  AMD: 'amd',
+  INTC: 'intel',
+  CSCO: 'cisco',
+  AVGO: 'broadcom',
+  NFLX: 'netflix',
+  TSLA: 'tesla',
+  SSNLF: 'samsung',
+
+  // Finanzas / pagos que SÍ existen
+  V: 'visa',
+  MA: 'mastercard',
+  KO: 'cocacola',
+  CAT: 'caterpillar',
+  '9988': 'alibabadotcom',
+
+  // Otros
+  GE: 'generalelectric',
 };
 
 export const SI_COLORS = {
+  // Crypto
   BTC: '#f7931a',
   ETH: '#627eea',
   SOL: '#9945ff',
@@ -64,38 +88,115 @@ export const SI_COLORS = {
   DAI: '#f5ac37',
   BINANCE: '#F0B90B',
   BYBIT: '#F7A600',
+
+  // Tech
+  NVDA: '#76b900',
+  AAPL: '#a2aaad',
+  MSFT: '#00a4ef',
+  AMZN: '#ff9900',
+  GOOGL: '#4285f4',
+  GOOG: '#4285f4',
+  META: '#0866ff',
+  AVGO: '#cc092f',
+  AMD: '#ed1c24',
+  INTC: '#0071c5',
+  CSCO: '#1ba0d7',
+  TSM: '#e31837',
+  ASML: '#0a5cff',
+  DELL: '#007db8',
+  PLTR: '#000000',
+  PANW: '#fa582d',
+  NFLX: '#e50914',
+  TSLA: '#cc0000',
+
+  // Finanzas
+  JPM: '#117aca',
+  V: '#1a1f71',
+  MA: '#eb001b',
+  BAC: '#e31837',
+  WFC: '#d71e28',
+  GS: '#7399c6',
+  SCHW: '#00a0df',
+  'BRK.B': '#1e3a5f',
+  HSBA: '#db0011',
+  RY: '#003da5',
+  TD: '#34b233',
+  SAN: '#ec0000',
+
+  // Salud
+  LLY: '#d52b1e',
+  JNJ: '#d51900',
+  UNH: '#002677',
+  MRK: '#0093d0',
+  ABBV: '#071d49',
+  AZN: '#003087',
+  NOVN: '#0460a9',
+  ROG: '#0066cc',
+
+  // Consumo
+  WMT: '#0071ce',
+  COST: '#e31837',
+  KO: '#f40009',
+  PG: '#003da5',
+  HD: '#f96302',
+  MELI: '#ffe600',
+  '9988': '#ff6a00',
+  '0700': '#00a4e4',
+
+  // Energía / Industria
+  XOM: '#ed1c24',
+  CVX: '#0033a0',
+  SHEL: '#fbce07',
+  CAT: '#ffcd11',
+  GE: '#3b73b9',
+  RTX: '#00205b',
+  BHP: '#e31323',
+  SIE: '#009999',
+
+  // Otros
+  SSNLF: '#1428a0',
+  '000660': '#00a0e9',
+  '7203': '#eb0a1e',
+
+  // Plataformas
   AIRTM: '#00C2A8',
   DEEL: '#FF5C35',
 };
 
-// ─── Lucide por símbolo (ETFs, stocks, liquidez) ───────────
+// ─── Lucide por símbolo (fallback) ─────────────────────────
 
 const SYMBOL_LUCIDE = {
-  // ─── ETFs ────────────────────────────────────────────────────
-  VOO: { Icon: BarChart2, color: '#10b981' },
-  SPY: { Icon: BarChart2, color: '#10b981' },
-  IVV: { Icon: BarChart2, color: '#10b981' },
-  VTI: { Icon: BarChart2, color: '#34d399' },
-  QQQM: { Icon: Cpu, color: '#5a9fff' },
-  QQQ: { Icon: Cpu, color: '#5a9fff' },
-  VXUS: { Icon: Globe2, color: '#2b7fff' },
-  VWO: { Icon: Globe2, color: '#2b7fff' },
-  VT: { Icon: Globe2, color: '#06b6d4' },
-  SCHD: { Icon: TrendingUp, color: '#facc15' },
-  VFMF: { Icon: TrendingUp, color: '#f59e0b' },
-  AVUV: { Icon: TrendingUp, color: '#f59e0b' },
-  EMXC: { Icon: Globe2, color: '#2b7fff' },
-  MCHI: { Icon: Globe2, color: '#2b7fff' },
-  EMBJ: { Icon: Globe2, color: '#2b7fff' },
-  IAU: { Icon: Gem, color: '#eab308' },
-  GLD: { Icon: Gem, color: '#eab308' },
-  BND: { Icon: Lock, color: '#facc15' },
-  TIP: { Icon: Shield, color: '#facc15' },
-  VNQ: { Icon: Building2, color: '#f97316' },
-  SGOV: { Icon: DollarSign, color: '#2b7fff' },
-  SLV: { Icon: Gem, color: '#eab308' },
+  // ─── ETFs core (concepto, no emisor) ───────────────────────
+VOO:  { Icon: BarChart2,  color: '#10b981' },  // S&P 500 / US large-cap
+VTI:  { Icon: BarChart2,  color: '#34d399' },  // Total US market
+SPY:  { Icon: BarChart2,  color: '#10b981' },
+IVV:  { Icon: BarChart2,  color: '#10b981' },
 
-  // ─── Tecnología ─────────────────────────────────────────────
+VXUS: { Icon: Globe2,     color: '#3b82f6' },  // International ex-US
+VWO:  { Icon: Globe2,     color: '#6366f1' },  // Emerging markets
+VT:   { Icon: Globe2,     color: '#06b6d4' },  // Total World
+EMXC: { Icon: Globe2,     color: '#818cf8' },
+MCHI: { Icon: Globe2,     color: '#f43f5e' },  // China (rojo)
+
+QQQ:  { Icon: Cpu,        color: '#5a9fff' },  // Tech/Nasdaq
+QQQM: { Icon: Cpu,        color: '#5a9fff' },
+
+SCHD: { Icon: TrendingUp, color: '#facc15' },  // Dividendos
+VFMF: { Icon: TrendingUp, color: '#f59e0b' },  // Multifactor
+AVUV: { Icon: TrendingUp, color: '#f59e0b' },  // Small value
+
+// Metales – mismos icono, color distinto
+IAU:  { Icon: Gem,        color: '#eab308' },  // Oro
+GLD:  { Icon: Gem,        color: '#eab308' },
+SLV:  { Icon: Gem,        color: '#94a3b8' },  // Plata (slate)
+
+// Bonos / liquidez
+BND:  { Icon: Lock,       color: '#facc15' },
+TIP:  { Icon: Shield,     color: '#facc15' },
+SGOV: { Icon: DollarSign, color: '#38bdf8' },
+VNQ:  { Icon: Building2,  color: '#f97316' },
+
+  // Tech (fallback por si Simple Icons falla)
   NVDA: { Icon: Cpu, color: '#76c442' },
   AAPL: { Icon: Smartphone, color: '#a4a19b' },
   MSFT: { Icon: Cpu, color: '#5a9fff' },
@@ -105,65 +206,107 @@ const SYMBOL_LUCIDE = {
   META: { Icon: Signal, color: '#0866ff' },
   AVGO: { Icon: Cpu, color: '#cc0000' },
   MU: { Icon: Cpu, color: '#5a9fff' },
-  DELL: { Icon: Cpu, color: '#007db8' },
+  AMD: { Icon: Cpu, color: '#ed1c24' },
   TSM: { Icon: Cpu, color: '#e31837' },
   ASML: { Icon: Cpu, color: '#00a6e0' },
   SSNLF: { Icon: Smartphone, color: '#1428a0' },
+  '000660': { Icon: Cpu, color: '#00a0e9' },
+  INTC: { Icon: Cpu, color: '#0071c5' },
+  CSCO: { Icon: Cpu, color: '#1ba0d7' },
+  PLTR: { Icon: Cpu, color: '#000000' },
+  LRCX: { Icon: Cpu, color: '#00a0e3' },
+  AMAT: { Icon: Cpu, color: '#1a1a1a' },
+  PANW: { Icon: Shield, color: '#fa582d' },
+  DELL: { Icon: Cpu, color: '#007db8' },
   INFY: { Icon: Cpu, color: '#0096e1' },
   LITE: { Icon: Cpu, color: '#5a9fff' },
 
-  // ─── Finanzas ───────────────────────────────────────────────
+  // Finanzas
   JPM: { Icon: Landmark, color: '#117aca' },
+  'BRK.B': { Icon: Landmark, color: '#1e3a5f' },
+  V: { Icon: CreditCard, color: '#1a1f71' },
+  MA: { Icon: CreditCard, color: '#eb001b' },
+  BAC: { Icon: Landmark, color: '#e31837' },
+  WFC: { Icon: Landmark, color: '#d71e28' },
+  GS: { Icon: Landmark, color: '#7399c6' },
+  SCHW: { Icon: Landmark, color: '#0078d7' },
+  HSBA: { Icon: Landmark, color: '#db0011' },
+  RY: { Icon: Landmark, color: '#003da5' },
+  TD: { Icon: Landmark, color: '#34b233' },
+  '8306': { Icon: Landmark, color: '#e60012' },
+  CBA: { Icon: Landmark, color: '#ffcc00' },
+  SAN: { Icon: Landmark, color: '#ec0000' },
   HDB: { Icon: Landmark, color: '#ed1c24' },
   IBN: { Icon: Landmark, color: '#e87511' },
   TRV: { Icon: Shield, color: '#004b87' },
-  SCHW: { Icon: Landmark, color: '#0078d7' },
 
-  // ─── Salud ──────────────────────────────────────────────────
+  // Salud
+  LLY: { Icon: HeartPulse, color: '#d52b1e' },
+  JNJ: { Icon: HeartPulse, color: '#d51900' },
+  ABBV: { Icon: HeartPulse, color: '#071d49' },
+  MRK: { Icon: HeartPulse, color: '#0093d0' },
+  UNH: { Icon: HeartPulse, color: '#002677' },
   ROG: { Icon: HeartPulse, color: '#0066cc' },
+  NOVN: { Icon: HeartPulse, color: '#0460a9' },
+  AZN: { Icon: HeartPulse, color: '#003087' },
   BMY: { Icon: HeartPulse, color: '#cc0000' },
-  MRNA: { Icon: HeartPulse, color: '#fb7185' },
   ZTS: { Icon: HeartPulse, color: '#3b82f6' },
+  MRNA: { Icon: HeartPulse, color: '#fb7185' },
 
-  // ─── Consumo básico ─────────────────────────────────────────
+  // Consumo básico
+  WMT: { Icon: ShoppingCart, color: '#0071ce' },
+  COST: { Icon: ShoppingCart, color: '#e31837' },
+  KO: { Icon: ShoppingCart, color: '#f40009' },
+  PG: { Icon: ShoppingCart, color: '#003da5' },
+  PM: { Icon: ShoppingCart, color: '#4a1c6b' },
   NESN: { Icon: ShoppingCart, color: '#1e3a8a' },
-  NESTLE: { Icon: ShoppingCart, color: '#1e3a8a' },
   HSY: { Icon: ShoppingCart, color: '#744f2c' },
   MO: { Icon: ShoppingCart, color: '#0078d7' },
 
-  // ─── Consumo discrecional ───────────────────────────────────
+  // Consumo discrecional
+  TSLA: { Icon: Car, color: '#cc0000' },
+  HD: { Icon: ShoppingBag, color: '#f96302' },
   MELI: { Icon: ShoppingBag, color: '#00b1ea' },
+  '9988': { Icon: ShoppingBag, color: '#ff6a00' },
+  '7203': { Icon: Car, color: '#eb0a1e' },
   FIVE: { Icon: ShoppingBag, color: '#0078d7' },
   M: { Icon: ShoppingBag, color: '#cc0000' },
   LEA: { Icon: Car, color: '#00529b' },
 
-  // ─── Energía ────────────────────────────────────────────────
+  // Energía
+  XOM: { Icon: Droplet, color: '#ed1c24' },
+  CVX: { Icon: Droplet, color: '#0033a0' },
+  SHEL: { Icon: Droplet, color: '#fbce07' },
   VLO: { Icon: Droplet, color: '#00529b' },
   COP: { Icon: Droplet, color: '#00529b' },
   EOG: { Icon: Droplet, color: '#164194' },
   MPC: { Icon: Droplet, color: '#00529b' },
-  NEM: { Icon: Gem, color: '#b8860b' },
   SM: { Icon: Droplet, color: '#0078d7' },
   CRC: { Icon: Droplet, color: '#00529b' },
   MGY: { Icon: Droplet, color: '#0078d7' },
+  NEM: { Icon: Gem, color: '#b8860b' },
 
-  // ─── Materiales ─────────────────────────────────────────────
-  // (NEM ya está en energía/metales preciosos)
-
-  // ─── Telecomunicaciones ─────────────────────────────────────
-  VSAT: { Icon: Signal, color: '#0066cc' },
-
-  // ─── Industria ──────────────────────────────────────────────
+  // Industria / Materiales
+  CAT: { Icon: Box, color: '#ffcd11' },
+  GE: { Icon: Box, color: '#3b73b9' },
+  RTX: { Icon: Box, color: '#00205b' },
+  SIE: { Icon: Box, color: '#009999' },
+  BHP: { Icon: Gem, color: '#e31323' },
   MATX: { Icon: Ship, color: '#00529b' },
   GATX: { Icon: TrainFront, color: '#00529b' },
 
-  // ─── Liquidez / plataformas ─────────────────────────────────
+  // Comunicación
+  NFLX: { Icon: Signal, color: '#e50914' },
+  '0700': { Icon: Signal, color: '#00a4e4' },
+  VSAT: { Icon: Signal, color: '#0066cc' },
+
+  // Liquidez / plataformas
   AIRTM: { Icon: Wallet, color: '#00C2A8' },
   DEEL: { Icon: Banknote, color: '#FF5C35' },
   BINANCE: { Icon: CircleDollarSign, color: '#F0B90B' },
   BYBIT: { Icon: Zap, color: '#F7A600' },
 
-  // ─── Crypto ─────────────────────────────────────────────────
+  // Crypto
   BTC: { Icon: Bitcoin, color: '#f7931a' },
   ETH: { Icon: Gem, color: '#627eea' },
   SOL: { Icon: Zap, color: '#9945ff' },
@@ -179,8 +322,10 @@ const SYMBOL_LUCIDE = {
   DOGE: { Icon: Smile, color: '#c2a633' },
   USDT: { Icon: DollarSign, color: '#26a17b' },
   USDC: { Icon: DollarSign, color: '#2775ca' },
-  DAI: { Icon: DollarSign, color: '#f5ac37' }
+  DAI: { Icon: DollarSign, color: '#f5ac37' },
 };
+
+// ─── Meta de sectores ──────────────────────────────────────
 
 export const SECTOR_META = {
   diversificado_eeuu: { Icon: BarChart2, color: '#10b981', bg: 'rgba(16,185,129,0.18)' },
@@ -230,10 +375,11 @@ const PLATFORM_LABEL = {
   manual: 'Manual',
 };
 
+// ─── Helpers ───────────────────────────────────────────────
+
 /**
  * Detecta plataforma.
  * Orden: source/groupKey ANTES que classification.platform
- * (Bybit USDT tiene classification.platform erróneo = "binance").
  */
 export function resolvePlatformKey(asset = {}) {
   const candidates = [
@@ -247,9 +393,7 @@ export function resolvePlatformKey(asset = {}) {
   ];
 
   for (const raw of candidates) {
-    const s = String(raw || '')
-      .trim()
-      .toLowerCase();
+    const s = String(raw || '').trim().toLowerCase();
     if (!s) continue;
     if (s.includes('binance')) return 'binance';
     if (s.includes('bybit')) return 'bybit';
@@ -264,14 +408,9 @@ export function resolvePlatformKey(asset = {}) {
 
 /**
  * Label del tile en el heatmap.
- * - AirTM / Deel → nombre legible
- * - USDT binance/bybit → "USDT · Binance" / "USDT · Bybit"
  */
 export function getDisplayLabel(asset = {}) {
-  const symbol = String(asset.symbol || '')
-    .trim()
-    .toUpperCase()
-    .split('/')[0];
+  const symbol = String(asset.symbol || '').trim().toUpperCase().split('/')[0];
   const name = String(asset.name || '').trim();
   const nameUpper = name.toUpperCase();
   const platform = resolvePlatformKey(asset);
@@ -298,7 +437,6 @@ export function getDisplayLabel(asset = {}) {
     asset.type === 'stablecoin' ||
     ['USDT', 'USDC', 'BUSD', 'FDUSD', 'DAI', 'TUSD'].includes(symbol);
 
-  // Stablecoin en exchange: solo el nombre de la plataforma (sin "USDT ·")
   if (isStable && (platform === 'binance' || platform === 'bybit')) {
     return PLATFORM_LABEL[platform];
   }
@@ -309,19 +447,20 @@ export function getDisplayLabel(asset = {}) {
 }
 
 /**
- * Clave para SI_SLUGS / SYMBOL_LUCIDE.
- * AirTM/Deel se mapean aunque source sea "manual".
+ * Clave limpia para SI_SLUGS / SYMBOL_LUCIDE.
+ * - Quita sufijos de exchange
+ * - Aplica aliases
  */
 export function getIconSymbol(asset = {}) {
-  const symbol = String(asset.symbol || '')
+  let symbol = String(asset.symbol || '')
     .trim()
     .toUpperCase()
     .split('/')[0];
-  const name = String(asset.name || '')
-    .trim()
-    .toUpperCase();
+
+  const name = String(asset.name || '').trim().toUpperCase();
   const platform = resolvePlatformKey(asset);
 
+  // Plataformas especiales
   if (
     symbol === 'AIRTM' ||
     name === 'AIRTM' ||
@@ -340,13 +479,51 @@ export function getIconSymbol(asset = {}) {
     return 'DEEL';
   }
 
-  // Stablecoin en exchange → logo de la plataforma (no Tether)
+  // Stablecoin → logo de la plataforma
   const isStable =
     asset.type === 'stablecoin' ||
     ['USDT', 'USDC', 'BUSD', 'FDUSD', 'DAI', 'TUSD'].includes(symbol);
 
   if (isStable && platform === 'binance') return 'BINANCE';
   if (isStable && platform === 'bybit') return 'BYBIT';
+
+  // Quitar sufijos de exchange
+  const exchangeSuffixes = [
+    '.KS', '.HK', '.SW', '.L', '.TO', '.T', '.AX', '.DE', '.MC',
+    '.PA', '.MI', '.AS', '.OL', '.ST', '.CO', '.HE', '.WA', '.BR',
+  ];
+  for (const suffix of exchangeSuffixes) {
+    if (symbol.endsWith(suffix)) {
+      symbol = symbol.slice(0, -suffix.length);
+      break;
+    }
+  }
+
+  // Aliases
+  const ALIASES = {
+    '2330': 'TSM',
+    '005930': 'SSNLF',
+    '000660': '000660',
+    '0700': '0700',
+    '9988': '9988',
+    'BRK.B': 'BRK.B',
+    BRKB: 'BRK.B',
+    ROG: 'ROG',
+    NESN: 'NESN',
+    HSBA: 'HSBA',
+    NOVN: 'NOVN',
+    SHEL: 'SHEL',
+    AZN: 'AZN',
+    SIE: 'SIE',
+    BHP: 'BHP',
+    CBA: 'CBA',
+    SAN: 'SAN',
+    '7203': '7203',
+    TD: 'TD',
+    RY: 'RY',
+  };
+
+  if (ALIASES[symbol]) symbol = ALIASES[symbol];
 
   return symbol || name || '';
 }
@@ -358,8 +535,10 @@ export function resolveIconLucide(asset = {}) {
     return SYMBOL_LUCIDE[iconSymbol];
   }
 
-  const sector = getSector(asset);
-  const role = getRole(asset);
+  // Importaciones dinámicas de getRole / getSector si las tienes en otro archivo
+  // Por ahora devolvemos fallback genérico si no existen
+  const sector = asset.classification?.sector || asset.sector;
+  const role = asset.classification?.role || asset.role;
   const type = asset.type;
 
   if (sector && SECTOR_META[sector]) {
@@ -386,10 +565,10 @@ export function resolveIconLucide(asset = {}) {
   };
 }
 
-// ─── Colores de tile ────────────────────────────────────────
+// ─── Colores de tile ───────────────────────────────────────
 
 export function tileBg(pnlPct, asset) {
-  if (pnlPct !== null) {
+  if (pnlPct !== null && pnlPct !== undefined) {
     if (pnlPct >= 5) return 'rgba(5,150,105,0.82)';
     if (pnlPct >= 2) return 'rgba(16,185,129,0.60)';
     if (pnlPct >= 0) return 'rgba(16,185,129,0.32)';
@@ -398,13 +577,13 @@ export function tileBg(pnlPct, asset) {
     return 'rgba(225,29,72,0.80)';
   }
 
-  const sector = getSector(asset);
+  const sector = asset.classification?.sector || asset.sector;
 
   if (sector && SECTOR_META[sector]) {
     return SECTOR_META[sector].bg;
   }
 
-  const role = getRole(asset);
+  const role = asset.classification?.role || asset.role;
 
   if (role === 'trading') return 'rgba(168,85,247,0.15)';
   if (role === 'speculative') return 'rgba(244,63,94,0.15)';
