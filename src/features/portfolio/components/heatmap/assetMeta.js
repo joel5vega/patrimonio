@@ -3,7 +3,7 @@ import {
   Dices, Droplets, Building2, Briefcase, DollarSign, Cpu, HeartPulse, Lock, Shield,
   CreditCard, Flame, Sun, ShoppingBag, ShoppingCart, Droplet, Signal, Globe2, Gem,
   Box, Smartphone, Wallet, Banknote, CircleDollarSign, Car, Ship, TrainFront,
-  Link2, Smile
+  Link2, Smile,Mountain, Factory, Radio, Search, MessageCircle
 } from 'lucide-react';
 
 // ─── Meta de roles ──────────────────────────────────────────
@@ -91,9 +91,23 @@ SLB: null,
 UPS: 'ups',
 TGT: 'target',
 FAST: null,
+'0700': 'tencent',
+PDD: null,           // o probar 'pinduoduo' si existe
+'3690': null,
+'9888': 'baidu',
+'9626': 'bilibili',
+TME: null,
+PLTR: 'palantir',          // existe en Simple Icons
+MU: null,                  // no hay slug fiable
+'005930': 'samsung',       // o '005930.KS'
+'005930.KS': 'samsung'
 };
 
 export const SI_COLORS = {
+  PLTR: '#000000',
+MU: '#0077c8',
+'005930': '#1428a0',
+'005930.KS': '#1428a0',
   // Crypto
   BTC: '#f7931a',
   ETH: '#627eea',
@@ -204,6 +218,10 @@ TGT: '#cc0000',
 // ─── Lucide por símbolo (fallback) ─────────────────────────
 
 const SYMBOL_LUCIDE = {
+  PLTR: { Icon: Box, color: '#000000' },      // o Layers / Cpu
+MU:   { Icon: Cpu, color: '#0077c8' },
+'005930': { Icon: Smartphone, color: '#1428a0' },
+'005930.KS': { Icon: Smartphone, color: '#1428a0' },
   // ─── ETFs core (concepto, no emisor) ───────────────────────
 VOO:  { Icon: BarChart2,  color: '#10b981' },  // S&P 500 / US large-cap
 VTI:  { Icon: BarChart2,  color: '#34d399' },  // Total US market
@@ -323,6 +341,11 @@ VNQ:  { Icon: Building2,  color: '#f97316' },
   CRC: { Icon: Droplet, color: '#00529b' },
   MGY: { Icon: Droplet, color: '#0078d7' },
   NEM: { Icon: Gem, color: '#b8860b' },
+  // SYMBOL_LUCIDE
+NLR:  { Icon: Zap,    color: '#facc15' },  // nuclear / energía
+CQQQ: { Icon: Cpu,    color: '#ef4444' },  // China tech
+
+// No LOGO_DOMAINS de issuer (mismo criterio: concepto > logo VanEck/Invesco)
 
   // Industria / Materiales
   CAT: { Icon: Box, color: '#ffcd11' },
@@ -361,6 +384,38 @@ VNQ:  { Icon: Building2,  color: '#f97316' },
   USDT: { Icon: DollarSign, color: '#26a17b' },
   USDC: { Icon: DollarSign, color: '#2775ca' },
   DAI: { Icon: DollarSign, color: '#f5ac37' },
+  CEG:  { Icon: Zap, color: '#00a3e0' },
+CCJ:  { Icon: Mountain, color: '#c8102e' },
+PEG:  { Icon: Zap, color: '#e31837' },
+FORTUM: { Icon: Zap, color: '#7c3aed' },
+BWXT: { Icon: Shield, color: '#003366' },
+NXE:  { Icon: Mountain, color: '#22c55e' },
+OKLO: { Icon: Zap, color: '#f97316' },
+KAP:  { Icon: Mountain, color: '#0ea5e9' },
+UEC:  { Icon: Mountain, color: '#84cc16' },
+LEU:  { Icon: Mountain, color: '#64748b' },
+PDN:  { Icon: Mountain, color: '#eab308' },
+DNN:  { Icon: Mountain, color: '#14b8a6' },
+UUUU: { Icon: Mountain, color: '#a855f7' },
+SMR:  { Icon: Factory, color: '#3b82f6' },
+YCA:  { Icon: Gem, color: '#eab308' },
+NNE:  { Icon: Zap, color: '#06b6d4' },
+PDD:   { Icon: ShoppingBag, color: '#e02e24' },
+'0700': { Icon: MessageCircle, color: '#07c160' }, // o Globe2
+'3690': { Icon: ShoppingBag, color: '#ffd100' },
+'9888': { Icon: Search, color: '#2932e1' },
+'1024': { Icon: Smartphone, color: '#ff4906' },
+'1347': { Icon: Cpu, color: '#0ea5e9' },
+'688256': { Icon: Cpu, color: '#8b5cf6' },
+'688041': { Icon: Cpu, color: '#06b6d4' },
+'2382': { Icon: Cpu, color: '#64748b' },
+'0020': { Icon: Cpu, color: '#f43f5e' },
+'9660': { Icon: Cpu, color: '#22c55e' },
+'9626': { Icon: Smartphone, color: '#00a1d6' },
+'002371': { Icon: Factory, color: '#3b82f6' },
+TME:   { Icon: Radio, color: '#1db954' },
+JOYY:  { Icon: Smartphone, color: '#ff6a00' },
+ATHM:  { Icon: Car, color: '#2563eb' },
 };
 
 // ─── Meta de sectores ──────────────────────────────────────
@@ -559,6 +614,20 @@ export function getIconSymbol(asset = {}) {
     '7203': '7203',
     TD: 'TD',
     RY: 'RY',
+    '700': '0700',
+  '0700.HK': '0700',
+  'TCEHY': '0700',
+  'BIDU': '9888',
+  '9888.HK': '9888',
+  'MPNGY': '3690',
+  '3690.HK': '3690',
+  'CCJ': 'CCJ',
+  'CCO': 'CCJ',
+  '005930.KS': '005930',
+  '005930': '005930',
+  SSNLF: '005930',
+  PLTR: 'PLTR',
+  MU: 'MU',
   };
 
   if (ALIASES[symbol]) symbol = ALIASES[symbol];

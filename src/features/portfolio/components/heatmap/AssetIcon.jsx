@@ -10,7 +10,9 @@ const US_FLAG_SYMBOLS = new Set([
   'VOO', 'SPY', 'IVV', 'VTI', 'QQQ', 'QQQM', 'DIA', 'IWM',
 ]);
 
-// Dominios para logos reales (DeBounce – reemplazo de Clearbit)
+// Símbolos donde Simple Icons se ve mal → ir directo a DeBounce
+const SKIP_SI = new Set(['005930', '005930.KS', 'SSNLF', 'SAMSUNG']);
+
 const LOGO_DOMAINS = {
   // Plataformas
   BYBIT: 'bybit.com',
@@ -18,54 +20,114 @@ const LOGO_DOMAINS = {
   DEEL: 'deel.com',
   BINANCE: 'binance.com',
 
-  // Acciones individuales
+  // Tech / growth
+  PLTR: 'palantir.com',
+  MU: 'micron.com',
   AMZN: 'amazon.com',
   MSFT: 'microsoft.com',
   MELI: 'mercadolibre.com',
   ASML: 'asml.com',
   TSM: 'tsmc.com',
+  NVDA: 'nvidia.com',
+  AAPL: 'apple.com',
+  GOOGL: 'google.com',
+  META: 'meta.com',
+
+  // Samsung
+  '005930': 'samsung.com',
+  '005930.KS': 'samsung.com',
+  SSNLF: 'samsung.com',
+
+  // China / CQQQ
+  PDD: 'pinduoduo.com',
   '0700': 'tencent.com',
+  '3690': 'meituan.com',
+  '9888': 'baidu.com',
+  '1024': 'kuaishou.com',
+  '1347': 'huahonggrace.com',
+  '1888': 'kingboard.com',
+  '688256': 'cambricon.com',
+  '688041': 'hygon.cn',
+  '2382': 'sunnyoptical.com',
+  '0020': 'sensetime.com',
+  '9660': 'horizon.ai',
+  '9626': 'bilibili.com',
+  '002371': 'naura.com',
+  TME: 'tencentmusic.com',
+  '9698': 'gds-services.com',
+  '3888': 'kingsoft.com',
+  '0268': 'kingdee.com',
+  JOYY: 'joyy.com',
+  '000725': 'boe.com',
+  ATHM: 'autohome.com.cn',
+
+  // SCHD / value
+  TXN: 'ti.com',
+  QCOM: 'qualcomm.com',
+  PG: 'pg.com',
+  KO: 'coca-cola.com',
+  CVX: 'chevron.com',
+  COP: 'conocophillips.com',
+  MRK: 'merck.com',
+  UNH: 'unitedhealthgroup.com',
+  AMGN: 'amgen.com',
+  VZ: 'verizon.com',
   HD: 'homedepot.com',
+  ABT: 'abbott.com',
+  PEP: 'pepsico.com',
+  BMY: 'bms.com',
+  ACN: 'accenture.com',
+  MO: 'altria.com',
+  ADP: 'adp.com',
+  LMT: 'lockheedmartin.com',
+  BX: 'blackstone.com',
+  EOG: 'eogresources.com',
+  CMCSA: 'comcast.com',
+  SLB: 'slb.com',
+  UPS: 'ups.com',
+  TGT: 'target.com',
+  FAST: 'fastenal.com',
   'BRK.B': 'berkshirehathaway.com',
   SCHW: 'schwab.com',
   JPM: 'jpmorganchase.com',
-  // ... resto de acciones
+
+  // NLR / nuclear
+  CEG: 'constellationenergy.com',
+  CCJ: 'cameco.com',
+  PEG: 'pseg.com',
+  FORTUM: 'fortum.com',
+  BWXT: 'bwxt.com',
+  '1816.HK': 'cgnpc.com.cn',
+  NXE: 'nexgenenergy.ca',
+  OKLO: 'oklo.com',
+  KAP: 'kazatomprom.kz',
+  XE: 'x-energy.com',
+  UEC: 'uraniumenergy.com',
+  LEU: 'centrusenergy.com',
+  PDN: 'paladinenergy.com.au',
+  DNN: 'denisonmines.com',
+  UUUU: 'energyfuels.com',
+  SMR: 'nuscalepower.com',
+  YCA: 'yellowcakeplc.com',
+  '052690.KS': 'kepco-enc.com',
+  '1164.HK': 'cgnmc.com',
+  NNE: 'nanonuclearenergy.com',
+
+  // Crypto
   BCH: 'bitcoincash.org',
-HYPE: 'hyperliquid.xyz',
-// ── LOGO_DOMAINS (DeBounce / logo CDN) ──
-TXN: 'ti.com',
-QCOM: 'qualcomm.com',
-PG: 'pg.com',
-KO: 'coca-cola.com',
-CVX: 'chevron.com',
-COP: 'conocophillips.com',
-MRK: 'merck.com',
-UNH: 'unitedhealthgroup.com',
-AMGN: 'amgen.com',
-VZ: 'verizon.com',
-HD: 'homedepot.com',
-ABT: 'abbott.com',
-PEP: 'pepsico.com',
-BMY: 'bms.com',
-ACN: 'accenture.com',
-MO: 'altria.com',
-ADP: 'adp.com',
-LMT: 'lockheedmartin.com',
-BX: 'blackstone.com',
-EOG: 'eogresources.com',
-CMCSA: 'comcast.com',
-SLB: 'slb.com',
-UPS: 'ups.com',
-TGT: 'target.com',
-FAST: 'fastenal.com',
+  HYPE: 'hyperliquid.xyz',
 };
 
 export default function AssetIcon({ asset, size = 16 }) {
   const iconSymbol = getIconSymbol(asset || {});
-  const [stage, setStage] = useState(0); // 0 = SI, 1 = Clearbit, 2 = Lucide
+  const skipSi = SKIP_SI.has(iconSymbol);
+
+  // stage: 0 = Simple Icons, 1 = DeBounce, 2 = Lucide
+  const [stage, setStage] = useState(skipSi ? 1 : 0);
+
   const fallback = resolveIconLucide(asset || { symbol: iconSymbol });
 
-  // 1. Bandera USA para ETFs core
+  // 1. Bandera USA (ETFs core US)
   if (US_FLAG_SYMBOLS.has(iconSymbol) && stage === 0) {
     return (
       <img
@@ -73,14 +135,19 @@ export default function AssetIcon({ asset, size = 16 }) {
         alt="USA"
         width={size}
         height={Math.round(size * 0.75)}
-        style={{ borderRadius: 2, display: 'block', flexShrink: 0, objectFit: 'cover' }}
+        style={{
+          borderRadius: 2,
+          display: 'block',
+          flexShrink: 0,
+          objectFit: 'cover',
+        }}
         onError={() => setStage(2)}
       />
     );
   }
 
-  // 2. Simple Icons (solo los que existen)
-  const slug = SI_SLUGS[iconSymbol];
+  // 2. Simple Icons (salvo SKIP_SI)
+  const slug = !skipSi ? SI_SLUGS[iconSymbol] : null;
   const color = SI_COLORS[iconSymbol];
 
   if (slug && stage === 0) {
@@ -90,13 +157,18 @@ export default function AssetIcon({ asset, size = 16 }) {
         alt={iconSymbol}
         width={size}
         height={size}
-        style={{ borderRadius: 3, display: 'block', flexShrink: 0, objectFit: 'contain' }}
+        style={{
+          borderRadius: 3,
+          display: 'block',
+          flexShrink: 0,
+          objectFit: 'contain',
+        }}
         onError={() => setStage(1)}
       />
     );
   }
 
-  // 3. DeBounce (logos reales – reemplazo de Clearbit)
+  // 3. DeBounce (logos reales)
   const domain = LOGO_DOMAINS[iconSymbol];
   if (domain && stage <= 1) {
     return (
@@ -117,7 +189,7 @@ export default function AssetIcon({ asset, size = 16 }) {
     );
   }
 
-  // 4. Fallback Lucide
+  // 4. Lucide
   const Icon = fallback.Icon;
   return (
     <Icon
