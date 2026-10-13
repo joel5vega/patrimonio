@@ -3,186 +3,90 @@ import { useMemo } from 'react';
 import MarketHeatmap from './MarketHeatmap';
 
 function numberOrNull(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+  const n = Number(value);
+  return Number.isFinite(n)? n : null;
 }
 
 function calculatePnlPct(asset) {
-  // Soporta tanto sourceMeta (formato antiguo) como propiedades raíz (nuevo futuresMonitoring)
-  const entryPrice = numberOrNull(
-    asset.entryPrice ?? asset.sourceMeta?.entryPrice
-  );
-  const currentPrice = numberOrNull(
-    asset.markPrice ??
-    asset.sourceMeta?.marketPrice ??
-    asset.sourceMeta?.priceUSD
-  );
-
-  if (!entryPrice || entryPrice <= 0 || currentPrice == null) {
-    return null;
-  }
-
-  // Si ya viene calculado en el JSON (como unrealizedPnlPct), lo priorizamos
-  if (asset.unrealizedPnlPct !== undefined) {
+  if (asset.unrealizedPnlPct!== undefined) {
     return numberOrNull(asset.unrealizedPnlPct);
   }
-
-  return ((currentPrice - entryPrice) / entryPrice) * 100;
+  const entry = numberOrNull(asset.entryPrice?? asset.sourceMeta?.entryPrice);
+  const current = numberOrNull(
+    asset.markPrice?? asset.sourceMeta?.marketPrice?? asset.sourceMeta?.priceUSD
+  );
+  if (!entry || entry <= 0 || current == null) return null;
+  return ((current - entry) / entry) * 100;
 }
 
 function normalizeAsset(asset) {
-  const classification = asset.classification || {};
-  const sourceMeta = asset.sourceMeta || {};
+  const c = asset.classification || {};
+  const meta = asset.sourceMeta || {};
 
-  const isPendingInvestmentCash =
-    asset.source === "wallbit" &&
-    (
-      asset.type === "cash" ||
-      asset.symbol === "WALLBIT_CASH" ||
-      classification.assetClass === "cash"
-    );
-
-  const pnlPct = isPendingInvestmentCash
-    ? 0
-    : calculatePnlPct(asset);
-
-  // Detecta si es futuro ya sea por su tipo, o por la presencia de campos de futuros
-  const isFutures = 
-    asset.type === "futures" || 
-    asset.positionSide !== undefined || 
-    asset.leverage !== undefined;
+  const isFutures =
+    asset.type === "futures" ||
+    asset.positionSide!== undefined ||
+    asset.leverage!== undefined;
 
   return {
-    ...asset,
+   ...asset,
+    id: asset.id || `${asset.source || "manual"}-${asset.symbol}`,
+    symbol: asset.symbol || asset.name || "N/A",
+    name: asset.name || asset.symbol || "Activo sin nombre",
 
-    id:
-      asset.id ||
-      `${asset.source || "manual"}-${asset.symbol}`,
-
-    symbol:
-      isPendingInvestmentCash
-        ? "WALLBIT_CASH"
-        : asset.symbol || asset.name || "N/A",
-
-    name:
-      isPendingInvestmentCash
-        ? "Pendiente de inversión"
-        : asset.name ||
-          asset.symbol ||
-          "Activo sin nombre",
-
-    valueUSD: Number(asset.notionalUSD || asset.valueUSD || 0),
+    valueUSD: Number(asset.valueUSD || asset.notionalUSD || 0),
     weightPct: Number(asset.weightPct || 0),
 
-    role:
-      isPendingInvestmentCash
-        ? "reserve"
-        : asset.role ||
-          classification.role ||
-          "unclassified",
+    role: asset.role || c.role || "unclassified",
+    sector: c.sector || "sin_sector",
+    assetClass: c.assetClass || "sin_clase",
+    riskLevel: Number(c.riskLevel || 0),
+    source: asset.source || asset.groupKey || "manual",
+    type: asset.type || (isFutures? "futures" : "other"),
 
-    sector:
-      classification.sector || "sin_sector",
+    // Futuros
+    positionSide: isFutures? asset.positionSide || null : null,
+    notionalUSD: isFutures? numberOrNull(asset.notionalUSD) : null,
+    leverage: isFutures? numberOrNull(asset.leverage) : null,
+    liquidationPrice: isFutures? numberOrNull(asset.liquidationPrice) : null,
+    liquidationDistancePct: isFutures? numberOrNull(asset.liquidationDistancePct) : null,
+    marginMode: isFutures? asset.marginMode || null : null,
 
-    assetClass:
-      isPendingInvestmentCash
-        ? "cash"
-        : classification.assetClass ||
-          "sin_clase",
+    // Precios
+    quantity: numberOrNull(asset.quantity?? meta.quantity),
+    marketPrice: numberOrNull(asset.markPrice?? meta.marketPrice?? meta.priceUSD),
+    entryPrice: numberOrNull(asset.entryPrice?? meta.entryPrice),
+    pnlUSD: numberOrNull(asset.unrealizedPnlUSD?? meta.unrealizedPnlUSD),
+    pnlPct: calculatePnlPct(asset),
 
-    riskLevel: Number(
-      classification.riskLevel || 0,
-    ),
-
-    source:
-      asset.source ||
-      asset.groupKey ||
-      "manual",
-
-    type: isFutures ? "futures" : (isPendingInvestmentCash ? "cash" : (asset.type || "other")),
-
-    ...(isFutures
-      ? {
-          positionSide: asset.positionSide || null,
-          notionalUSD: numberOrNull(asset.notionalUSD),
-          leverage: numberOrNull(asset.leverage),
-          liquidationPrice: numberOrNull(asset.liquidationPrice),
-          liquidationDistancePct: numberOrNull(asset.liquidationDistancePct),
-          marginMode: asset.marginMode || null,
-        }
-      : {
-          positionSide: null,
-          notionalUSD: null,
-          leverage: null,
-          liquidationPrice: null,
-          liquidationDistancePct: null,
-          marginMode: null,
-        }),
-
-    quantity: isPendingInvestmentCash
-      ? Number(asset.valueUSD || 0)
-      : numberOrNull(asset.quantity ?? sourceMeta.quantity),
-
-    marketPrice: isPendingInvestmentCash
-      ? 1
-      : numberOrNull(
-          asset.markPrice ??
-          sourceMeta.marketPrice ??
-          sourceMeta.priceUSD,
-        ),
-
-    entryPrice: isPendingInvestmentCash
-      ? 1
-      : numberOrNull(asset.entryPrice ?? sourceMeta.entryPrice),
-
-    pnlUSD: isPendingInvestmentCash
-      ? 0
-      : numberOrNull(
-          asset.unrealizedPnlUSD ??
-          sourceMeta.unrealizedPnlUSD,
-        ),
-
-    pnlPct,
-
-    isPendingInvestmentCash,
-
-    isNeutral:
-      isPendingInvestmentCash ||
-      asset.type === "stablecoin" ||
-      classification.assetClass === "efectivo" ||
-      pnlPct === null,
-
-    strategy: asset.strategy || {},
+    // Flags genéricos, sin lógica de Wallbit/USDT
+    isNeutral: c.assetClass === "efectivo" || asset.type === "cash" || asset.type === "stablecoin",
   };
 }
 
 export default function PortfolioHeatmap({
   assets = [],
-  futuresMonitoring = null, // Recibimos el objeto completo en lugar de un array plano
+  futuresMonitoring = null,
   bobRate,
   historicalContext = null,
   decisionSupport = null,
 }) {
   const normalizedAssets = useMemo(() => {
     return assets
-      .filter((asset) => Number(asset?.valueUSD) > 0)
-      .map(normalizeAsset);
+     .filter((a) => Number(a?.valueUSD) > 0)
+     .map(normalizeAsset);
   }, [assets]);
-  
-  const normalizedFutures = useMemo(() => {
-    // Extraemos las posiciones directamente de la agregación multiexchange
-    const rawPositions = futuresMonitoring?.aggregated?.positions || [];
-    return rawPositions
-      .filter((asset) => {
-        const notional =
-          Number(asset.notionalUSD) ||
-          Number(asset.sourceMeta?.notionalUSD) ||
-          Number(asset.valueUSD);
 
-        return Number.isFinite(notional) && notional > 0;
+  const normalizedFutures = useMemo(() => {
+    const raw = futuresMonitoring?.aggregated?.positions || [];
+    return raw
+     .filter((a) => {
+        const n = Number(a.notionalUSD) || Number(a.sourceMeta?.notionalUSD) || Number(a.valueUSD);
+        return Number.isFinite(n) && n > 0;
       })
-      .map(normalizeAsset);
+     .map(normalizeAsset);
   }, [futuresMonitoring]);
+
   return (
     <MarketHeatmap
       assets={normalizedAssets}
