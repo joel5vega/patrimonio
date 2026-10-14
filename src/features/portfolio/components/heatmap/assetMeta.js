@@ -3,7 +3,7 @@ import {
   Dices, Droplets, Building2, Briefcase, DollarSign, Cpu, HeartPulse, Lock, Shield,
   CreditCard, Flame, Sun, ShoppingBag, ShoppingCart, Droplet, Signal, Globe2, Gem,
   Box, Smartphone, Wallet, Banknote, CircleDollarSign, Car, Ship, TrainFront,
-  Link2, Smile,Mountain, Factory, Radio, Search, MessageCircle
+  Link2, Smile,Mountain, Factory, Radio, Search, MessageCircle, Atom
 } from 'lucide-react';
 
 // ─── Meta de roles ──────────────────────────────────────────
@@ -342,7 +342,7 @@ VNQ:  { Icon: Building2,  color: '#f97316' },
   MGY: { Icon: Droplet, color: '#0078d7' },
   NEM: { Icon: Gem, color: '#b8860b' },
   // SYMBOL_LUCIDE
-NLR:  { Icon: Zap,    color: '#facc15' },  // nuclear / energía
+NLR:  { Icon: Atom,    color: '#facc15' },  // nuclear / energía
 CQQQ: { Icon: Cpu,    color: '#ef4444' },  // China tech
 
 // No LOGO_DOMAINS de issuer (mismo criterio: concepto > logo VanEck/Invesco)
@@ -539,6 +539,33 @@ export function getDisplayLabel(asset = {}) {
   return '—';
 }
 
+// assetMeta.js — junto a getDisplayLabel
+
+/**
+ * Nombre corto y legible para holdings / chips.
+ * Prioridad: alias → name limpio → symbol
+ */
+export function friendlyLabel({ alias, name, symbol } = {}) {
+  if (alias) return String(alias).trim();
+
+  const raw = String(name || '').trim();
+  if (!raw) return symbol || '—';
+
+  const short = raw
+    .replace(
+      /\b(Inc\.?|Corp\.?|Co\.?|Ltd\.?|Limited|Holdings?|N\.?V\.?|S\.?A\.?|PLC|Group)\b/gi,
+      '',
+    )
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (short.length > 20) {
+    const cut = short.slice(0, 20).replace(/\s+\S*$/, '');
+    return cut || short.slice(0, 18);
+  }
+
+  return short || symbol || '—';
+}
 /**
  * Clave limpia para SI_SLUGS / SYMBOL_LUCIDE.
  * - Quita sufijos de exchange

@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import AssetIcon from './heatmap/AssetIcon';
 import '../styles/PortfolioSectorMap.css';
+import { friendlyLabel } from './heatmap/assetMeta'; // o la ruta que uses
+// ...
 
 export const DEFAULT_VISIBLE_LIMIT = 8;
 
@@ -400,10 +402,16 @@ function CompanyChip({ company, sectorPct = 0, sectorValueUSD = 0 }) {
     ? []
     : company.sources
         .filter((s) => s.symbol !== company.symbol || s.etfWeightPct < 100)
-        .slice(0, 3);
+        .slice(0, 2); // máximo 2 para no saturar
+
+  const label = friendlyLabel(company);
+  const showTicker = label !== company.symbol;
 
   return (
-    <div className="sector-chip" title={company.name}>
+    <div
+      className="sector-chip"
+      title={`${company.name || company.symbol} · ${company.symbol}`}
+    >
       <div className="sector-chip__icon">
         <AssetIcon
           asset={{
@@ -418,12 +426,19 @@ function CompanyChip({ company, sectorPct = 0, sectorValueUSD = 0 }) {
 
       <div className="sector-chip__info">
         <div className="sector-chip__row">
-          <span className="sector-chip__symbol">{company.symbol}</span>
-          <strong className="sector-chip__weight">{formatPct(weightPct, 2)}</strong>
+          <span className="sector-chip__name">{label}</span>
+          <strong className="sector-chip__weight">
+            {formatPct(weightPct, 2)}
+          </strong>
         </div>
         <div className="sector-chip__row sector-chip__row--sub">
-          <span className="sector-chip__usd">
-            {formatUSD(company.totalEffectiveValueUSD)}
+          <span className="sector-chip__meta">
+            {showTicker && (
+              <span className="sector-chip__ticker">{company.symbol}</span>
+            )}
+            <span className="sector-chip__usd">
+              {formatUSD(company.totalEffectiveValueUSD)}
+            </span>
           </span>
           {etfs.length > 0 && (
             <span className="sector-chip__etfs">

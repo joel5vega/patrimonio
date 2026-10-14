@@ -535,3 +535,33 @@
     grid-template-columns: 1fr;
   }
 }
+
+.sector-chip__name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #eeeeee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.sector-chip__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sector-chip__ticker {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: #5e5d59;
+  letter-spacing: 0.02em;
+}
+
+.sector-chip__usd {
+  font-family: var(--p-mono, 'Fira Code', ui-monospace, monospace);
+  font-size: 0.6rem;
+  color: #5e5d59;
+}
