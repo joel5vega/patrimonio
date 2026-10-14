@@ -693,3 +693,81 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Top Holdings (tooltip)
+   ═══════════════════════════════════════════════════════════ */
+
+.hm-hold {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-slate-elevated, #262626);
+  min-width: 0;
+}
+
+.hm-hold__head,
+.hm-hold__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-smoke, #5e5d59);
+}
+
+.hm-hold__total {
+  font-family: var(--font-fira-code, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-fog, #a4a19b);
+}
+.hm-hold__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hm-hold__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  border-radius: 4px;
+  min-width: 0;
+}
+
+.hm-hold__row > .hm-hold-logo,
+.hm-hold__row > img {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.hm-hold__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-bone, #eeeeee);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hm-hold__weight {
+  flex-shrink: 0;
+  font-family: var(--font-fira-code, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-voltage-blue, #2b7fff);
+}

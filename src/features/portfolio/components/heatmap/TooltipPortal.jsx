@@ -6,7 +6,7 @@ import { fmt, fmtPct } from './format';
 import { getRole, getSector } from './assetGetters';
 import { ROLE_META, resolveIconLucide } from './assetMeta';
 import AssetIcon from './AssetIcon';
-
+import TopHoldings from './TopHoldings';
 export default function TooltipPortal({
   asset,
   anchorRect,
@@ -53,13 +53,7 @@ export default function TooltipPortal({
   const { color } = resolveIconLucide(asset);
 
   const lookThrough = asset?.lookThrough ?? null;
-  const topHoldings = Array.isArray(lookThrough?.topHoldings)
-    ? lookThrough.topHoldings.slice(0, 5)
-    : [];
-  const topHoldingsWeight = topHoldings.reduce(
-    (sum, h) => sum + (Number(h.etfWeightPct ?? h.weightPct) || 0),
-    0,
-  );
+
 
   const style = position
     ? { top: position.top, left: position.left, opacity: 1 }
@@ -183,31 +177,9 @@ export default function TooltipPortal({
       </div>
 
       {/* ── Top holdings (solo ETFs) ── */}
-      {topHoldings.length > 0 && (
-        <div className="tooltip-holdings">
-          <div className="tooltip-section-title">Top holdings</div>
-          {topHoldings.map((h) => (
-            <div key={h.symbol} className="tooltip-holding">
-              <AssetIcon
-                asset={{
-                  symbol: h.symbol,
-                  name: h.name,
-                  type: 'stock',
-                  sector: h.sector,
-                }}
-                size={14}
-              />
-              <span className="tooltip-holding__name">{h.symbol}</span>
-              <span className="tooltip-holding__weight">
-                {Number(h.etfWeightPct ?? h.weightPct ?? 0).toFixed(1)}%
-              </span>
-            </div>
-          ))}
-          <div className="tooltip-holdings-total">
-            Top {topHoldings.length}: {topHoldingsWeight.toFixed(1)}%
-          </div>
-        </div>
-      )}
+     {lookThrough && (
+  <TopHoldings lookThrough={lookThrough} limit={5} />
+)}
 
       {/* ── Footer ── */}
       {(roleMeta || sector) && (
